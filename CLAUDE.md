@@ -20,7 +20,9 @@ Nie kopiujemy kodu, nazw, grafik ani wyglądu innych przeglądarek (np. Helium) 
 - `lum/patches/` + `lum/patches/series` - **wszystkie nasze zmiany w kodzie Chromium**, jako pliki `.patch`.
   Nakładane na końcu (po ungoogled-chromium i patches/ Windows) przez `build.py` (bloki oznaczone `# LUM:`).
 - `lum/flags.gn` - nasze flagi GN, dopisywane na końcu `args.gn`. gn działa z `--fail-on-unused-args`.
-- `lum/branding/` - źródła logo/ikon.
+- `lum/branding/` - źródła logo/ikon. Ikony binarne (PNG/ICO) leżą w `lum/branding/overlay/` w układzie `build/src`
+  i `build.py` kopiuje je po łatkach (łatki tekstowe nie podmienią plików binarnych). Generuje je
+  `lum/branding/generate_icons.py` - uruchom po każdej zmianie logo.
 - `ungoogled-chromium/` (submoduł), `patches/`, `flags.windows.gn`, `downloads.ini`, `pruning.list`,
   `domain_substitution.list`, `package.py`, `.github/`, `devutils/` - **warstwa upstream. Nie edytuj**,
   chyba że to aktualizacja bazy albo użytkownik wprost o to prosi. Zmiany upstream = konflikty przy każdej aktualizacji.

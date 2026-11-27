@@ -36,6 +36,25 @@ class _BuildTimeout(Exception):
     """Raised when the CI build time limit is reached."""
 
 
+def _apply_lum_overlay(overlay_dir, source_tree):
+    """
+    LUM: copies every file from lum/branding/overlay over the same path in the source tree.
+
+    Used for binary branding files (icons) that text patches cannot replace. Only existing
+    files are replaced, so a path that moved in a newer Chromium is reported, not added.
+    """
+    if not overlay_dir.is_dir():
+        return
+    for src in sorted(path for path in overlay_dir.rglob('*') if path.is_file()):
+        rel = src.relative_to(overlay_dir)
+        dst = source_tree / rel
+        if not dst.is_file():
+            get_logger().warning('LUM overlay: %s not found in source tree, skipped', rel.as_posix())
+            continue
+        shutil.copyfile(src, dst)
+        get_logger().info('LUM overlay: replaced %s', rel.as_posix())
+
+
 def _get_vcvars_path(name='64'):
     """
     Returns the path to the corresponding vcvars*.bat path
@@ -241,6 +260,8 @@ def main():
             source_tree,
             patch_bin_path=(source_tree / _PATCH_BIN_RELPATH)
         )
+        # LUM: Lum's binary branding files (icons) from lum/branding/overlay
+        _apply_lum_overlay(_ROOT_DIR / 'lum' / 'branding' / 'overlay', source_tree)
 
         # Substitute domains
         domain_substitution_list = (_ROOT_DIR / 'ungoogled-chromium' / 'domain_substitution.list') if args.tarball else (_ROOT_DIR  / 'domain_substitution.list')

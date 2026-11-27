@@ -2,3 +2,6 @@
 *.patch text eol=lf
 series text eol=lf
 *.gn text eol=lf
+# Ikony Lum - zawsze binarnie
+*.png binary
+*.ico binary
