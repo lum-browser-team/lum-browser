@@ -31,9 +31,25 @@ Kolejność przy kompilacji: kod Chromium → łatki ungoogled-chromium → łat
 
 ### Wymagania
 
-- **Dysk:** szacunkowo 60-80 GB wolnego miejsca (NTFS, najlepiej SSD) w trybie `--tarball`. Dokładną liczbę zapiszemy tu po pierwszej kompilacji.
+- **Dysk:** szacunkowo 60-80 GB wolnego miejsca (NTFS, najlepiej SSD) w trybie `--tarball`, plus ok. 15 GB na Visual Studio i SDK. Dokładną liczbę zapiszemy tu po pierwszej kompilacji.
 - **RAM:** 16 GB minimum, 32 GB zalecane.
-- **Visual Studio** (Community wystarczy) - wersja, składniki i Windows SDK dokładnie wg sekcji „Visual Studio” w
+
+### Instalacja narzędzi - jednym skryptem
+
+W PowerShell **jako administrator**, w folderze repo:
+
+```
+powershell -ExecutionPolicy Bypass -File lum\devutils\setup-windows.ps1
+```
+
+Skrypt instaluje wszystko z listy poniżej (Python 3.12, 7-Zip, Visual Studio Community 2026 z C++ i MFC/ATL,
+Windows SDK 10.0.28000 z debuggerami), ustawia `python3.exe`, pakiety pip i długie ścieżki, a na końcu sprawdza,
+czy wszystko jest. Ręcznie zostaje tylko wyłączenie aliasów Pythona (skrypt otworzy właściwe ustawienia) i restart.
+
+### Wymagania - szczegóły (gdyby skrypt nie zadziałał)
+
+- **Visual Studio 2026** (Community wystarczy): „Desktop development with C++” + „MFC/ATL support”, oraz
+  **Windows SDK 10.0.28000** z „Debugging Tools for Windows” - wg sekcji „Visual Studio” w
   [oficjalnej instrukcji Chromium](https://chromium.googlesource.com/chromium/src/+/refs/heads/main/docs/windows_build_instructions.md#visual-studio).
 - **Python 3.11+** z python.org:
   - zaznacz „Add python.exe to PATH”,
