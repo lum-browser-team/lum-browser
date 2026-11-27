@@ -6,3 +6,5 @@
 # branding/change-name-to-lum.patch
 # privacy/disable-something.patch
 # ui/minimal-toolbar.patch
+branding/rename-chromium-to-lum.patch
+perf/enable-memory-saver-by-default.patch
