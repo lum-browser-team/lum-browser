@@ -11,3 +11,6 @@ Thumbs.db
 .idea/
 .claude/settings.local.json
 __pycache__/
+
+# Log kompilacji (lum/devutils/build-status.ps1)
+/build-log.txt
