@@ -1,0 +1,61 @@
+Lum: nazwa produktu i firmy "Lum" zamiast "Chromium" (zasoby wersji, instalator),
+osobny folder profilu (%LOCALAPPDATA%\Lum), wlasne ProgID/AppUserModelID, schemat lum://
+i wlasny GUID Active Setup, zeby Lum nie mieszal sie z zainstalowanym Chromium.
+
+--- a/chrome/app/theme/chromium/BRANDING
++++ b/chrome/app/theme/chromium/BRANDING
+@@ -1,10 +1,10 @@
+-COMPANY_FULLNAME=The Chromium Authors
+-COMPANY_SHORTNAME=The Chromium Authors
+-PRODUCT_FULLNAME=Chromium
+-PRODUCT_SHORTNAME=Chromium
+-PRODUCT_INSTALLER_FULLNAME=Chromium Installer
+-PRODUCT_INSTALLER_SHORTNAME=Chromium Installer
+-COPYRIGHT=Copyright @LASTCHANGE_YEAR@ The Chromium Authors. All rights reserved.
++COMPANY_FULLNAME=Lum
++COMPANY_SHORTNAME=Lum
++PRODUCT_FULLNAME=Lum
++PRODUCT_SHORTNAME=Lum
++PRODUCT_INSTALLER_FULLNAME=Lum Installer
++PRODUCT_INSTALLER_SHORTNAME=Lum Installer
++COPYRIGHT=Copyright @LASTCHANGE_YEAR@ The Chromium Authors and the Lum contributors. All rights reserved.
+ MAC_BUNDLE_ID=org.chromium.Chromium
+ MAC_CREATOR_CODE=Cr24
+ MAC_TEAM_ID=
+--- a/chrome/install_static/chromium_install_modes.h
++++ b/chrome/install_static/chromium_install_modes.h
+@@ -21,7 +21,7 @@
+ 
+ // The brand-specific product name to be included as a component of the install
+ // and user data directory paths.
+-inline constexpr wchar_t kProductPathName[] = L"Chromium";
++inline constexpr wchar_t kProductPathName[] = L"Lum";
+ 
+ // The brand-specific safe browsing client name.
+ inline constexpr char kSafeBrowsingName[] = "chromium";
+@@ -54,17 +54,17 @@
+         .logo_suffix = L"",  // No logo suffix for the primary install mode.
+         .app_guid =
+             L"",  // Empty app_guid since no integration with Google Update.
+-        .base_app_name = L"Chromium",              // A distinct base_app_name.
+-        .base_app_id = L"Chromium",                // A distinct base_app_id.
+-        .browser_prog_id_prefix = L"ChromiumHTM",  // Browser ProgID prefix.
++        .base_app_name = L"Lum",                   // A distinct base_app_name.
++        .base_app_id = L"Lum",                     // A distinct base_app_id.
++        .browser_prog_id_prefix = L"LumHTM",       // Browser ProgID prefix.
+         .browser_prog_id_description =
+-            L"Chromium HTML Document",  // Browser ProgID description.
+-        .direct_launch_url_scheme = "chromium",
+-        .pdf_prog_id_prefix = L"ChromiumPDF",  // PDF ProgID prefix.
++            L"Lum HTML Document",  // Browser ProgID description.
++        .direct_launch_url_scheme = "lum",
++        .pdf_prog_id_prefix = L"LumPDF",       // PDF ProgID prefix.
+         .pdf_prog_id_description =
+-            L"Chromium PDF Document",  // PDF ProgID description.
++            L"Lum PDF Document",  // PDF ProgID description.
+         .active_setup_guid =
+-            L"{7D2B3E1D-D096-4594-9D8F-A6667F12E0AC}",  // Active Setup
++            L"{90367064-BC6F-44D6-84F5-7EA8FBFA6770}",  // Active Setup
+                                                         // GUID.
+         .toast_activator_clsid = {0x635EFA6F,
+                                   0x08D6,
