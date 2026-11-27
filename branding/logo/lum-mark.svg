@@ -6,25 +6,14 @@
       <stop offset="0.55" stop-color="#F3ECDD"/>
       <stop offset="1" stop-color="#D6C9AE"/>
     </radialGradient>
-    <linearGradient id="lum-rim" gradientUnits="userSpaceOnUse" x1="3" y1="30" x2="63" y2="90">
-      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.95"/>
-      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
-    </linearGradient>
     <linearGradient id="lum-star" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#FFEDB0"/>
       <stop offset="1" stop-color="#F2B227"/>
     </linearGradient>
-    <clipPath id="lum-clip">
-      <path d="M52.34 0.5 A60 60 0 1 0 119.5 67.67 A48 48 0 1 1 52.34 0.5 Z"/>
-    </clipPath>
     <filter id="lum-shadow" x="-10%" y="-10%" width="120%" height="125%">
       <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000000" flood-opacity="0.35"/>
     </filter>
   </defs>
   <path d="M52.34 0.5 A60 60 0 1 0 119.5 67.67 A48 48 0 1 1 52.34 0.5 Z" fill="url(#lum-moon)" filter="url(#lum-shadow)"/>
-  <g clip-path="url(#lum-clip)">
-    <circle cx="81" cy="39" r="48" fill="none" stroke="#B9A887" stroke-opacity="0.45" stroke-width="2.4"/>
-    <path d="M52.34 0.5 A60 60 0 1 0 119.5 67.67 A48 48 0 1 1 52.34 0.5 Z" fill="none" stroke="url(#lum-rim)" stroke-width="3.6"/>
-  </g>
   <path d="M96 12 Q98.4 27.6 114 30 Q98.4 32.4 96 48 Q93.6 32.4 78 30 Q93.6 27.6 96 12 Z" fill="url(#lum-star)" filter="url(#lum-shadow)"/>
 </svg>

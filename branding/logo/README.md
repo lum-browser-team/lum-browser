@@ -1,6 +1,6 @@
 # Logo lum
 
-Znak: sierp księżyca z gwiazdką (wariant F1.2 „Połysk”).
+Znak: sierp księżyca z gwiazdką, z miękkim cieniowaniem, bez obwódek.
 
 | Plik | Do czego |
 |---|---|
