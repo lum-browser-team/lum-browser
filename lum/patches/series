@@ -1,0 +1,8 @@
+# Łatki Lum - nakładane NA KOŃCU, po łatkach ungoogled-chromium i Windows.
+# Jedna linia = jedna łatka, ścieżka względem lum/patches/.
+# Kolejność ma znaczenie: łatka niżej może zależeć od łatki wyżej.
+#
+# Przykład:
+# branding/change-name-to-lum.patch
+# privacy/disable-something.patch
+# ui/minimal-toolbar.patch
