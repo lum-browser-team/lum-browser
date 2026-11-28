@@ -29,7 +29,7 @@ body { background: var(--page, #000); }
 body.bar-shown #pages webview, #pages webview.errored { pointer-events: none; }
 
 /* ---------- Bar (38 px) ---------- */
-.bar { position: fixed; top: 0; left: 0; right: 0; height: 38px; z-index: 10; display: flex; align-items: center; justify-content: space-between; padding: 0 10px;
+.bar { position: fixed; top: 0; left: 0; right: 0; height: 38px; z-index: 10; display: flex; align-items: center; justify-content: space-between; padding: 0;
   pointer-events: none;
   --chrome: #FFFFFF; --dim: rgba(255,255,255,.68); --hov: rgba(255,255,255,.12); --track: rgba(255,255,255,.4);
   --glow-icon: rgba(255,255,255,.55); --flash: rgba(255,255,255,.8);
@@ -67,7 +67,7 @@ body.bar-clear .bar.show .tab.active { color: var(--chrome); }
 @media (prefers-reduced-motion: reduce) { .scrim, #pages webview { transition-duration: .01s; } }
 
 /* The window moves by dragging an empty spot on the bar (see "Window dragging" below) */
-.side { display: flex; align-items: center; gap: 1px; }
+.side { display: flex; align-items: center; gap: 0; }
 #left { flex: 1; min-width: 0; margin-right: 20px; }
 /* Buttons and tabs lie above the address in the middle, so the address never blocks them;
    the empty parts of both sides let clicks through (to the address or the drag area) */
@@ -77,11 +77,12 @@ body.bar-clear .bar.show .tab.active { color: var(--chrome); }
 #left::after { content: ""; flex: 0 0 120px; }
 #right { flex: none; }
 
-.btn { position: relative; flex: none; width: 30px; height: 30px; border-radius: 50%; border: 0; padding: 0; background: transparent; color: inherit; display: grid; place-items: center; cursor: default;
+/* Bar buttons: equal 38 x 38 squares over the full bar height, so the whole area around an icon is clickable;
+   the first and last ones reach the window edges (the bar has no side padding). */
+.btn { position: relative; flex: none; width: 38px; height: 38px; border-radius: 8px; border: 0; padding: 0; background: transparent; color: inherit; display: grid; place-items: center; cursor: default;
   pointer-events: auto; transition: transform .45s cubic-bezier(.34,1.9,.64,1); }
 .btn svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round;
   filter: var(--halo); opacity: .8; transition: opacity .45s ease, filter .45s ease, transform .5s cubic-bezier(.22,1,.36,1); }
-.btn.nav { width: 32px; }
 .btn.nav svg { width: 19px; height: 19px; stroke-width: 1.7; }
 .btn.off svg { opacity: .3; }
 .btn:focus-visible, .tab:focus-visible { outline: 2px solid #8FB4FF; outline-offset: 1px; }
@@ -91,14 +92,20 @@ body.bar-clear .bar.show .tab.active { color: var(--chrome); }
 /* Click: press and a short icon flash */
 .btn.pressed { transform: scale(.82); transition: transform .08s ease; }
 .btn.pressed svg { opacity: 1; filter: var(--halo) drop-shadow(0 0 4px var(--flash)); transition: filter .05s, opacity .05s; }
-.arcs { display: flex; align-items: center; gap: 0; margin-left: 6px; }
+.arcs { display: flex; align-items: center; gap: 0; }
 /* Window buttons: same size and position in both styles, packed tightly */
-.arcs .btn { width: 28px; height: 28px; }
 .arcs svg { width: 17px; height: 17px; stroke-width: 2; opacity: 1; }
-/* On a light background the arcs are darker so they stay visible */
-.bar.on-light .arcs [data-act=min] svg path { stroke: #16A34A; }
-.bar.on-light .arcs [data-act=max] svg path { stroke: #C98A00; }
-.bar.on-light .arcs [data-act=close] svg circle { stroke: #E5483E; }
+/* Window button colors ("Window buttons" setting: Colored / Plain). Colored: green, yellow, red, darker on a light
+   background so they stay visible. Plain: the same color as the other icons. Same in both styles (arcs and — □ ✕). */
+body:not(.btn-plain) .arcs [data-act=min] { --glow-icon: rgba(61,220,132,.9); --flash: #3DDC84; --wb: #3DDC84; }
+body:not(.btn-plain) .arcs [data-act=max] { --glow-icon: rgba(245,197,66,.9); --flash: #F5C542; --wb: #F5C542; }
+body:not(.btn-plain) .arcs [data-act=close] { --glow-icon: rgba(255,95,87,.9); --flash: #FF5F57; --wb: #FF5F57; }
+body:not(.btn-plain) .bar.on-light .arcs [data-act=min] { --wb: #16A34A; }
+body:not(.btn-plain) .bar.on-light .arcs [data-act=max] { --wb: #C98A00; }
+body:not(.btn-plain) .bar.on-light .arcs [data-act=close] { --wb: #E5483E; }
+.arcs svg path, .arcs svg circle, .arcs svg rect { stroke: var(--wb, currentColor); }
+body.btn-plain .arcs svg { opacity: .8; }
+body.btn-plain .arcs .btn:hover svg { opacity: 1; }
 
 /* ---------- Center: page address or search ---------- */
 .center { position: absolute; left: 50%; top: 0; height: 38px; transform: translateX(-50%); display: flex; align-items: center; justify-content: center; pointer-events: none; max-width: 52%; }
@@ -127,7 +134,7 @@ body.bar-clear .bar.show .tab.active { color: var(--chrome); }
 
 /* ---------- Tabs ---------- */
 /* Tab strip: grows with the number of tabs and scrolls horizontally (mouse wheel) when out of space */
-.tabs { flex: 0 1 auto; min-width: 0; display: flex; align-items: center; gap: 2px; margin-left: 10px; pointer-events: none;
+.tabs { flex: 0 1 auto; min-width: 0; display: flex; align-items: center; gap: 2px; margin-left: 4px; pointer-events: none;
   overflow-x: auto; overflow-y: hidden; scrollbar-width: none; height: 38px; }
 .tabs::-webkit-scrollbar { display: none; }
 .tab { position: relative; flex: 0 1 190px; min-width: 36px; height: 26px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 5px 0 10px; border-radius: 8px; font: 500 12px/1 var(--ui); color: var(--dim);
@@ -270,13 +277,6 @@ body.style-square .ctx, body.style-square .ctx button { border-radius: 0; }
 .arcs .ic-square { display: none; }
 body.style-square .arcs .ic-round { display: none; }
 body.style-square .arcs .ic-square { display: block; stroke-width: 1.8; stroke-linecap: butt; stroke-linejoin: miter; opacity: 1; }
-/* Square buttons have the same colors as the arcs */
-body.style-square .arcs [data-act=min] .ic-square { stroke: #3DDC84; }
-body.style-square .arcs [data-act=max] .ic-square { stroke: #F5C542; }
-body.style-square .arcs [data-act=close] .ic-square { stroke: #FF5F57; }
-body.style-square .bar.on-light .arcs [data-act=min] .ic-square { stroke: #16A34A; }
-body.style-square .bar.on-light .arcs [data-act=max] .ic-square { stroke: #C98A00; }
-body.style-square .bar.on-light .arcs [data-act=close] .ic-square { stroke: #E5483E; }
 body.style-square .arcs .btn { border-radius: 0; }
 body.style-square #trackPath { stroke-linejoin: miter; stroke-linecap: butt; }
 body.style-square .btn { border-radius: 0; }

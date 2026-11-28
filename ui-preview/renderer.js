@@ -51,6 +51,9 @@ const normBar = (v) => (BAR_MODES.includes(v) ? v : 'auto');
 let barMode = 'auto';
 try { barMode = normBar(localStorage.getItem('lum-bar')); } catch { /* hidden by default */ }
 // Style: 'round' - arcs and a rounded tab line, 'square' - classic — □ ✕ and a square line
+// Window buttons: 'color' - green / yellow / red, 'plain' - the same color as the other icons
+let btnColor = 'color';
+try { btnColor = localStorage.getItem('lum-btn-color') === 'plain' ? 'plain' : 'color'; } catch { /* colored by default */ }
 let uiStyle = 'round';
 try { uiStyle = localStorage.getItem('lum-style') === 'square' ? 'square' : 'round'; } catch { /* round by default */ }
 
@@ -280,6 +283,11 @@ function setUiStyle(s) {
   render();
   track.ready = false; updateTrack(tabsVisible(), true); // line switches to the new shape right away
 }
+function setBtnColor(v) {
+  btnColor = v === 'plain' ? 'plain' : 'color';
+  try { localStorage.setItem('lum-btn-color', btnColor); } catch { /* no storage */ }
+  render();
+}
 function setBarMode(mode) {
   barMode = normBar(mode);
   try { localStorage.setItem('lum-bar', barMode); } catch { /* no storage */ }
@@ -344,6 +352,8 @@ function renderBar() {
   panel.querySelectorAll('[data-theme]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.theme === theme ? 'true' : 'false'));
   panel.querySelectorAll('[data-barmode]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.barmode === barMode ? 'true' : 'false'));
   panel.querySelectorAll('[data-style]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.style === uiStyle ? 'true' : 'false'));
+  panel.querySelectorAll('[data-btncolor]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.btncolor === btnColor ? 'true' : 'false'));
+  document.body.classList.toggle('btn-plain', btnColor === 'plain');
   document.body.classList.toggle('style-square', uiStyle === 'square');
   TK.r = uiStyle === 'square' ? 0 : 8;
   applyThemeChrome();
@@ -584,6 +594,7 @@ document.addEventListener('click', (e) => {
   const th = el.closest('.sw-btn[data-theme]'); if (th) { setTheme(th.dataset.theme); return; }
   const bm = el.closest('button[data-barmode]'); if (bm) { setBarMode(bm.dataset.barmode); return; }
   const sb = el.closest('button[data-style]'); if (sb) { setUiStyle(sb.dataset.style); return; }
+  const bc = el.closest('button[data-btncolor]'); if (bc) { setBtnColor(bc.dataset.btncolor); return; }
   if (el.closest('#panel')) return;
   const act = el.closest('[data-act]');
   if (!act) { if (S.settings) { S.settings = false; render(); focusHomeField(); } return; }

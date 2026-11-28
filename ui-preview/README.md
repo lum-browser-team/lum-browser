@@ -26,7 +26,8 @@ Double-click `Lum.cmd` (the first run installs dependencies, about 100 MB) or:
 - New tab: a search field in the middle of the window, always ready for typing and pasting.
 - Buttons: back, forward (curved arrows), reload, settings, window buttons
   (arcs in the round style, — □ ✕ in the square style, same colors).
-- Settings: 5 grays, 4 pastels, custom color (two rows of 5); Round/Square style; bar mode.
+- Settings: 5 grays, 4 pastels, custom color (two rows of 5); Round/Square style; window buttons Colored/Plain; bar mode.
+- All bar buttons are equal 38 × 38 squares over the full bar height (big click areas, up to the window edges).
   The settings panel look is temporary – the real browser will have a different one (separate design).
 - Right click on a tab: Copy link, Close tab.
 - Closing a tab: the cross on hover, middle mouse button, Ctrl+W. Many tabs: tabs shrink,

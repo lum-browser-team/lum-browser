@@ -34,10 +34,14 @@ While the bar is shown, the page under it ignores clicks (so they reach the butt
 
 ### Layout from the left
 
-1. **Back / Forward**: curved "<" and ">" (19 px icon in a 32 px box, 1.7 px stroke, round caps).
+**All bar buttons are equal 38 × 38 px squares** over the full bar height, touching each other (no gaps), so the whole area
+around an icon is clickable; the bar has no side padding, so the first button (back) reaches the left window edge and the
+last one (close) the right edge. Icons keep their size inside the squares.
+
+1. **Back / Forward**: curved "<" and ">" (19 px icon, 1.7 px stroke, round caps).
    SVG paths (viewBox 24): back `M15.5 5.5C13.2 8.4 10.6 10.2 7.5 12C10.6 13.8 13.2 15.6 15.5 18.5`,
    forward `M8.5 5.5C10.8 8.4 13.4 10.2 16.5 12C13.4 13.8 10.8 15.6 8.5 18.5`. Disabled: opacity 0.3.
-2. **Reload**: circular arrow (17 px in a 30 px box).
+2. **Reload**: circular arrow (17 px icon).
 3. **Tabs** (only while the bar is shown) – right next to reload.
 4. **Plus** after the last tab.
 
@@ -49,7 +53,7 @@ outside restores it. While editing, the text has one color (no dimmed path) and 
 The text does not move when you click it (the edit field sits exactly on top of the label, same font and position).
 Tabs and buttons always lie above the address, so it never blocks clicks on them.
 
-On the right: **settings** (two-sliders icon, 1.4 stroke) and the **window buttons** (each 28×28 px, packed, no gap):
+On the right: **settings** (two-sliders icon, 1.4 stroke) and the **window buttons** (38 × 38 px squares like the rest):
 
 | Style | Minimize | Maximize | Close |
 |---|---|---|---|
@@ -57,6 +61,8 @@ On the right: **settings** (two-sliders icon, 1.4 stroke) and the **window butto
 | Square | — green | □ yellow | ✕ red |
 
 On a light background the colors are darker: `#16A34A`, `#C98A00`, `#E5483E`. In both styles the buttons have the same size and position.
+**Window buttons setting: Colored / Plain.** Plain turns the colors off: the window buttons use the same color as the other icons
+(and the same neutral hover glow).
 
 ### Tabs
 
@@ -139,6 +145,7 @@ The mockup's options are what exists today; the final settings may be different 
 or change – ask olehnykorovych before building the settings page. What the mockup offers (all remembered):
 - **Theme** – the colors from the table above + a custom color.
 - **Style** – Round / Square.
+- **Window buttons** – Colored / Plain.
 - **Bar** – Hidden / Clear / Always visible / Full.
 
 Whatever the settings end up looking like, the **behavior** of these modes (described above) is the design to follow.
@@ -182,6 +189,9 @@ The icon that opens settings (two sliders) stays on the bar, left of the window 
 Kept so Claude on the other machine can see what changed since it last read this file.
 
 - **2026-11-28**
+  - All bar buttons are equal 38 × 38 squares over the full bar height (bigger click areas, reaching the window edges).
+  - New setting **Window buttons: Colored / Plain**.
+  - Settings panel tidied (colors in even columns, equal section spacing).
   - The mockup is now called **Lum Preview** (window title, menu, `Lum Preview.exe`). The real browser stays **Lum**.
   - Build it with `npm run pack` in `ui-preview/`. Running from the source uses its own profile (`Lum Preview (dev)`).
   - Theme colors cut to 10 (two rows of 5): Peach and Lemon removed; a saved Peach/Lemon theme falls back to Black.
