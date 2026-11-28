@@ -2,7 +2,7 @@
   "name": "lum-ui-preview",
   "version": "0.1.0",
   "private": true,
-  "description": "Mini przeglądarka do testowania interfejsu Lum przed łatkami w Chromium",
+  "description": "Mini browser for testing the Lum UI before patching Chromium",
   "main": "main.js",
   "scripts": {
     "start": "electron ."

@@ -12,7 +12,7 @@ const tone = (win) => win.evaluate(() => ({ show: bar.classList.contains('show')
     await win.keyboard.type('hello world'); await sleep(500);
     log('A typing', JSON.stringify(await inPage(win, `({v:nin.value, cls:note.className, hint:document.querySelector('.hint').innerText, op:getComputedStyle(document.querySelector('.hint')).opacity})`)));
     log('A isLink(start.js)', JSON.stringify(await inPage(win, `['localhost','localhost:3000','192.168.1.1','about:blank','file:///C:/x','node.js','example.com','hello world','999.999.1.1'].map(v=>[v,isLink(v)])`)));
-    log('A toUrl(renderer)', JSON.stringify(await win.evaluate(() => ['localhost', 'localhost:3000/x', '192.168.1.1', 'about:blank', 'file:///C:/Windows/win.ini', 'javascript:alert(1)', 'chrome://gpu', 'node.js', 'index.html', 'example.com', 'świerk pospolity'].map((v) => [v, toUrl(v)]))));
+    log('A toUrl(renderer)', JSON.stringify(await win.evaluate(() => ['localhost', 'localhost:3000/x', '192.168.1.1', 'about:blank', 'file:///C:/Windows/win.ini', 'javascript:alert(1)', 'chrome://gpu', 'node.js', 'index.html', 'example.com', 'café crème'].map((v) => [v, toUrl(v)]))));
     await shot2(app, 'a_start_typing');
     await win.keyboard.press('Control+a'); await win.keyboard.type('example.com'); await sleep(400);
     log('A link hint', await inPage(win, `document.querySelector('.hint').innerText + ' / ' + note.className`));

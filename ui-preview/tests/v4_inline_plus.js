@@ -1,4 +1,4 @@
-// Plus zamienia się w pole w tym samym miejscu, karty zostają widoczne; Enter otwiera nową kartę.
+// + turns into a field in the same spot, tabs stay visible; Enter opens a new tab.
 const { _electron: electron } = require('playwright-core');
 const path = require('path');
 (async () => {

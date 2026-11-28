@@ -1,5 +1,5 @@
-// Lum - mini przeglądarka do testowania interfejsu (Electron).
-// Okno bez ramki; cały interfejs (pasek, karty) jest w index.html, strony w <webview>.
+// Lum - mini browser for testing the UI (Electron).
+// Frameless window; the whole UI (bar, tabs) is in index.html, pages in <webview>.
 const { app, BrowserWindow, ipcMain, screen, Menu, webContents, session } = require('electron');
 const fs = require('fs');
 const path = require('path');
@@ -31,7 +31,7 @@ function createWindow() {
   });
   win.loadFile('index.html');
   win.once('ready-to-show', () => {
-    // Tylko do testów: LUM_BOUNDS=x,y,szer,wys ustawia okno w znanym miejscu
+    // Tests only: LUM_BOUNDS=x,y,width,height puts the window at a known spot
     if (process.env.LUM_BOUNDS) {
       const [x, y, width, height] = process.env.LUM_BOUNDS.split(',').map(Number);
       win.setBounds({ x, y, width, height });
@@ -41,9 +41,9 @@ function createWindow() {
     if (process.env.LUM_BOUNDS) { win.focus(); win.moveTop(); }
   });
 
-  // Strefa kursora względem górnej krawędzi. Strona w <webview> połyka zdarzenia myszy,
-  // więc sprawdzamy pozycję kursora co 50 ms, a do interfejsu wysyłamy tylko ZMIANĘ strefy:
-  //   edge - sama górna krawędź, bar - na wysokości paska, near - tuż pod paskiem, far/out - dalej.
+  // Cursor zone relative to the top edge. The page in <webview> swallows mouse events,
+  // so the cursor position is checked every 50 ms and only a zone CHANGE is sent to the UI:
+  //   edge - the very top edge, bar - at bar height, near - just below the bar, far/out - further away.
   let lastZone = null;
   poll = setInterval(() => {
     if (!win || win.isDestroyed() || !win.isVisible() || win.isMinimized()) return;
@@ -65,7 +65,7 @@ function createWindow() {
   win.on('blur', () => endDrag());
   win.on('closed', () => { clearInterval(poll); endDrag(); win = null; });
 
-  // Tryb do sprawdzania: LUM_SNAPSHOT=plik.png zapisuje zrzut okna po kilku sekundach i zamyka aplikację.
+  // Check mode: LUM_SNAPSHOT=file.png saves a window screenshot after a few seconds and quits the app.
   if (process.env.LUM_SNAPSHOT) {
     const delay = Number(process.env.LUM_SNAPSHOT_DELAY || 5000);
     if (process.env.LUM_EVAL) {
@@ -91,8 +91,8 @@ function createWindow() {
   }
 }
 
-// Przeciąganie okna za pusty pasek - własne, bez "-webkit-app-region: drag",
-// bo obszar przeciągania w Windows potrafi zabierać kliknięcia przyciskom na pasku.
+// Manual window dragging by the empty bar, without "-webkit-app-region: drag".
+// Currently unused: the bar uses native app-region dragging (snapping works), see style.css.
 let drag = null;
 ipcMain.on('drag-start', (_e, sx, sy) => {
   if (!win || win.isMaximized() || win.isFullScreen()) return;
@@ -108,7 +108,7 @@ ipcMain.on('drag-start', (_e, sx, sy) => {
 function endDrag() { if (drag) { clearInterval(drag.timer); drag = null; } }
 ipcMain.on('drag-end', endDrag);
 
-// Przyciski okna (łuki): minimalizuj, maksymalizuj, zamknij
+// Window buttons (arcs): minimize, maximize, close
 ipcMain.on('win', (_e, action) => {
   if (!win) return;
   if (action === 'min') win.minimize();
@@ -116,9 +116,9 @@ ipcMain.on('win', (_e, action) => {
   else if (action === 'close') win.close();
 });
 
-// Górna krawędź strony: średnia jasność (kolor ikon, gdy pasek jest przezroczysty)
-// i kolor, którego jest tam najwięcej (kolor paska, gdy kursor jest przy górze).
-// fx0..fx1 (0-1): poziomy pas wokół otwartej karty, z którego liczymy kolor karty.
+// Top edge of the page: average lightness (icon color while the bar is transparent)
+// and the most common color there (bar color while the cursor is near the top).
+// fx0..fx1 (0-1): horizontal strip around the open tab used for the tab color.
 ipcMain.handle('sample', async (_e, id, width, fx0 = 0, fx1 = 1) => {
   const wc = webContents.fromId(id);
   if (!wc || wc.isDestroyed()) return null;
@@ -153,42 +153,42 @@ ipcMain.handle('sample', async (_e, id, width, fx0 = 0, fx1 = 1) => {
   }
 });
 
-// Skróty klawiszowe działają też wtedy, gdy kursor tekstowy jest w stronie.
+// Keyboard shortcuts work even when the text caret is inside the page.
 function sendCmd(cmd) { return () => { if (win) win.webContents.send('cmd', cmd); }; }
 Menu.setApplicationMenu(Menu.buildFromTemplate([{
   label: 'Lum',
   submenu: [
-    { label: 'Nowa karta', accelerator: 'CmdOrCtrl+T', click: sendCmd('newtab') },
-    { label: 'Zamknij kartę', accelerator: 'CmdOrCtrl+W', click: sendCmd('close') },
-    { label: 'Szukaj', accelerator: 'CmdOrCtrl+L', click: sendCmd('search') },
-    { label: 'Następna karta', accelerator: 'Ctrl+Tab', click: sendCmd('next') },
-    { label: 'Poprzednia karta', accelerator: 'Ctrl+Shift+Tab', click: sendCmd('prev') },
-    { label: 'Odśwież', accelerator: 'F5', click: sendCmd('reload') },
-    { label: 'Odśwież ', accelerator: 'CmdOrCtrl+R', click: sendCmd('reload') },
-    { label: 'Wstecz', accelerator: 'Alt+Left', click: sendCmd('back') },
-    { label: 'Dalej', accelerator: 'Alt+Right', click: sendCmd('forward') },
-    { label: 'Narzędzia deweloperskie', accelerator: 'F12', click: () => win && win.webContents.openDevTools({ mode: 'detach' }) }
+    { label: 'New tab', accelerator: 'CmdOrCtrl+T', click: sendCmd('newtab') },
+    { label: 'Close tab', accelerator: 'CmdOrCtrl+W', click: sendCmd('close') },
+    { label: 'Search', accelerator: 'CmdOrCtrl+L', click: sendCmd('search') },
+    { label: 'Next tab', accelerator: 'Ctrl+Tab', click: sendCmd('next') },
+    { label: 'Previous tab', accelerator: 'Ctrl+Shift+Tab', click: sendCmd('prev') },
+    { label: 'Reload', accelerator: 'F5', click: sendCmd('reload') },
+    { label: 'Reload ', accelerator: 'CmdOrCtrl+R', click: sendCmd('reload') },
+    { label: 'Back', accelerator: 'Alt+Left', click: sendCmd('back') },
+    { label: 'Forward', accelerator: 'Alt+Right', click: sendCmd('forward') },
+    { label: 'Developer tools', accelerator: 'F12', click: () => win && win.webContents.openDevTools({ mode: 'detach' }) }
   ]
 }]));
 
 app.on('web-contents-created', (_e, contents) => {
   if (contents.getType() !== 'webview') return;
-  // Linki otwierane w nowym oknie trafiają do nowej karty Lum, ale tylko tuż po kliknięciu
-  // albo klawiszu użytkownika - strona sama z siebie nie otworzy kart.
+  // Links that open a new window go to a new Lum tab, but only right after a user click
+  // or key press - a page cannot open tabs on its own.
   let lastInput = 0;
   contents.on('input-event', (_ev, input) => {
     if (input.type === 'mouseDown' || input.type === 'mouseUp' || input.type === 'keyDown') lastInput = Date.now();
   });
   contents.setWindowOpenHandler(({ url }) => {
     if (win && Date.now() - lastInput < 1500 && /^https?:/i.test(url)) {
-      lastInput = 0; // jedno kliknięcie = jedna karta
+      lastInput = 0; // one click = one tab
       win.webContents.send('open-tab', url);
     }
     return { action: 'deny' };
   });
 });
 
-// Hak przewijania w osobnym świecie JS: strona go nie widzi i nie może po nim rozpoznać przeglądarki.
+// Scroll hook in a separate JS world: the page cannot see it or use it to fingerprint the browser.
 const SCROLL_HOOK = "(function(){var t;addEventListener('scroll',function(){clearTimeout(t);t=setTimeout(function(){console.debug('__lum_scroll__')},140)},{passive:true,capture:true});})();";
 ipcMain.handle('hook', async (_e, id) => {
   const wc = webContents.fromId(id);
@@ -197,7 +197,7 @@ ipcMain.handle('hook', async (_e, id) => {
 });
 
 app.whenReady().then(() => {
-  // Prywatność: bez zgody strony nie dostają kamery, mikrofonu, lokalizacji ani powiadomień.
+  // Privacy: pages get no camera, microphone, location or notifications.
   session.fromPartition('persist:lum').setPermissionRequestHandler((_wc, _perm, cb) => cb(false));
   createWindow();
 });

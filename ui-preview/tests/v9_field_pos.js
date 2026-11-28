@@ -5,7 +5,7 @@ const path = require('path');
   const app = await electron.launch({ args: ['.', '--user-data-dir=' + path.join(__dirname, '.profile-v9')], cwd, executablePath: require('electron') });
   const win = await app.firstWindow();
   await win.waitForTimeout(2200);
-  // pozycja pola w oknie = górna krawędź strony (webview) + pozycja pola w stronie
+  // field position in the window = top edge of the page (webview) + field position in the page
   const pos = () => win.evaluate(async () => {
     const wv = S.tabs[0].wv, top = wv.getBoundingClientRect().top;
     const y = await wv.executeJavaScript("(function(){var r=document.getElementById('nin').getBoundingClientRect();return r.top+r.height/2})()");

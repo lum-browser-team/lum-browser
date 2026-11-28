@@ -1,12 +1,12 @@
 <!doctype html>
-<html lang="pl">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'unsafe-inline';">
-<title>Nowa karta</title>
+<title>New tab</title>
 <style>
-  /* Kolory: przeglądarka ustawia --bg i --text (dowolny motyw, także pastelowy lub własny),
-     reszta wynika z nich. Domyślnie czarny. */
+  /* Colors: the browser sets --bg and --text (any theme, including pastel or custom),
+     the rest is derived from them. Black by default. */
   :root { --bg: #000000; --text: #ECECEC; color-scheme: dark;
     --ph: color-mix(in srgb, var(--text) 50%, var(--bg));
     --icon: color-mix(in srgb, var(--text) 68%, var(--bg));
@@ -15,12 +15,11 @@
     --foot: color-mix(in srgb, var(--text) 46%, var(--bg)); }
   html, body, main { transition: background-color .4s ease; }
   html, body { margin: 0; height: 100%; background: var(--bg); font-family: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif; }
-  /* Pole na środku strony */
-  /* Pole na środku całego okna: w trybie "Zawsze widoczny" strona zaczyna się pod paskiem,
-     więc przesuwamy treść o połowę wysokości paska w górę (--lift), żeby pole nie zmieniało miejsca. */
+  /* Field in the middle of the whole window: in "Always visible" mode the page starts below the bar,
+     so the content moves up by half the bar height (--lift) to keep the field in place. */
   main { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 24px; box-sizing: border-box; transform: translateY(calc(-1 * var(--lift, 0px))); }
-  /* Napis Lum: cienki jak Lato 100, ale bez ostrych wypustek - kreski z zaokrąglonymi końcami.
-     Nie da się go zaznaczyć ani skopiować. */
+  /* Lum wordmark (currently not used): thin like Lato 100, but without sharp spurs - strokes with
+     rounded ends. Cannot be selected or copied. */
   .mark { width: 168px; height: auto; color: var(--text); fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round;
     user-select: none; -webkit-user-select: none; -webkit-user-drag: none; pointer-events: none; overflow: visible; transition: color .4s ease; }
   .note { width: min(640px, 100%); display: flex; flex-direction: column; gap: 14px; }
@@ -46,16 +45,16 @@
 <main>
   <div class="note" id="note">
     <div class="line">
-      <input id="nin" type="text" placeholder="Napisz coś albo wklej link…" autocomplete="off" spellcheck="false" aria-label="Napisz coś albo wklej link">
-      <button class="act" id="act" aria-label="Szukaj albo otwórz">
+      <input id="nin" type="text" placeholder="Type something or paste a link…" autocomplete="off" spellcheck="false" aria-label="Type something or paste a link">
+      <button class="act" id="act" aria-label="Search or open">
         <svg class="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 20 20"/></svg>
         <svg class="i-link" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
       </button>
     </div>
-    <div class="hint"><span class="h-search"><b>Enter</b> szukaj</span><span class="h-link"><b>Enter</b> otwórz stronę</span></div>
+    <div class="hint"><span class="h-search"><b>Enter</b> search</span><span class="h-link"><b>Enter</b> open page</span></div>
   </div>
 </main>
-<div class="foot"><b>Ctrl+T</b> nowa karta &nbsp;·&nbsp; <b>Ctrl+L</b> szukaj &nbsp;·&nbsp; <b>Ctrl+W</b> zamknij kartę</div>
+<div class="foot"><b>Ctrl+T</b> new tab &nbsp;·&nbsp; <b>Ctrl+L</b> search &nbsp;·&nbsp; <b>Ctrl+W</b> close tab</div>
 <script src="start.js"></script>
 </body>
 </html>

@@ -1,9 +1,9 @@
 'use strict';
-// Nowa karta Lum: pole jak notatka. Fraza -> wyszukiwarka, adres -> strona.
+// Lum new tab: a field like a note. Phrase -> search engine, address -> page.
 const SEARCH = 'https://www.google.com/search?q=';
 
-// Kolor tła z przeglądarki (?bg=#rrggbb, ustawiane też na żywo przez lumTheme()).
-// Tekst: jasny na ciemnym tle, ciemny (w odcieniu tła) na jasnym.
+// Background color from the browser (?bg=#rrggbb, also set live via lumTheme()).
+// Text: light on a dark background, dark (tinted with the background) on a light one.
 function lumTheme(bg) {
   if (!/^#[0-9a-f]{6}$/i.test(bg || '')) bg = '#000000';
   const r = parseInt(bg.slice(1, 3), 16), g = parseInt(bg.slice(3, 5), 16), b = parseInt(bg.slice(5, 7), 16);
@@ -18,7 +18,7 @@ lumTheme(new URLSearchParams(location.search).get('bg'));
 const note = document.getElementById('note');
 const nin = document.getElementById('nin');
 
-// Ta sama logika co classify() w renderer.js
+// Same logic as classify() in renderer.js
 const FILE_EXT = /\.(js|mjs|ts|html?|css|json|md|txt|py|exe|png|jpe?g|gif|svg|pdf|zip|docx?|xlsx?)$/i;
 function classify(text) {
   const v = (text || '').trim();
@@ -48,8 +48,8 @@ nin.addEventListener('input', () => {
 nin.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); go(); } });
 document.getElementById('act').addEventListener('click', go);
 
-// Pole jest zawsze gotowe: pisanie i wklejanie w dowolnym miejscu strony trafia do pola,
-// kliknięcie gdziekolwiek ustawia w nim kursor.
+// The field is always ready: typing and pasting anywhere on the page goes into the field,
+// clicking anywhere puts the caret in it.
 function focusField() { if (document.activeElement !== nin) { nin.focus(); const n = nin.value.length; nin.setSelectionRange(n, n); } }
 document.addEventListener('keydown', (e) => {
   if (document.activeElement === nin) return;
@@ -69,7 +69,7 @@ document.addEventListener('mousedown', (e) => { if (e.target !== nin && !e.targe
 window.addEventListener('focus', () => setTimeout(focusField, 0));
 focusField();
 
-// Tryb paska z przeglądarki (?bar=fixed albo na żywo przez lumBar()): przy pasku zawsze widocznym
-// strona jest niższa o 38 px, więc pole przesuwamy o 19 px w górę - zostaje w tym samym miejscu okna.
+// Bar mode from the browser (?bar=fixed or live via lumBar()): with the bar always visible
+// the page is 38 px shorter, so the field moves up 19 px - it stays in the same spot in the window.
 function lumBar(mode) { document.documentElement.style.setProperty('--lift', mode === 'fixed' ? '19px' : '0px'); }
 lumBar(new URLSearchParams(location.search).get('bar'));

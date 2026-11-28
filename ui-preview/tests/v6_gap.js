@@ -11,7 +11,7 @@ const path = require('path');
   console.log(JSON.stringify(await win.evaluate(() => {
     const a = document.querySelector('.tab.active').getBoundingClientRect(), r = newInput.getBoundingClientRect();
     const c = document.createElement('canvas').getContext('2d'); c.font = getComputedStyle(newInput).font;
-    const m = c.measureText('Napisz');
+    const m = c.measureText('Type');
     const baseline = r.top + (r.height + m.fontBoundingBoxAscent - m.fontBoundingBoxDescent) / 2;
     return { leftGap: Math.round(r.left - a.right), bottomGapToLine: Math.round(TK.b - baseline) };
   })));

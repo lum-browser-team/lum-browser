@@ -7,28 +7,28 @@
 
 :root {
   --ui: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
-  --band: #0E0E10;                    /* kolor paska nad linią po najechaniu (motyw ciemny) */
+  --band: #0E0E10;                    /* bar color above the line on hover (dark theme) */
   --band-ink: #FFFFFF;
   --panel-bg: rgba(22,23,26,.82); --panel-ink: #EDEEF0; --panel-line: rgba(255,255,255,.1); --seg-bg: rgba(255,255,255,.07); --seg-on: rgba(255,255,255,.16);
   color-scheme: dark;
 }
 body.theme-light {
-  --band: #F1F1F2;                    /* motyw jasny */
+  --band: #F1F1F2;                    /* light theme */
   --band-ink: #16181B;
   --panel-bg: rgba(252,252,252,.9); --panel-ink: #16181B; --panel-line: rgba(0,0,0,.1); --seg-bg: rgba(0,0,0,.05); --seg-on: #FFFFFF;
 }
 html, body { margin: 0; height: 100%; overflow: hidden; background: #000; font-family: var(--ui); user-select: none; }
 body { background: var(--page, #000); }
 
-/* ---------- Strony: na całe okno, także pod paskiem ---------- */
+/* ---------- Pages: full window, also under the bar ---------- */
 #pages { position: absolute; inset: 0; }
 #pages webview { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
 #pages webview.hidden { visibility: hidden; pointer-events: none; }
-/* Strona w <webview> przechwytuje kliknięcia także tam, gdzie leży nad nią pasek albo panel.
-   Gdy pasek jest pokazany, strona chwilowo nie przyjmuje kliknięć, więc trafiają one w przyciski. */
+/* The page in <webview> captures clicks even where the bar or panel lies over it.
+   While the bar is shown, the page temporarily ignores clicks, so they reach the buttons. */
 body.bar-shown #pages webview, #pages webview.errored { pointer-events: none; }
 
-/* ---------- Pasek (38 px) ---------- */
+/* ---------- Bar (38 px) ---------- */
 .bar { position: fixed; top: 0; left: 0; right: 0; height: 38px; z-index: 10; display: flex; align-items: center; justify-content: space-between; padding: 0 10px;
   pointer-events: none;
   --chrome: #FFFFFF; --dim: rgba(255,255,255,.68); --hov: rgba(255,255,255,.12); --track: rgba(255,255,255,.4);
@@ -38,23 +38,23 @@ body.bar-shown #pages webview, #pages webview.errored { pointer-events: none; }
 .bar.on-light { --chrome: #16181B; --dim: rgba(22,24,27,.66); --hov: rgba(0,0,0,.07); --track: rgba(22,24,27,.28);
   --glow-icon: rgba(22,24,27,.25); --flash: rgba(22,24,27,.4);
   --halo: drop-shadow(0 0 1px rgba(255,255,255,.8)) drop-shadow(0 0 5px rgba(255,255,255,.4)); }
-/* Po najechaniu pasek ma kolor motywu, więc halo nie jest potrzebne */
+/* On hover the bar has the theme color, so the halo is not needed */
 .bar.show { pointer-events: auto; --halo: drop-shadow(0 0 0 transparent); }
 .bar, .bar * { transition: color .35s ease; }
 .bar { transition: color .35s ease, opacity .45s ease; }
 
-/* Tryb "Chowany": cały pasek znika, gdy kursor nie jest przy górnej krawędzi */
+/* "Hidden" mode: the whole bar disappears when the cursor is not at the top edge */
 body.bar-auto .bar:not(.show) { opacity: 0; }
 body.bar-auto .bar:not(.show) * { pointer-events: none !important; }
-/* Tryb "Zawsze widoczny": pasek ma kolor motywu, a strona zaczyna się pod nim (nic na nią nie nachodzi) */
+/* "Always visible" mode: the bar has the theme color and the page starts below it (nothing overlaps it) */
 body.bar-fixed #pages, body.bar-fixed .err { top: 38px; }
 body.bar-fixed .bar { pointer-events: auto; --halo: drop-shadow(0 0 0 transparent); }
 body.bar-fixed #band { opacity: 1; }
 
-/* Okno przesuwa się przez przeciągnięcie pustego miejsca paska (obsługa w renderer.js, bez app-region) */
+/* The window moves by dragging an empty spot on the bar (see "Window dragging" below) */
 .side { display: flex; align-items: center; gap: 1px; }
 #left { flex: 1; min-width: 0; margin-right: 20px; }
-/* Zawsze zostaje wolne miejsce do chwycenia i przesunięcia okna, nawet przy wielu kartach */
+/* There is always free space to grab and move the window, even with many tabs */
 #left::after { content: ""; flex: 0 0 120px; }
 #right { flex: none; }
 
@@ -66,26 +66,26 @@ body.bar-fixed #band { opacity: 1; }
 .btn.nav svg { width: 19px; height: 19px; stroke-width: 1.7; }
 .btn.off svg { opacity: .3; }
 .btn:focus-visible, .tab:focus-visible { outline: 2px solid #8FB4FF; outline-offset: 1px; }
-/* Najechanie: ikona delikatnie się rozjaśnia i lekko świeci */
+/* Hover: the icon brightens slightly and glows a little */
 .btn:hover svg { opacity: 1; filter: var(--halo) drop-shadow(0 0 3px var(--glow-icon)); }
 .btn.off:hover svg { opacity: .3; filter: var(--halo); }
-/* Kliknięcie: wciśnięcie i krótki błysk ikony */
+/* Click: press and a short icon flash */
 .btn.pressed { transform: scale(.82); transition: transform .08s ease; }
 .btn.pressed svg { opacity: 1; filter: var(--halo) drop-shadow(0 0 4px var(--flash)); transition: filter .05s, opacity .05s; }
 .arcs { display: flex; align-items: center; gap: 0; margin-left: 6px; }
-/* Przyciski okna: ten sam rozmiar i miejsce w obu stylach, ciasno obok siebie */
+/* Window buttons: same size and position in both styles, packed tightly */
 .arcs .btn { width: 28px; height: 28px; }
 .arcs svg { width: 17px; height: 17px; stroke-width: 2; opacity: 1; }
-/* Na jasnym tle łuki ciemniejsze, żeby było je widać */
+/* On a light background the arcs are darker so they stay visible */
 .bar.on-light .arcs [data-act=min] svg path { stroke: #16A34A; }
 .bar.on-light .arcs [data-act=max] svg path { stroke: #C98A00; }
 .bar.on-light .arcs [data-act=close] svg circle { stroke: #E5483E; }
 
-/* ---------- Środek: adres strony albo wyszukiwanie ---------- */
+/* ---------- Center: page address or search ---------- */
 .center { position: absolute; left: 50%; top: 0; height: 38px; transform: translateX(-50%); display: flex; align-items: center; justify-content: center; pointer-events: none; max-width: 52%; }
 .label { font-size: 12.5px; letter-spacing: .01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; filter: var(--halo); transition: opacity .7s ease, transform .8s cubic-bezier(.22,1,.36,1); }
 .label .path { opacity: .6; }
-/* Napis znika szybko (zanim pojawią się karty), a wraca powoli */
+/* The label fades out fast (before the tabs appear) and comes back slowly */
 .bar.show .label, .bar.searching .label { opacity: 0; transform: translateY(-4px); transition: opacity .2s ease, transform .3s ease; }
 .sbox { display: none; align-items: center; gap: 8px; width: min(600px, 50vw); height: 28px; filter: var(--halo); pointer-events: auto; }
 .bar.searching .sbox { display: flex; }
@@ -95,8 +95,8 @@ body.bar-fixed #band { opacity: 1; }
 .sbox .btn { width: 28px; height: 28px; }
 .sbox .btn svg { width: 16px; height: 16px; }
 
-/* ---------- Karty ---------- */
-/* Pasek kart: rośnie z liczbą kart, a gdy brakuje miejsca, przewija się w poziomie (kółkiem myszy) */
+/* ---------- Tabs ---------- */
+/* Tab strip: grows with the number of tabs and scrolls horizontally (mouse wheel) when out of space */
 .tabs { flex: 0 1 auto; min-width: 0; display: flex; align-items: center; gap: 2px; margin-left: 10px; pointer-events: none;
   overflow-x: auto; overflow-y: hidden; scrollbar-width: none; height: 38px; }
 .tabs::-webkit-scrollbar { display: none; }
@@ -104,7 +104,7 @@ body.bar-fixed #band { opacity: 1; }
   filter: var(--halo); opacity: 0; transform: translateX(-10px);
   transition: opacity .8s ease calc(var(--i, 0) * 45ms), transform 1s cubic-bezier(.22,1,.36,1) calc(var(--i, 0) * 45ms), color .35s ease; }
 .tab:hover, .tab.active { color: var(--chrome); }
-/* Otwarta karta leży na kolorze strony, więc jej tekst ma kolor dobrany do tego tła */
+/* The open tab sits on the page color, so its text color is matched to that background */
 .bar.show .tab.active { color: var(--tab-ink, var(--chrome)); }
 .tab .t { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .tab .fav { width: 15px; height: 15px; flex: none; border-radius: 4px; display: grid; place-items: center; overflow: hidden; }
@@ -122,22 +122,22 @@ body.bar-fixed #band { opacity: 1; }
 .bar.show:not(.searching) .tabs, .bar.show:not(.searching) .newtab { pointer-events: auto; }
 .bar:not(.show) .newtab, .bar.searching .newtab { pointer-events: none; }
 .bar.show:not(.searching) .tab, .bar.show:not(.searching) .newtab { opacity: 1; transform: none; }
-/* Dużo kart: sama ikonka, krzyżyk w jej miejscu po najechaniu */
+/* Many tabs: icon only, the close cross replaces it on hover */
 .tabs.dense .tab { padding: 0; justify-content: center; gap: 0; }
 .tabs.dense .tab .t { display: none; }
 .tabs.dense .tab .x { display: none; }
 .tabs.dense .tab:hover .x { display: grid; }
 .tabs.dense .tab:hover .fav { display: none; }
 
-/* ---------- Kolory po najechaniu i linia otwartej karty ---------- */
+/* ---------- Hover colors and the open tab line ---------- */
 .track { position: absolute; top: 0; left: 0; width: 100%; height: 38px; pointer-events: none; overflow: visible; }
-/* Nad linią: kolor motywu przeglądarki */
+/* Above the line: browser theme color */
 #band { fill: var(--band); opacity: 0; transition: opacity .55s ease, fill .4s ease; }
-/* Wnętrze otwartej karty: kolor, którego jest najwięcej u góry strony */
+/* Inside of the open tab: the most common color at the top of the page */
 #tabFill { fill: transparent; opacity: 0; transition: opacity .55s ease, fill .45s ease; }
 .bar.show #band, .bar.show #tabFill { opacity: 1; }
 .bar.searching #tabFill { opacity: 0; }
-/* Linia: od lewej do prawej krawędzi okna, pojawia się później i wolniej niż karty */
+/* Line: from the left to the right window edge, appears later and slower than the tabs */
 #trackPath { fill: none; stroke: var(--track); stroke-width: 1.2; stroke-linecap: round; stroke-linejoin: round;
   stroke-dasharray: 6000 6000; stroke-dashoffset: 6000; opacity: 0;
   transition: stroke-dashoffset .6s ease, opacity .5s ease, stroke .35s ease; }
@@ -148,7 +148,7 @@ body.bar-fixed #band { opacity: 1; }
 .progress.run { opacity: .9; width: 70%; transition: width 6s cubic-bezier(.1,.7,.2,1), opacity .2s; }
 .progress.done { opacity: 0; width: 100%; transition: width .25s ease, opacity .5s ease .25s; }
 
-/* ---------- Strona, której nie udało się otworzyć ---------- */
+/* ---------- Page that failed to open ---------- */
 .err { position: fixed; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center; background: var(--page, #000); color: #ECECEC; }
 body.theme-light .err { color: #1C1C1C; }
 .err[hidden] { display: none; }
@@ -160,7 +160,7 @@ body.theme-light .err { color: #1C1C1C; }
 .err-b:hover { opacity: 1; }
 .err-b:active { transform: scale(.96); }
 
-/* ---------- Ustawienia ---------- */
+/* ---------- Settings ---------- */
 .panel { position: fixed; top: 44px; right: 66px; z-index: 12; width: 300px; box-sizing: border-box; padding: 12px; border-radius: 12px;
   background: var(--panel-bg); -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); color: var(--panel-ink); border: 1px solid var(--panel-line);
   opacity: 0; transform: translateY(-6px) scale(.97); transform-origin: top right; pointer-events: none; transition: opacity .35s ease, transform .45s cubic-bezier(.22,1,.36,1); }
@@ -172,12 +172,12 @@ body.theme-light .err { color: #1C1C1C; }
 .seg button svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .seg button[aria-pressed="true"] { background: var(--seg-on); }
 .seg button.pressed { transform: scale(.95); transition-duration: .08s; }
-/* Wybór motywu: pięć kółek od czarnego do białego */
+/* Theme picker: five grays from black to white, pastels and a custom color */
 .swatches { display: flex; justify-content: flex-start; gap: 7px; padding: 2px 2px; }
 .sw-btn { position: relative; width: 32px; height: 32px; border-radius: 50%; border: 0; padding: 0; background: transparent; display: grid; place-items: center;
   box-shadow: 0 0 0 0 transparent; transition: box-shadow .3s ease, transform .4s cubic-bezier(.34,1.8,.64,1); }
 .sw-btn span { width: 24px; height: 24px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(128,128,128,.5); }
-/* Własny kolor: kolorowa obwódka wokół wybranego koloru; kliknięcie otwiera wybierak systemowy */
+/* Custom color: a colorful ring around the chosen color; clicking opens the system picker */
 .sw-custom span { box-shadow: 0 0 0 2px var(--panel-bg), 0 0 0 4px transparent; background-clip: padding-box; outline: 2px solid transparent;
   border: 2px solid transparent; background-origin: border-box; width: 20px; height: 20px;
   background-image: linear-gradient(var(--cc, #B9D7EA), var(--cc, #B9D7EA)), conic-gradient(#F6B8C8, #F6D9A8, #F3EDC4, #BFE6CF, #B9D7EA, #D4C6F0, #F6B8C8); background-clip: padding-box, border-box; }
@@ -191,9 +191,9 @@ body.theme-light .err { color: #1C1C1C; }
   .tab, .newtab, #trackPath, #band, #tabFill, .label { transition-duration: .01s !important; transition-delay: 0s !important; }
 }
 
-/* ---------- Pole w miejscu plusa (nowa karta po Enterze) ---------- */
-/* Wygląda jak pole na stronie głównej: bez tła i ramki, cienki tekst; lupa pojawia się dopiero przy pisaniu */
-.newfield { position: relative; display: none; flex: none; align-items: center; gap: 6px; width: 280px; height: 26px; margin-left: 8px; top: 3px; /* tekst niżej: odstęp do linii z lewej i od dołu jest podobny */ padding: 0; box-sizing: border-box;
+/* ---------- Field in place of + (new tab on Enter) ---------- */
+/* Looks like the home page field: no background or border, thin text; the magnifier appears only while typing */
+.newfield { position: relative; display: none; flex: none; align-items: center; gap: 6px; width: 280px; height: 26px; margin-left: 8px; top: 3px; /* text lower: similar gap to the line on the left and below */ padding: 0; box-sizing: border-box;
   background: transparent; pointer-events: auto; animation: nf-in .35s cubic-bezier(.22,1,.36,1); }
 @keyframes nf-in { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: none; } }
 .bar.adding .newfield { display: flex; }
@@ -205,19 +205,19 @@ body.theme-light .err { color: #1C1C1C; }
 .newfield.typing .btn { opacity: 1; transform: none; }
 .newfield .btn svg { width: 14px; height: 14px; }
 
-/* ---------- Przesuwanie okna (systemowe) ----------
-   Puste miejsca pokazanego paska są obszarem chwytania okna Windows: przeciąganie,
-   przyklejanie do krawędzi/narożników, dwuklik = maksymalizuj. Przyciski, karty i pola nie. */
+/* ---------- Window dragging (native) ----------
+   Empty spots on the shown bar are a Windows caption area: dragging,
+   snapping to edges/corners, double-click = maximize. Buttons, tabs and fields are not. */
 .bar.show, body.bar-fixed .bar { -webkit-app-region: drag; }
 .bar .btn, .bar .tab, .bar .sbox, .bar .newfield, .bar input { -webkit-app-region: no-drag; }
 
-/* ---------- Styl kanciasty ----------
-   Przyciski okna: klasyczne — □ ✕ zamiast łuków; linia karty z ostrymi narożnikami (TK.r = 0 w renderer.js);
-   mniej zaokrągleń w panelu i polach. */
+/* ---------- Square style ----------
+   Window buttons: classic — □ ✕ instead of arcs; tab line with sharp corners (TK.r = 0 in renderer.js);
+   less rounding in the panel and fields. */
 .arcs .ic-square { display: none; }
 body.style-square .arcs .ic-round { display: none; }
 body.style-square .arcs .ic-square { display: block; stroke-width: 1.8; stroke-linecap: butt; stroke-linejoin: miter; opacity: 1; }
-/* Kanciaste przyciski mają te same kolory co łuki */
+/* Square buttons have the same colors as the arcs */
 body.style-square .arcs [data-act=min] .ic-square { stroke: #3DDC84; }
 body.style-square .arcs [data-act=max] .ic-square { stroke: #F5C542; }
 body.style-square .arcs [data-act=close] .ic-square { stroke: #FF5F57; }

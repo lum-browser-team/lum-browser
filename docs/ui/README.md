@@ -1,9 +1,9 @@
-# Wizualizacje interfejsu Lum
+# Lum UI visuals
 
-Projekt: **olehnykorovych** (w całości). Kolejne etapy projektowania, od makiet do klikalnego prototypu.
-Aktualny wzór to działająca makieta w [`../../ui-preview/`](../../ui-preview/) i opis w
-[`../lum-interfejs.md`](../lum-interfejs.md); te pliki pokazują drogę do niego.
+Design: **olehnykorovych** (entirely). Successive design stages, from mockups to a clickable prototype.
+The current reference is the working mockup in [`../../ui-preview/`](../../ui-preview/) and the spec in
+[`../lum-ui-spec.md`](../lum-ui-spec.md); these files show the road to it.
 
-- `u2-u3-fullhd.html` + `lum-start-*.png` – strona startowa, ciemna i jasna (stany: pusta, pisanie, link).
-- `lum-przewijanie.html` – animacja: strona przewija się pod paskiem, ikony zmieniają kolor do tła.
-- `lum-prototyp.html` – klikalny prototyp z pokazem (wcześniejsza wersja pomysłów).
+- `u2-u3-fullhd.html` + `lum-start-*.png` – start page, dark and light (states: empty, typing, link).
+- `lum-scrolling.html` – animation: the page scrolls under the bar, icons change color to match the background.
+- `lum-prototype.html` – clickable prototype with a demo (an earlier version of the ideas).

@@ -1,8 +1,8 @@
 'use strict';
-// Lum - interfejs mini przeglądarki: pasek, karty, wyszukiwanie, ustawienia.
+// Lum - mini browser UI: bar, tabs, search, settings.
 
-const SEARCH = 'https://www.google.com/search?q=';       // wyszukiwarka
-const START = new URL('start.html', location.href).href; // nowa karta
+const SEARCH = 'https://www.google.com/search?q=';       // search engine
+const START = new URL('start.html', location.href).href; // new tab page
 
 const $ = (id) => document.getElementById(id);
 const bar = $('bar'), leftEl = $('left'), tabsEl = $('tabs'), plusBtn = $('newtab'), labelEl = $('label'), input = $('q');
@@ -10,7 +10,7 @@ const newField = $('newfield'), newInput = $('nq');
 const panel = $('panel'), progressEl = $('progress'), pages = $('pages'), trackPath = $('trackPath');
 const bandPath = $('band'), tabFillPath = $('tabFill');
 
-// Cienki, zaokrąglony pasek przewijania na każdej stronie (w Chromium zrobimy to łatką)
+// Thin, rounded scrollbar on every page (in Chromium this will be a patch)
 const SCROLLBAR_CSS = '::-webkit-scrollbar{width:10px;height:10px;background:transparent}' +
   '::-webkit-scrollbar-track,::-webkit-scrollbar-corner{background:transparent}' +
   '::-webkit-scrollbar-thumb{background-color:rgba(128,128,128,.42);border-radius:10px;border:3px solid transparent;background-clip:content-box;min-height:40px}' +
@@ -18,38 +18,38 @@ const SCROLLBAR_CSS = '::-webkit-scrollbar{width:10px;height:10px;background:tra
   '::-webkit-scrollbar-button{display:none;width:0;height:0}';
 const errBox = $('err'), errUrl = $('errUrl'), errDesc = $('errDesc');
 
-// Motywy od czarnego do białego. Pasek nad linią (band) ma dokładnie kolor przeglądarki (page):
-// tło nowej karty i ekranu błędu, więc pasek i przeglądarka są jednym kolorem.
+// Themes from black to white. The strip above the line (band) is exactly the browser color (page):
+// the background of the new tab page and the error screen, so the bar and the browser are one color.
 const THEMES = {
-  black:    { name: 'Czarny',     band: '#000000', page: '#000000', light: false },
-  graphite: { name: 'Grafit',     band: '#1C1D20', page: '#1C1D20', light: false },
-  gray:     { name: 'Szary',      band: '#3A3B40', page: '#3A3B40', light: false },
-  silver:   { name: 'Jasnoszary', band: '#DFE0E3', page: '#DFE0E3', light: true },
-  white:    { name: 'Biały',      band: '#FAFAFA', page: '#FAFAFA', light: true },
-  // Pastele
-  mint:     { name: 'Miętowy',     band: '#CFEBDD', page: '#CFEBDD', light: true },
-  sky:      { name: 'Błękitny',    band: '#CFE3F3', page: '#CFE3F3', light: true },
-  lavender: { name: 'Lawendowy',   band: '#DCD3F2', page: '#DCD3F2', light: true },
-  rose:     { name: 'Różowy',      band: '#F3D3DE', page: '#F3D3DE', light: true },
-  peach:    { name: 'Brzoskwiniowy', band: '#F6D9C7', page: '#F6D9C7', light: true },
-  lemon:    { name: 'Cytrynowy',   band: '#F3EDC4', page: '#F3EDC4', light: true }
+  black:    { name: 'Black',      band: '#000000', page: '#000000', light: false },
+  graphite: { name: 'Graphite',   band: '#1C1D20', page: '#1C1D20', light: false },
+  gray:     { name: 'Gray',       band: '#3A3B40', page: '#3A3B40', light: false },
+  silver:   { name: 'Light gray', band: '#DFE0E3', page: '#DFE0E3', light: true },
+  white:    { name: 'White',      band: '#FAFAFA', page: '#FAFAFA', light: true },
+  // Pastels
+  mint:     { name: 'Mint',       band: '#CFEBDD', page: '#CFEBDD', light: true },
+  sky:      { name: 'Sky',        band: '#CFE3F3', page: '#CFE3F3', light: true },
+  lavender: { name: 'Lavender',   band: '#DCD3F2', page: '#DCD3F2', light: true },
+  rose:     { name: 'Rose',       band: '#F3D3DE', page: '#F3D3DE', light: true },
+  peach:    { name: 'Peach',      band: '#F6D9C7', page: '#F6D9C7', light: true },
+  lemon:    { name: 'Lemon',      band: '#F3EDC4', page: '#F3EDC4', light: true }
 };
 const hexLum = (h) => { const n = parseInt(h.slice(1), 16); return (0.2126 * (n >> 16) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255; };
 let customColor = '#B9D7EA';
-try { const c = localStorage.getItem('lum-custom-color'); if (/^#[0-9a-f]{6}$/i.test(c || '')) customColor = c; } catch { /* domyślny */ }
+try { const c = localStorage.getItem('lum-custom-color'); if (/^#[0-9a-f]{6}$/i.test(c || '')) customColor = c; } catch { /* default */ }
 const normTheme = (v) => (v === 'light' ? 'white' : v === 'dark' ? 'black' : (v === 'custom' || THEMES[v] ? v : 'black'));
 let theme = 'black';
-try { theme = normTheme(localStorage.getItem('lum-theme')); } catch { /* bez pamięci: czarny */ }
-// Motyw 'custom': kolor wybrany w polu koloru; jasność liczona z koloru
+try { theme = normTheme(localStorage.getItem('lum-theme')); } catch { /* no storage: black */ }
+// 'custom' theme: the color picked in the color input; lightness computed from the color
 const TH = () => (theme === 'custom'
-  ? { name: 'Własny', band: customColor, page: customColor, light: hexLum(customColor) > 0.55 }
+  ? { name: 'Custom', band: customColor, page: customColor, light: hexLum(customColor) > 0.55 }
   : THEMES[theme]);
-// Pasek: 'auto' - chowany (wraca przy górnej krawędzi), 'fixed' - zawsze widoczny, strona pod nim
+// Bar: 'auto' - hidden (comes back at the top edge), 'fixed' - always visible, page below it
 let barMode = 'auto';
-try { barMode = localStorage.getItem('lum-bar') === 'fixed' ? 'fixed' : 'auto'; } catch { /* domyślnie chowany */ }
-// Styl: 'round' - łuki i zaokrąglona linia karty, 'square' - klasyczne — □ ✕ i kanciasta linia
+try { barMode = localStorage.getItem('lum-bar') === 'fixed' ? 'fixed' : 'auto'; } catch { /* hidden by default */ }
+// Style: 'round' - arcs and a rounded tab line, 'square' - classic — □ ✕ and a square line
 let uiStyle = 'round';
-try { uiStyle = localStorage.getItem('lum-style') === 'square' ? 'square' : 'round'; } catch { /* domyślnie zaokrąglony */ }
+try { uiStyle = localStorage.getItem('lum-style') === 'square' ? 'square' : 'round'; } catch { /* round by default */ }
 
 const S = { tabs: [], active: null, nextId: 1, near: false, search: false, settings: false, debugHover: false };
 
@@ -57,16 +57,16 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&l
 const startUrl = () => START + '?bg=' + encodeURIComponent(TH().page) + '&bar=' + barMode;
 const isStart = (url) => !url || url.split('?')[0].split('#')[0] === START;
 const shown = () => S.near || S.search || S.settings || S.debugHover;
-// Karty widać, gdy pasek jest pokazany - także przy wpisywaniu w polu w miejscu plusa, ale nie przy Ctrl+L
+// Tabs are visible when the bar is shown - also while typing in the field in place of +, but not on Ctrl+L
 const tabsVisible = () => shown() && !(S.search && S.searchTarget === 'current');
 const tab = (id) => S.tabs.find((t) => t.id === (id == null ? S.active : id));
 
-// Adres czy fraza? Ta sama logika jest w start.js.
-//  - http(s)://... i about:blank -> otwórz
-//  - localhost, poprawny IPv4 -> http://
-//  - domena z końcówką z liter, ale nie nazwa pliku (node.js, index.html) -> https://
-//  - inne schematy (file:, javascript: ...) -> nic (nie wysyłamy lokalnych ścieżek do wyszukiwarki)
-//  - wszystko inne -> wyszukiwarka
+// Address or search phrase? The same logic lives in start.js.
+//  - http(s)://... and about:blank -> open
+//  - localhost, valid IPv4 -> http://
+//  - domain with a letter TLD, but not a file name (node.js, index.html) -> https://
+//  - other schemes (file:, javascript: ...) -> nothing (local paths are not sent to the search engine)
+//  - everything else -> search engine
 const FILE_EXT = /\.(js|mjs|ts|html?|css|json|md|txt|py|exe|png|jpe?g|gif|svg|pdf|zip|docx?|xlsx?)$/i;
 function classify(text) {
   const v = (text || '').trim();
@@ -84,13 +84,13 @@ function classify(text) {
 }
 function toUrl(text) { const c = classify(text); return c && c.kind !== 'blocked' ? c.url : null; }
 
-/* ================= Karty ================= */
+/* ================= Tabs ================= */
 function createTab(url, focus = true) {
-  const t = { id: S.nextId++, url: url || startUrl(), title: 'Nowa karta', favicon: null, loading: true, ready: false,
+  const t = { id: S.nextId++, url: url || startUrl(), title: 'New tab', favicon: null, loading: true, ready: false,
     focusNote: false, error: null, light: TH().light, color: null, colorLight: TH().light, el: null };
   const wv = document.createElement('webview');
   wv.setAttribute('partition', 'persist:lum');
-  wv.setAttribute('allowpopups', '');                      // linki "w nowym oknie" -> nowa karta (main.js)
+  wv.setAttribute('allowpopups', '');                      // "open in new window" links -> new tab (main.js)
   wv.setAttribute('webpreferences', 'contextIsolation=yes');
   wv.setAttribute('src', t.url);
   t.wv = wv;
@@ -108,21 +108,21 @@ function createTab(url, focus = true) {
   wv.addEventListener('page-favicon-updated', (e) => { t.favicon = (e.favicons && e.favicons[0]) || null; renderTabs(); });
   wv.addEventListener('did-navigate', (e) => {
     t.url = e.url; t.error = null;
-    if (isStart(t.url)) { t.title = 'Nowa karta'; t.favicon = null; }
+    if (isStart(t.url)) { t.title = 'New tab'; t.favicon = null; }
     render(); sampleSoon(t);
   });
   wv.addEventListener('did-navigate-in-page', (e) => { if (e.isMainFrame) { t.url = e.url; render(); sampleSoon(t); } });
   wv.addEventListener('did-start-loading', () => { t.loading = true; t.navSeq = (t.navSeq || 0) + 1; if (t.id === S.active) progress(true); renderTabs(); });
   wv.addEventListener('did-stop-loading', () => { t.loading = false; if (t.id === S.active) progress(false); renderTabs(); updateNav(); sampleWhenReady(t); });
   wv.addEventListener('did-fail-load', (e) => {
-    if (!e.isMainFrame || e.errorCode === -3) return; // -3: przerwane (np. kolejna nawigacja)
+    if (!e.isMainFrame || e.errorCode === -3) return; // -3: aborted (e.g. another navigation)
     t.error = { url: e.validatedURL || t.url, desc: e.errorDescription || String(e.errorCode) };
-    t.url = t.error.url; t.title = 'Nie udało się otworzyć strony'; t.favicon = null; t.loading = false;
+    t.url = t.error.url; t.title = "Couldn't open the page"; t.favicon = null; t.loading = false;
     if (t.id === S.active) progress(false);
     render();
   });
   wv.addEventListener('console-message', (e) => { if (e.message === '__lum_scroll__') sampleSoon(t); });
-  // Kliknięcie w stronę zamyka ustawienia i wyszukiwanie na pasku
+  // Clicking the page closes settings and the search on the bar
   wv.addEventListener('focus', () => { if (S.settings || S.search) { S.settings = false; S.search = false; render(); } });
 
   pages.appendChild(wv);
@@ -142,7 +142,7 @@ function activateTab(id) {
   focusHomeField();
 }
 
-// Na stronie głównej pole wyszukiwania jest zawsze gotowe do pisania i wklejania
+// On the home page the search field is always ready for typing and pasting
 function focusHomeField() {
   const t = tab();
   if (!t || !isStart(t.url) || S.search || S.settings) return;
@@ -171,14 +171,14 @@ function openNewTab() {
   t.focusNote = true;
 }
 
-// Pola wpisywania:
-//  'new'     - plus / Ctrl+T: małe pole w miejscu plusa, karty zostają widoczne; karta powstaje dopiero po Enterze
-//  'current' - Ctrl+L: pole na środku paska z adresem obecnej karty
+// Input fields:
+//  'new'     - + / Ctrl+T: small field in place of +, tabs stay visible; the tab is created only on Enter
+//  'current' - Ctrl+L: field in the middle of the bar with the current tab's address
 const activeInput = () => (S.searchTarget === 'new' ? newInput : input);
 function openSearch(target = 'new') {
   S.settings = false;
   S.searchTarget = target;
-  // Bez drugiego migającego kursora w stronie
+  // No second blinking caret inside the page
   const t = tab();
   if (t && t.ready) t.wv.executeJavaScript('document.activeElement && document.activeElement.blur()').catch(() => {});
   S.search = true;
@@ -213,14 +213,14 @@ function step(dir) {
   if (n) activateTab(n.id);
 }
 
-// Motyw zmienia się na miejscu, bez przeładowania i bez nowego wpisu w historii
+// The theme changes in place, without a reload and without a new history entry
 function applyStartTheme(t) {
   t.wv.executeJavaScript('typeof lumTheme === "function" && lumTheme(' + JSON.stringify(TH().page) + ');' +
     'typeof lumBar === "function" && lumBar(' + JSON.stringify(barMode) + ')').catch(() => {});
   t.light = t.colorLight = TH().light;
   t.color = TH().page;
 }
-// Kolory motywu na pasku, w panelu i na ekranie błędu
+// Theme colors on the bar, in the panel and on the error screen
 function applyThemeChrome() {
   const T = TH();
   document.body.dataset.lumTheme = theme;
@@ -235,33 +235,33 @@ function applyThemeChrome() {
 }
 function setUiStyle(s) {
   uiStyle = s === 'square' ? 'square' : 'round';
-  try { localStorage.setItem('lum-style', uiStyle); } catch { /* bez pamięci */ }
+  try { localStorage.setItem('lum-style', uiStyle); } catch { /* no storage */ }
   render();
-  track.ready = false; updateTrack(tabsVisible(), true); // linia od razu w nowym kształcie
+  track.ready = false; updateTrack(tabsVisible(), true); // line switches to the new shape right away
 }
 function setBarMode(mode) {
   barMode = mode === 'fixed' ? 'fixed' : 'auto';
-  try { localStorage.setItem('lum-bar', barMode); } catch { /* bez pamięci */ }
-  // Strony główne dostają tryb od razu, żeby pole zostało w tym samym miejscu okna
+  try { localStorage.setItem('lum-bar', barMode); } catch { /* no storage */ }
+  // Home pages get the mode right away, so the field stays in the same spot in the window
   S.tabs.forEach((x) => { if (isStart(x.url) && x.ready) x.wv.executeJavaScript('typeof lumBar === "function" && lumBar(' + JSON.stringify(barMode) + ')').catch(() => {}); });
   render();
-  setTimeout(() => { renderTabs(); sampleSoon(); }, 60); // strona zmienia rozmiar
+  setTimeout(() => { renderTabs(); sampleSoon(); }, 60); // the page resizes
 }
 function setTheme(next) {
   theme = normTheme(next);
-  try { localStorage.setItem('lum-theme', theme); } catch { /* bez pamięci */ }
+  try { localStorage.setItem('lum-theme', theme); } catch { /* no storage */ }
   S.tabs.forEach((x) => { if (isStart(x.url) && x.ready) applyStartTheme(x); });
   render();
 }
-// Własny kolor z pola koloru (zmienia się na żywo podczas wybierania)
+// Custom color from the color input (updates live while picking)
 function setCustomColor(c) {
   if (!/^#[0-9a-f]{6}$/i.test(c)) return;
   customColor = c;
-  try { localStorage.setItem('lum-custom-color', c); } catch { /* bez pamięci */ }
+  try { localStorage.setItem('lum-custom-color', c); } catch { /* no storage */ }
   setTheme('custom');
 }
 
-/* ================= Rysowanie paska ================= */
+/* ================= Drawing the bar ================= */
 const ICON_MOON = '<svg viewBox="0 0 120 120"><path d="M52.34 0.5 A60 60 0 1 0 119.5 67.67 A48 48 0 1 1 52.34 0.5 Z" fill="currentColor"/></svg>';
 const ICON_GLOBE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c2.5 2.6 2.5 13.4 0 16M12 4c-2.5 2.6-2.5 13.4 0 16"/></svg>';
 const ICON_X = '<svg viewBox="0 0 12 12"><path d="M3 3l6 6M9 3 3 9"/></svg>';
@@ -273,7 +273,7 @@ function labelFor(url) {
     const u = new URL(url);
     if (u.protocol === 'http:' || u.protocol === 'https:') {
       let path = (u.pathname === '/' ? '' : u.pathname) + u.search;
-      try { path = decodeURIComponent(path); } catch { /* zostaje zakodowany */ }
+      try { path = decodeURIComponent(path); } catch { /* stays encoded */ }
       if (path.length > 70) path = path.slice(0, 68) + '…';
       return esc(u.host) + '<span class="path">' + esc(path) + '</span>';
     }
@@ -288,7 +288,7 @@ function renderBar() {
   bar.classList.toggle('show', shown());
   bar.classList.toggle('searching', S.search && S.searchTarget === 'current');
   bar.classList.toggle('adding', S.search && S.searchTarget === 'new');
-  // Na nowej karcie napis Lum jest na środku strony, więc na pasku nie ma nic
+  // On the new tab page the search field is in the middle of the page, so the bar shows no address
   if (!t || isStart(t.url)) { labelEl.className = 'label'; labelEl.textContent = ''; }
   else { labelEl.className = 'label'; labelEl.innerHTML = labelFor(t.url); }
   panel.classList.toggle('open', S.settings);
@@ -304,14 +304,14 @@ function renderBar() {
   updateNav();
 }
 
-// Karty są aktualizowane na miejscu (bez przebudowy), więc kliknięcia nie giną, a przejścia CSS działają.
+// Tabs are updated in place (no rebuild), so clicks are not lost and CSS transitions work.
 function tabElement(t) {
   if (t.el) return t.el;
   const el = document.createElement('div');
   el.className = 'tab';
   el.setAttribute('role', 'tab');
   el.dataset.tab = t.id;
-  el.innerHTML = '<span class="fav"></span><span class="t"></span><span class="x" data-close="' + t.id + '" title="Zamknij kartę (Ctrl+W, środkowy przycisk myszy)">' + ICON_X + '</span>';
+  el.innerHTML = '<span class="fav"></span><span class="t"></span><span class="x" data-close="' + t.id + '" title="Close tab (Ctrl+W, middle mouse button)">' + ICON_X + '</span>';
   t.el = el;
   return el;
 }
@@ -351,7 +351,7 @@ function scrollTabIntoView(el) {
 function updateNav() {
   const t = tab();
   let back = false, fwd = false;
-  if (t && t.ready) { try { back = t.wv.canGoBack(); fwd = t.wv.canGoForward(); } catch { /* jeszcze się ładuje */ } }
+  if (t && t.ready) { try { back = t.wv.canGoBack(); fwd = t.wv.canGoForward(); } catch { /* still loading */ } }
   bar.querySelector('[data-act=back]').classList.toggle('off', !back);
   bar.querySelector('[data-act=forward]').classList.toggle('off', !fwd);
 }
@@ -364,9 +364,9 @@ function renderError() {
   S.tabs.forEach((x) => x.wv.classList.toggle('errored', !!x.error));
 }
 
-// Pasek schowany: przezroczysty, kolor ikon według jasności strony.
-// Pasek pokazany: nad linią kolor motywu przeglądarki, a wnętrze otwartej karty w kolorze,
-// którego jest najwięcej u góry strony - karta wygląda jak przedłużenie strony.
+// Bar hidden: transparent, icon color follows the page's lightness.
+// Bar shown: above the line the browser theme color, and the inside of the open tab in the color
+// most common at the top of the page - the tab looks like an extension of the page.
 function updateTone() {
   const t = tab(), on = shown();
   const themeLight = TH().light;
@@ -378,12 +378,12 @@ function updateTone() {
   bar.style.setProperty('--tab-ink', pageLight ? '#16181B' : '#FFFFFF');
 }
 
-/* Linia otwartej karty: od lewej do prawej krawędzi okna, obejmuje otwartą kartę */
+/* Open tab line: from the left to the right window edge, wraps around the open tab */
 const track = { L: 0, R: 0, ready: false, timer: null };
-// Góra karty, poziom linii (dół paska, więc przyciski są na środku między górą okna a linią), promień zaokrąglenia
+// Tab top, line level (bottom of the bar, so buttons sit midway between the window top and the line), corner radius
 const TK = { t: 6, b: 37, r: uiStyle === 'square' ? 0 : 8 };
-// Linia zaczyna się u góry przy lewej krawędzi okna, schodzi w dół, biegnie do otwartej karty,
-// obejmuje ją, biegnie dalej i przy prawej krawędzi wraca do góry - przechodzi w granicę okna.
+// The line starts at the top of the left window edge, runs down, goes to the open tab,
+// wraps around it, continues and at the right edge goes back up - it becomes the window border.
 function edgeStart() { const { b, r } = TK, x = 0.6; return 'M' + x + ' 0V' + (b - r) + 'Q' + x + ' ' + b + ' ' + (x + r) + ' ' + b; }
 function edgeEnd() { const { b, r } = TK, x = bar.clientWidth - 0.6; return 'H' + (x - r) + 'Q' + x + ' ' + b + ' ' + x + ' ' + (b - r) + 'V0'; }
 function trackD(L, R) {
@@ -391,7 +391,7 @@ function trackD(L, R) {
   return edgeStart() + 'H' + (L - r) + 'Q' + L + ' ' + b + ' ' + L + ' ' + (b - r) + 'V' + (t + r) + 'Q' + L + ' ' + t + ' ' + (L + r) + ' ' + t +
     'H' + (R - r) + 'Q' + R + ' ' + t + ' ' + R + ' ' + (t + r) + 'V' + (b - r) + 'Q' + R + ' ' + b + ' ' + (R + r) + ' ' + b + edgeEnd();
 }
-// Kształt wnętrza otwartej karty (do linii) i pas nad linią z wyciętą kartą
+// Shape of the open tab's inside (down to the line) and the strip above the line with the tab cut out
 function tabShape(L, R) {
   const { t, r } = TK, b = TK.b + 1;
   return 'M' + L + ' ' + b + 'V' + (t + r) + 'Q' + L + ' ' + t + ' ' + (L + r) + ' ' + t + 'H' + (R - r) + 'Q' + R + ' ' + t + ' ' + R + ' ' + (t + r) + 'V' + b + 'Z';
@@ -405,11 +405,11 @@ function setShapes(e) {
     return;
   }
   trackPath.setAttribute('d', trackD(e.L, e.R));
-  // Wycięcie na otwartą kartę tylko wtedy, gdy karty są pokazane; inaczej pasek jest jednolity
+  // Cut-out for the open tab only when tabs are shown; otherwise the strip is solid
   bandPath.setAttribute('d', tabsVisible() ? rect + tabShape(e.L, e.R) : rect);
   tabFillPath.setAttribute('d', tabShape(e.L, e.R));
 }
-// Krawędzie otwartej karty w oknie; przycięte do widocznej części paska kart. Gdy karty nie widać: null (sama prosta linia).
+// Open tab edges in the window, clipped to the visible part of the tab strip. When the tab is not visible: null (a straight line).
 function activeEdges() {
   const a = tabsEl.querySelector('.tab.active');
   if (!a) return null;
@@ -440,16 +440,16 @@ function progress(on) {
   }
 }
 
-/* ================= Kolor i jasność górnej krawędzi strony ================= */
-// Sprawdzane tylko wtedy, gdy coś się zmieniło: wczytanie, nawigacja, przewinięcie, zmiana karty.
-// Do tego rzadki zapas co 4 s dla stron, które zmieniają się same (tylko gdy okno jest aktywne).
+/* ================= Color and lightness of the page's top edge ================= */
+// Checked only when something changed: load, navigation, scroll, tab switch.
+// Plus a rare fallback every 4 s for pages that change on their own (only while the window is focused).
 function sample(t) {
   t = t || tab();
-  // Podczas ładowania strona bywa pusta albo w połowie narysowana - zostaje poprzedni kolor
+  // While loading the page may be blank or half drawn - the previous color stays
   if (!t || !t.ready || t.error || t.loading || document.hidden) return;
   let id;
   try { id = t.wv.getWebContentsId(); } catch { return; }
-  // Kolor karty: pas wokół otwartej karty (z zapasem po bokach), jasność: cała szerokość
+  // Tab color: a strip around the open tab (with margin on the sides), lightness: full width
   const w = t.wv.clientWidth || window.innerWidth;
   let fx0 = 0, fx1 = 1;
   const e = t.id === S.active ? activeEdges() : null;
@@ -471,9 +471,9 @@ function sampleSoon(t) {
 }
 setInterval(() => { if (document.hasFocus()) sample(); }, 4000);
 
-// Po wczytaniu strony kolor pobieramy, gdy strona jest naprawdę gotowa: pełne wczytanie (load),
-// załadowane czcionki i dwie narysowane klatki. Potem jeszcze raz po chwili, bo niektóre strony
-// dociągają treść (np. tło, baner) po wczytaniu.
+// After a page loads, the color is sampled once the page is really ready: full load (load event),
+// fonts loaded and two painted frames. Then once more a moment later, because some pages
+// pull in content (e.g. a background, a banner) after loading.
 const WHEN_READY = "new Promise(function (done) {" +
   "function frames() { requestAnimationFrame(function () { requestAnimationFrame(function () { done(true); }); }); }" +
   "function fonts() { (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(frames, frames); }" +
@@ -481,7 +481,7 @@ const WHEN_READY = "new Promise(function (done) {" +
   "setTimeout(function () { done(false); }, 6000);" +
   "})";
 function sampleWhenReady(t) {
-  const nav = (t.navSeq = (t.navSeq || 0) + 1); // kolejna nawigacja unieważnia poprzednie oczekiwanie
+  const nav = (t.navSeq = (t.navSeq || 0) + 1); // another navigation cancels the previous wait
   t.wv.executeJavaScript(WHEN_READY).catch(() => false).then(() => {
     if (t.navSeq !== nav || t.loading) return;
     sample(t);
@@ -489,7 +489,7 @@ function sampleWhenReady(t) {
   });
 }
 
-/* ================= Zdarzenia ================= */
+/* ================= Events ================= */
 function pressFx(el) {
   const target = el.closest('.btn, .tab, .seg button, .sw-btn');
   if (!target) return;
@@ -521,14 +521,14 @@ document.addEventListener('click', (e) => {
   render();
 });
 
-// Środkowy przycisk myszy (kółko) zamyka kartę
+// Middle mouse button (wheel click) closes a tab
 tabsEl.addEventListener('mousedown', (e) => { if (e.button === 1) e.preventDefault(); });
 tabsEl.addEventListener('auxclick', (e) => {
   if (e.button !== 1) return;
   const tb = e.target.closest('[data-tab]');
   if (tb) { e.preventDefault(); closeTab(Number(tb.dataset.tab)); }
 });
-// Gdy kart jest za dużo, kółko myszy przewija pasek kart
+// With too many tabs, the mouse wheel scrolls the tab strip
 tabsEl.addEventListener('wheel', (e) => {
   if (tabsEl.scrollWidth <= tabsEl.clientWidth) return;
   e.preventDefault();
@@ -540,30 +540,30 @@ input.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') { e.preventDefault(); submit(input.value); }
   else if (e.key === 'Escape') closeSearch();
 });
-// Kliknięcie obok pola zamyka je (bez tworzenia karty); lupa w polu nie zabiera fokusu
+// Clicking outside the field closes it (without creating a tab); the magnifier in the field does not take focus
 input.addEventListener('blur', () => setTimeout(() => { if (S.search && document.activeElement !== input) closeSearch(); }, 120));
 document.querySelector('.sbox [data-act=submit]').addEventListener('mousedown', (e) => e.preventDefault());
-// To samo dla małego pola w miejscu plusa
+// Same for the small field in place of +
 newInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') { e.preventDefault(); submit(newInput.value); }
   else if (e.key === 'Escape') closeSearch();
 });
-// Lupa obok pola pokazuje się dopiero, gdy coś wpiszesz (jak na stronie głównej)
+// The magnifier next to the field appears only once you type something (like on the home page)
 newInput.addEventListener('input', () => newField.classList.toggle('typing', newInput.value.trim().length > 0));
-// Powrót do okna na stronie głównej: kursor od razu w polu wyszukiwania
+// Coming back to the window on the home page: the caret goes straight into the search field
 window.addEventListener('focus', () => setTimeout(focusHomeField, 30));
 newInput.addEventListener('blur', () => setTimeout(() => { if (S.search && S.searchTarget === 'new' && document.activeElement !== newInput) closeSearch(); }, 120));
 newField.querySelector('[data-act=addgo]').addEventListener('mousedown', (e) => e.preventDefault());
 
-// Przesuwanie okna: systemowe (CSS -webkit-app-region: drag na pustym pasku), więc działa
-// przyklejanie do krawędzi i narożników ekranu, Win+strzałki i dwuklik = maksymalizuj.
+// Window dragging: native (CSS -webkit-app-region: drag on the empty bar), so snapping
+// to screen edges and corners, Win+arrows and double-click = maximize all work.
 $('customColor').addEventListener('input', (e) => setCustomColor(e.target.value));
 
-// Pasek pokazuje się dopiero przy samej górnej krawędzi (żeby nie zasłaniać strony przy zwykłym klikaniu u góry)
-// i zostaje, dopóki kursor jest w okolicy paska.
+// The bar appears only at the very top edge (so it does not cover the page on normal clicks near the top)
+// and stays while the cursor is around the bar.
 window.lum.on('zone', (zone) => {
-  // Chowany: pasek pojawia się, gdy kursor wejdzie w jego (niewidoczny) obszar, i zostaje tuż pod nim.
-  // Zawsze widoczny: karty pokazują się, gdy kursor jest na pasku.
+  // Hidden: the bar appears when the cursor enters its (invisible) area, and stays just below it.
+  // Always visible: tabs show up when the cursor is on the bar.
   const onBar = zone === 'edge' || zone === 'bar';
   const near = barMode === 'fixed' ? onBar : (onBar || (S.near && zone === 'near'));
   if (near !== S.near) {

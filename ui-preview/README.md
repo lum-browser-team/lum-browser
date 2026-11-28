@@ -1,55 +1,55 @@
-# Lum – makieta przeglądarki
+# Lum – browser mockup
 
-**Projekt interfejsu: w całości olehnykorovych.** Nazwa „Lum”: Savio. Szczegóły w [`../AUTORZY.md`](../AUTORZY.md).
+**UI design: entirely by olehnykorovych.** The name "Lum": Savio. Details in [`../AUTHORS.md`](../AUTHORS.md).
 
-Działająca makieta (mini przeglądarka na Electronie): pokazuje, jak ma wyglądać i działać Lum,
-na prawdziwych stronach. To **wzór dla prawdziwej przeglądarki** (fork Chromium w tym repo),
-a nie docelowa przeglądarka. Opis wyglądu i zachowania do przeniesienia do Chromium:
-[`../docs/lum-interfejs.md`](../docs/lum-interfejs.md).
+A working mockup (a mini browser on Electron) that shows how Lum should look and behave
+on real websites. It is the **reference for the real browser** (the Chromium fork in this repo),
+not the target browser itself. The look and behavior to port to Chromium are described in
+[`../docs/lum-ui-spec.md`](../docs/lum-ui-spec.md).
 
-## Uruchomienie
+## Running
 
-Dwuklik na `Lum.cmd` (za pierwszym razem zainstaluje zależności, ok. 100 MB) albo:
+Double-click `Lum.cmd` (the first run installs dependencies, about 100 MB) or:
 
     cd ui-preview
     npm install
     npm start
 
-## Co jest w makiecie
+## What the mockup has
 
-- Pasek 38 px, dwa tryby: **Chowany** (znika, wraca po najechaniu kursorem na jego obszar u góry okna)
-  i **Zawsze widoczny** (strona zaczyna się pod paskiem).
-- Po najechaniu: karty obok odświeżania; linia z lewej krawędzi okna (od góry) obejmuje otwartą kartę
-  i przy prawej krawędzi wraca do góry. Nad linią kolor motywu, wnętrze otwartej karty w kolorze strony.
-- Plus: w jego miejscu pole „Napisz coś albo wklej link…”, nowa karta po Enterze.
-- Nowa karta: pole wyszukiwania na środku okna, zawsze gotowe do pisania i wklejania.
-- Przyciski: wstecz, dalej (zakrzywione strzałki), odśwież, ustawienia, przyciski okna
-  (łuki w stylu zaokrąglonym, — □ ✕ w stylu kanciastym, te same kolory).
-- Ustawienia: 5 szarości, 6 pasteli, własny kolor; styl Zaokrąglony/Kanciasty; tryb paska.
-  Wygląd panelu ustawień jest tymczasowy – w prawdziwej przeglądarce będzie inny (osobny projekt).
-- Zamykanie karty: krzyżyk po najechaniu, środkowy przycisk myszy, Ctrl+W. Dużo kart: zwężanie,
-  same ikonki, przewijanie kółkiem.
-- Cienki, zaokrąglony pasek przewijania na stronach.
-- Skróty: Ctrl+T, Ctrl+W, Ctrl+L, Ctrl+Tab, Ctrl+Shift+Tab, F5, Alt+←/→, F12 (narzędzia).
+- A 38 px bar with two modes: **Hidden** (disappears, comes back when the cursor reaches its area at the top
+  of the window) and **Always visible** (the page starts below the bar).
+- On hover: tabs next to reload; a line from the left window edge (from the top) wraps around the open tab
+  and goes back up at the right edge. Theme color above the line, the open tab's inside in the page color.
+- Plus: a "Type something or paste a link…" field appears in its place, a new tab opens on Enter.
+- New tab: a search field in the middle of the window, always ready for typing and pasting.
+- Buttons: back, forward (curved arrows), reload, settings, window buttons
+  (arcs in the round style, — □ ✕ in the square style, same colors).
+- Settings: 5 grays, 6 pastels, custom color; Round/Square style; bar mode.
+  The settings panel look is temporary – the real browser will have a different one (separate design).
+- Closing a tab: the cross on hover, middle mouse button, Ctrl+W. Many tabs: tabs shrink,
+  icons only, scrolling with the wheel.
+- A thin, rounded scrollbar on pages.
+- Shortcuts: Ctrl+T, Ctrl+W, Ctrl+L, Ctrl+Tab, Ctrl+Shift+Tab, F5, Alt+←/→, F12 (dev tools).
 
-Wyszukiwarka w makiecie: Google (`SEARCH` w `renderer.js` i `start.js`).
-Strony nie dostają dostępu do kamery, mikrofonu, lokalizacji ani powiadomień.
+Search engine in the mockup: Google (`SEARCH` in `renderer.js` and `start.js`).
+Pages get no access to the camera, microphone, location or notifications.
 
-## Pliki
+## Files
 
-- `main.js` – okno, skróty, odczyt kursora przy górnej krawędzi, próbkowanie koloru strony.
-- `renderer.js`, `index.html`, `style.css` – pasek, karty, ustawienia.
-- `start.html`, `start.js` – strona nowej karty.
-- `tests/` – skrypty testów (Playwright + Electron).
+- `main.js` – window, shortcuts, reading the cursor near the top edge, sampling the page color.
+- `renderer.js`, `index.html`, `style.css` – bar, tabs, settings.
+- `start.html`, `start.js` – new tab page.
+- `tests/` – test scripts (Playwright + Electron).
 
-## Sprawdzanie bez klikania
+## Checking without clicking
 
-`LUM_SNAPSHOT=plik.png` zapisuje zrzut okna po kilku sekundach i zamyka aplikację.
-`LUM_OPEN=adres1,adres2` otwiera karty, `LUM_SNAPSHOT_HOVER=1` pokazuje pasek jak po najechaniu,
-`LUM_EVAL="kod"` wykonuje kod w interfejsie (np. `setTheme('mint')`).
+`LUM_SNAPSHOT=file.png` saves a window screenshot after a few seconds and quits the app.
+`LUM_OPEN=url1,url2` opens tabs, `LUM_SNAPSHOT_HOVER=1` shows the bar as if hovered,
+`LUM_EVAL="code"` runs code in the UI (e.g. `setTheme('mint')`).
 
-## Gotowa aplikacja (Lum.exe)
+## Packaged app (Lum.exe)
 
     npx electron-packager . Lum --platform=win32 --arch=x64 --out=dist --overwrite --prune=true --icon=../lum/branding/overlay/chrome/app/theme/chromium/win/chromium.ico --ignore="^/tests" --ignore="^/dist" --ignore="^/Lum\.cmd"
 
-Wynik: `dist/Lum-win32-x64/Lum.exe` (potrzebny cały folder, ok. 360 MB, bo zawiera Electron/Chromium).
+Output: `dist/Lum-win32-x64/Lum.exe` (the whole folder is needed, about 360 MB, since it contains Electron/Chromium).

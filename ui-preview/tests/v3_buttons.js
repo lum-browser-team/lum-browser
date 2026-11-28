@@ -1,4 +1,4 @@
-// Sprawdza przyciski po poprawce (klik w body[data-theme] przechwytywał wszystko).
+// Checks the buttons after the fix (a click on body[data-theme] used to catch everything).
 const { _electron: electron } = require('playwright-core');
 const path = require('path');
 (async () => {

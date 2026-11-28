@@ -48,10 +48,10 @@ const { launch, shot, inPage, waitFor, sleep } = require('./lib');
     await win.evaluate(() => openNewTab());
     await waitFor(() => win.evaluate(() => tab().ready));
     await sleep(500);
-    await inPage(win, `nin.value='świerk pospolity'; nin.dispatchEvent(new Event('input')); nin.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter'}));`);
+    await inPage(win, `nin.value='café crème'; nin.dispatchEvent(new Event('input')); nin.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter'}));`);
     await waitFor(() => win.evaluate(() => /duckduckgo/.test(tab().url)));
     console.log('search url', await win.evaluate(() => tab().url), await win.evaluate(() => document.getElementById('label').innerText));
-    console.log('toUrl checks', JSON.stringify(await win.evaluate(() => ['localhost:3000', '192.168.1.1', 'http://localhost:3000', 'example.com/a b', 'pl.wikipedia.org/wiki/Świerk', 'file:///C:/Windows/win.ini', 'about:blank', 'ab.c'].map((s) => [s, toUrl(s)]))));
+    console.log('toUrl checks', JSON.stringify(await win.evaluate(() => ['localhost:3000', '192.168.1.1', 'http://localhost:3000', 'example.com/a b', 'en.wikipedia.org/wiki/Café', 'file:///C:/Windows/win.ini', 'about:blank', 'ab.c'].map((s) => [s, toUrl(s)]))));
     console.log('LOGS', JSON.stringify(logs, null, 1));
   } finally { await app.close(); }
 })().catch((e) => { console.error(e); process.exit(1); });

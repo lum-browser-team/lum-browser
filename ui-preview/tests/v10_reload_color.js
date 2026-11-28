@@ -1,4 +1,4 @@
-// Kolor karty po odświeżeniu: w trakcie ładowania zostaje poprzedni, nowy dopiero po wczytaniu.
+// Tab color after a reload: the previous one stays while loading, the new one only after load.
 const { _electron: electron } = require('playwright-core');
 const path = require('path');
 (async () => {
