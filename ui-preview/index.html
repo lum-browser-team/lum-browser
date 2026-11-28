@@ -18,7 +18,7 @@
   </div>
 
   <div class="progress" id="progress"></div>
-  <!-- "Clear" bar mode: a soft shade behind the transparent bar, darker or lighter depending on the page -->
+  <!-- "Clear" bar mode: a dark shade behind the transparent bar while the page is scrolled under it -->
   <div class="scrim" id="scrim" aria-hidden="true"></div>
 
   <div class="bar" id="bar">
@@ -87,7 +87,7 @@
     <div class="ttl" style="margin-top:16px">Bar</div>
     <div class="seg">
       <button type="button" data-barmode="auto" aria-pressed="true" title="The bar hides; it comes back when you move to the very top of the window"><svg viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M8 12l4 4 4-4" opacity=".7"/></svg>Hidden</button>
-      <button type="button" data-barmode="clear" aria-pressed="false" title="The bar stays, transparent over the page, with a soft shade that adapts to the page"><svg viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M4 11h16M4 15h16" opacity=".35"/></svg>Clear</button>
+      <button type="button" data-barmode="clear" aria-pressed="false" title="The bar stays and is transparent; at the top the page starts below it, when you scroll the page goes under it with a dark shade"><svg viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M4 11h16M4 15h16" opacity=".35"/></svg>Clear</button>
       <button type="button" data-barmode="fixed" aria-pressed="false" title="The bar is always visible, the page starts below it"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2.5"/><path d="M4 9.5h16"/></svg>Always</button>
     </div>
   </div>

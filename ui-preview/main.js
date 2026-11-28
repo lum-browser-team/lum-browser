@@ -189,7 +189,16 @@ app.on('web-contents-created', (_e, contents) => {
 });
 
 // Scroll hook in a separate JS world: the page cannot see it or use it to fingerprint the browser.
-const SCROLL_HOOK = "(function(){var t;addEventListener('scroll',function(){clearTimeout(t);t=setTimeout(function(){console.debug('__lum_scroll__')},140)},{passive:true,capture:true});})();";
+//  __lum_scroll__  - scrolling stopped (resample the page color)
+//  __lum_top__1/0  - the page is / is not scrolled to the very top (sent only on change).
+//    A page that is barely scrollable (<= 40 px) stays "at the top", otherwise moving it
+//    below the bar and back could make it flip between the two states.
+const SCROLL_HOOK = "(function(){var t,top=null;" +
+  "function chk(){var y=window.scrollY||0,se=document.scrollingElement||document.documentElement," +
+  "max=(se?se.scrollHeight:0)-window.innerHeight,a=y<=0||(top===true&&max<=40);" +
+  "if(a!==top){top=a;console.debug('__lum_top__'+(a?1:0));}}" +
+  "addEventListener('scroll',function(){chk();clearTimeout(t);t=setTimeout(function(){console.debug('__lum_scroll__')},140)},{passive:true,capture:true});" +
+  "addEventListener('load',chk);chk();})();";
 ipcMain.handle('hook', async (_e, id) => {
   const wc = webContents.fromId(id);
   if (!wc || wc.isDestroyed()) return false;

@@ -18,8 +18,8 @@ Double-click `Lum.cmd` (the first run installs dependencies, about 100 MB) or:
 ## What the mockup has
 
 - A 38 px bar with three modes: **Hidden** (disappears, comes back when the cursor reaches its area at the top
-  of the window), **Clear** (never hides, stays transparent over the page with a soft shade behind it –
-  darker over light pages, lighter over dark ones) and **Always visible** (the page starts below the bar).
+  of the window), **Clear** (never hides and stays transparent; at the very top the page starts below the bar,
+  scrolled down it runs under the bar with a dark shade behind it) and **Always visible** (the page starts below the bar).
 - On hover: tabs next to reload; a line from the left window edge (from the top) wraps around the open tab
   and goes back up at the right edge. Theme color above the line, the open tab's inside in the page color.
 - Plus: a "Type something or paste a link…" field appears in its place, a new tab opens on Enter.

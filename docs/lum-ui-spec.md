@@ -23,11 +23,11 @@
 | Mode | Behavior |
 |---|---|
 | **Hidden** | The page fills the whole window. The bar is invisible (opacity 0, does not catch clicks). When the cursor enters the bar area (top 38 px of the window, also a few px above the window), the bar appears; it stays while the cursor is within 80 px of the top; further down it disappears. |
-| **Clear** | The bar never hides and **stays transparent**, over the page (the page fills the whole window). Behind it is a soft shade (84 px, fading into the page) that goes the opposite way of the page: **darker over a light page** (light icons), **lighter over a dark page** (dark icons). Page lightness = average of the top ~64 px, threshold 0.55; the shade switches with a 0.6 s fade. No shade on Lum's own pages (new tab, error screen), which already have the theme color. On hover the tabs and the line appear, still without the theme color; the shade gets a 12 px backdrop blur (masked so it fades out downwards), so the tabs do not mix with the page text. At rest there is no blur. |
+| **Clear** | The bar never hides and **stays transparent** (no theme color, also on hover). **Page scrolled to the very top:** the page starts **below the bar** (like Always visible), so the page's own top buttons do not collide with ours; the bar sits on the theme color. **Scrolled down:** the page moves up and runs **under the bar**, with a **dark shade** behind it (84 px, fading into the page) and light icons. Switching between the two: the page's top/height animate over 0.22 s, the shade fades. A page that is barely scrollable (≤ 40 px) stays below the bar, so it does not flip back and forth. Lum's own pages (new tab, error screen) stay full-window without a shade. On hover the tabs and the line appear; over the shade it gets a 12 px backdrop blur (masked so it fades out downwards). |
 | **Always visible** | The bar is always visible in the theme color, the page starts **below it** (it does not overlap page buttons, e.g. on YouTube). Tabs and the line appear on bar hover. |
 
-Shade gradients (top → bottom): dark `rgba(0,0,0,.7)` → `.6` at 30% → `.34` at 55% → `.12` at 78% → transparent;
-light: the same with white and `.72 / .62 / .36 / .12`. The new tab field stays in the same window position in all three modes.
+Shade gradient (top → bottom): `rgba(0,0,0,.7)` → `.6` at 30% → `.34` at 55% → `.12` at 78% → transparent.
+"At the top" comes from a scroll hook in an isolated JS world (the page cannot see it), sent only when it changes. The new tab field stays in the same window position in all three modes.
 
 While the bar is shown, the page under it ignores clicks (so they reach the buttons).
 

@@ -89,7 +89,7 @@ function toUrl(text) { const c = classify(text); return c && c.kind !== 'blocked
 
 /* ================= Tabs ================= */
 function createTab(url, focus = true) {
-  const t = { id: S.nextId++, url: url || startUrl(), title: 'New tab', favicon: null, loading: true, ready: false,
+  const t = { id: S.nextId++, url: url || startUrl(), title: 'New tab', favicon: null, loading: true, ready: false, atTop: true,
     focusNote: false, error: null, light: TH().light, color: null, colorLight: TH().light, el: null };
   const wv = document.createElement('webview');
   wv.setAttribute('partition', 'persist:lum');
@@ -110,7 +110,7 @@ function createTab(url, focus = true) {
   wv.addEventListener('page-title-updated', (e) => { if (!isStart(t.url)) { t.title = e.title; renderTabs(); } });
   wv.addEventListener('page-favicon-updated', (e) => { t.favicon = (e.favicons && e.favicons[0]) || null; renderTabs(); });
   wv.addEventListener('did-navigate', (e) => {
-    t.url = e.url; t.error = null;
+    t.url = e.url; t.error = null; t.atTop = true; // a new page starts at the top (the hook corrects it)
     if (isStart(t.url)) { t.title = 'New tab'; t.favicon = null; }
     render(); sampleSoon(t);
   });
@@ -124,7 +124,13 @@ function createTab(url, focus = true) {
     if (t.id === S.active) progress(false);
     render();
   });
-  wv.addEventListener('console-message', (e) => { if (e.message === '__lum_scroll__') sampleSoon(t); });
+  wv.addEventListener('console-message', (e) => {
+    if (e.message === '__lum_scroll__') sampleSoon(t);
+    else if (e.message === '__lum_top__1' || e.message === '__lum_top__0') {
+      const top = e.message.endsWith('1');
+      if (top !== t.atTop) { t.atTop = top; if (t.id === S.active) updateTone(); else applyDock(); }
+    }
+  });
   // Clicking the page closes settings and the search on the bar
   wv.addEventListener('focus', () => { if (S.settings || S.search) { S.settings = false; S.search = false; render(); } });
 
@@ -371,22 +377,35 @@ function renderError() {
 // Bar hidden: transparent, icon color follows the page's lightness.
 // Bar shown: above the line the browser theme color, and the inside of the open tab in the color
 // most common at the top of the page - the tab looks like an extension of the page.
-// 'clear' mode: the bar stays transparent; a shade behind it goes the opposite way of the page -
-// darker over a light page (light icons), lighter over a dark page (dark icons).
+// 'clear' mode: the bar stays transparent. Page scrolled to the very top: the page starts below the bar
+// (its own buttons do not collide with ours) and the bar sits on the theme color. Scrolled down: the page
+// runs under the bar and a dark shade behind it keeps the light icons readable.
 function updateTone() {
   const t = tab(), on = shown();
   const themeLight = TH().light;
   let pageColor = TH().page, pageLight = themeLight;
   if (t && !t.error && t.color) { pageColor = t.color; pageLight = t.colorLight; }
   const topLight = !!(t && !t.error ? t.light : themeLight);
+  const docked = applyDock();
   // Lum's own pages (new tab, error screen) already have the theme color: no shade needed there
-  const ownPage = !t || isStart(t.url) || !!t.error;
-  scrimEl.classList.toggle('lighten', !topLight);
-  scrimEl.classList.toggle('off', ownPage);
+  const plain = !t || isStart(t.url) || !!t.error || docked;
+  scrimEl.classList.toggle('off', plain);
   const solid = barMode === 'fixed' || (on && barMode === 'auto');
-  bar.classList.toggle('on-light', barMode === 'clear' ? (ownPage ? themeLight : !topLight) : solid ? themeLight : topLight);
+  bar.classList.toggle('on-light', barMode === 'clear' ? (plain ? themeLight : false) : solid ? themeLight : topLight);
   tabFillPath.style.fill = pageColor;
   bar.style.setProperty('--tab-ink', pageLight ? '#16181B' : '#FFFFFF');
+}
+
+// 'clear' mode: a web page scrolled to the very top is moved below the bar ("docked").
+// Returns whether the active tab is docked.
+function applyDock() {
+  let active = false;
+  S.tabs.forEach((x) => {
+    const d = barMode === 'clear' && !isStart(x.url) && !x.error && x.atTop !== false;
+    x.wv.classList.toggle('docked', d);
+    if (x.id === S.active) active = d;
+  });
+  return active;
 }
 
 /* Open tab line: from the left to the right window edge, wraps around the open tab */
