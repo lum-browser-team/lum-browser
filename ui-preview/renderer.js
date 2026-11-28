@@ -8,7 +8,7 @@ const $ = (id) => document.getElementById(id);
 const bar = $('bar'), leftEl = $('left'), tabsEl = $('tabs'), plusBtn = $('newtab'), labelEl = $('label'), input = $('q');
 const newField = $('newfield'), newInput = $('nq');
 const panel = $('panel'), progressEl = $('progress'), pages = $('pages'), trackPath = $('trackPath');
-const bandPath = $('band'), tabFillPath = $('tabFill');
+const bandPath = $('band'), tabFillPath = $('tabFill'), scrimEl = $('scrim');
 
 // Thin, rounded scrollbar on every page (in Chromium this will be a patch)
 const SCROLLBAR_CSS = '::-webkit-scrollbar{width:10px;height:10px;background:transparent}' +
@@ -44,9 +44,12 @@ try { theme = normTheme(localStorage.getItem('lum-theme')); } catch { /* no stor
 const TH = () => (theme === 'custom'
   ? { name: 'Custom', band: customColor, page: customColor, light: hexLum(customColor) > 0.55 }
   : THEMES[theme]);
-// Bar: 'auto' - hidden (comes back at the top edge), 'fixed' - always visible, page below it
+// Bar: 'auto' - hidden (comes back at the top edge), 'clear' - always there but transparent, over the page,
+// with a soft shade behind it, 'fixed' - always visible in the theme color, page below it
+const BAR_MODES = ['auto', 'clear', 'fixed'];
+const normBar = (v) => (BAR_MODES.includes(v) ? v : 'auto');
 let barMode = 'auto';
-try { barMode = localStorage.getItem('lum-bar') === 'fixed' ? 'fixed' : 'auto'; } catch { /* hidden by default */ }
+try { barMode = normBar(localStorage.getItem('lum-bar')); } catch { /* hidden by default */ }
 // Style: 'round' - arcs and a rounded tab line, 'square' - classic — □ ✕ and a square line
 let uiStyle = 'round';
 try { uiStyle = localStorage.getItem('lum-style') === 'square' ? 'square' : 'round'; } catch { /* round by default */ }
@@ -240,7 +243,7 @@ function setUiStyle(s) {
   track.ready = false; updateTrack(tabsVisible(), true); // line switches to the new shape right away
 }
 function setBarMode(mode) {
-  barMode = mode === 'fixed' ? 'fixed' : 'auto';
+  barMode = normBar(mode);
   try { localStorage.setItem('lum-bar', barMode); } catch { /* no storage */ }
   // Home pages get the mode right away, so the field stays in the same spot in the window
   S.tabs.forEach((x) => { if (isStart(x.url) && x.ready) x.wv.executeJavaScript('typeof lumBar === "function" && lumBar(' + JSON.stringify(barMode) + ')').catch(() => {}); });
@@ -300,6 +303,7 @@ function renderBar() {
   applyThemeChrome();
   document.body.classList.toggle('bar-auto', barMode === 'auto');
   document.body.classList.toggle('bar-fixed', barMode === 'fixed');
+  document.body.classList.toggle('bar-clear', barMode === 'clear');
   document.body.classList.toggle('bar-shown', shown());
   updateNav();
 }
@@ -367,13 +371,20 @@ function renderError() {
 // Bar hidden: transparent, icon color follows the page's lightness.
 // Bar shown: above the line the browser theme color, and the inside of the open tab in the color
 // most common at the top of the page - the tab looks like an extension of the page.
+// 'clear' mode: the bar stays transparent; a shade behind it goes the opposite way of the page -
+// darker over a light page (light icons), lighter over a dark page (dark icons).
 function updateTone() {
   const t = tab(), on = shown();
   const themeLight = TH().light;
   let pageColor = TH().page, pageLight = themeLight;
   if (t && !t.error && t.color) { pageColor = t.color; pageLight = t.colorLight; }
-  const solid = on || barMode === 'fixed';
-  bar.classList.toggle('on-light', solid ? themeLight : !!(t && !t.error ? t.light : themeLight));
+  const topLight = !!(t && !t.error ? t.light : themeLight);
+  // Lum's own pages (new tab, error screen) already have the theme color: no shade needed there
+  const ownPage = !t || isStart(t.url) || !!t.error;
+  scrimEl.classList.toggle('lighten', !topLight);
+  scrimEl.classList.toggle('off', ownPage);
+  const solid = barMode === 'fixed' || (on && barMode === 'auto');
+  bar.classList.toggle('on-light', barMode === 'clear' ? (ownPage ? themeLight : !topLight) : solid ? themeLight : topLight);
   tabFillPath.style.fill = pageColor;
   bar.style.setProperty('--tab-ink', pageLight ? '#16181B' : '#FFFFFF');
 }

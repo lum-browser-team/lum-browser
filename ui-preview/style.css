@@ -50,6 +50,23 @@ body.bar-auto .bar:not(.show) * { pointer-events: none !important; }
 body.bar-fixed #pages, body.bar-fixed .err { top: 38px; }
 body.bar-fixed .bar { pointer-events: auto; --halo: drop-shadow(0 0 0 transparent); }
 body.bar-fixed #band { opacity: 1; }
+/* "Clear" mode: the bar never hides and stays transparent (no theme color, also on hover), over the page.
+   Behind it a soft shade fades into the page: darker over a light page, lighter over a dark one. */
+.scrim { position: fixed; top: 0; left: 0; right: 0; height: 84px; z-index: 9; pointer-events: none; opacity: 0; transition: opacity .5s ease;
+  /* on hover: a blur under the bar that fades out downwards, so tabs do not mix with the page text */
+  -webkit-backdrop-filter: blur(var(--scrim-blur, 0px)); backdrop-filter: blur(var(--scrim-blur, 0px));
+  -webkit-mask-image: linear-gradient(#000 45%, transparent); mask-image: linear-gradient(#000 45%, transparent); }
+body.bar-clear.bar-shown .scrim { --scrim-blur: 12px; }
+.scrim::before, .scrim::after { content: ""; position: absolute; inset: 0; transition: opacity .6s ease; }
+.scrim::before { background: linear-gradient(rgba(0,0,0,.7), rgba(0,0,0,.6) 30%, rgba(0,0,0,.34) 55%, rgba(0,0,0,.12) 78%, transparent); }
+.scrim::after { background: linear-gradient(rgba(255,255,255,.72), rgba(255,255,255,.62) 30%, rgba(255,255,255,.36) 55%, rgba(255,255,255,.12) 78%, transparent); opacity: 0; }
+.scrim.lighten::before { opacity: 0; }
+.scrim.lighten::after { opacity: 1; }
+body.bar-clear .scrim { opacity: 1; }
+body.bar-clear .scrim.off { opacity: 0; }
+body.bar-clear #band, body.bar-clear #tabFill { opacity: 0 !important; }
+body.bar-clear .bar.show .tab.active { color: var(--chrome); }
+@media (prefers-reduced-motion: reduce) { .scrim, .scrim::before, .scrim::after { transition-duration: .01s; } }
 
 /* The window moves by dragging an empty spot on the bar (see "Window dragging" below) */
 .side { display: flex; align-items: center; gap: 1px; }

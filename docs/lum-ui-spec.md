@@ -23,7 +23,11 @@
 | Mode | Behavior |
 |---|---|
 | **Hidden** | The page fills the whole window. The bar is invisible (opacity 0, does not catch clicks). When the cursor enters the bar area (top 38 px of the window, also a few px above the window), the bar appears; it stays while the cursor is within 80 px of the top; further down it disappears. |
+| **Clear** | The bar never hides and **stays transparent**, over the page (the page fills the whole window). Behind it is a soft shade (84 px, fading into the page) that goes the opposite way of the page: **darker over a light page** (light icons), **lighter over a dark page** (dark icons). Page lightness = average of the top ~64 px, threshold 0.55; the shade switches with a 0.6 s fade. No shade on Lum's own pages (new tab, error screen), which already have the theme color. On hover the tabs and the line appear, still without the theme color; the shade gets a 12 px backdrop blur (masked so it fades out downwards), so the tabs do not mix with the page text. At rest there is no blur. |
 | **Always visible** | The bar is always visible in the theme color, the page starts **below it** (it does not overlap page buttons, e.g. on YouTube). Tabs and the line appear on bar hover. |
+
+Shade gradients (top → bottom): dark `rgba(0,0,0,.7)` → `.6` at 30% → `.34` at 55% → `.12` at 78% → transparent;
+light: the same with white and `.72 / .62 / .36 / .12`. The new tab field stays in the same window position in all three modes.
 
 While the bar is shown, the page under it ignores clicks (so they reach the buttons).
 
@@ -88,7 +92,7 @@ In Hidden mode nothing is drawn while the bar is invisible. Icon/text color on t
 ## New tab (start page)
 
 - Background = theme color. Only one "Type something or paste a link…" field (26 px, weight 300), **exactly in the middle of the window**,
-  in the same spot in both bar modes. No logo and no Lum wordmark.
+  in the same spot in all bar modes. No logo and no Lum wordmark.
 - While typing: a magnifier (phrase) or an arrow (link) on the right + hint "Enter search" / "Enter open page".
 - The field is always ready: focused when the tab opens, when coming back to the tab and to the window; typing or Ctrl+V anywhere goes into the field.
 - A shortcut footer at the bottom (12 px): Ctrl+T new tab · Ctrl+L search · Ctrl+W close tab.
@@ -117,7 +121,7 @@ olehnykorovych will design them separately. Do not recreate the panel look from 
 Only the **options** and their behavior are binding (all remembered):
 - **Theme** – the colors from the table above + a custom color.
 - **Style** – Round / Square.
-- **Bar** – Hidden / Always visible.
+- **Bar** – Hidden / Clear / Always visible.
 
 The icon that opens settings (two sliders) stays on the bar, left of the window buttons.
 
