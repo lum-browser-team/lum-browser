@@ -1,0 +1,152 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Lum: zmienia nazwe "Chromium" na "Lum" we wszystkich napisach przegladarki i instalatora,
+we wszystkich jezykach, oraz wpisuje tworcow Lum jako wydawce/autorow.
+
+Dlaczego skrypt, a nie latka: napisy sa w plikach .grd (angielski) i .xtb (81 tlumaczen).
+Tlumaczenia sa przypiete do identyfikatora liczonego z angielskiego tekstu, wiec po zmianie
+tekstu w .grd trzeba przeliczyc identyfikatory i podmienic je w kazdym .xtb. Latka na to
+mialaby tysiace linii i rozjezdzalaby sie przy kazdej aktualizacji Chromium.
+
+Uruchamiany przez build.py po latkach Lum (i przez lum/devutils/rebuild.py).
+Mozna puszczac wielokrotnie - drugi przebieg niczego nie zmienia.
+
+Czego NIE zmienia (celowo):
+- "ChromiumOS" / "Chromium OS" - nazwa systemu, nie naszej przegladarki,
+- link do projektu Chromium na stronie "O programie" ("... mozliwe dzieki projektowi open
+  source Chromium") - to uczciwa informacja, na czym Lum jest zbudowany (licencja BSD),
+- opisy (atrybut desc) - nie sa widoczne dla uzytkownika.
+
+Uzycie: python3 rebrand_strings.py <build/src>
+"""
+
+import re
+import sys
+from pathlib import Path
+
+PRODUCT = 'Lum'
+# Tworcy Lum (wydawca na liscie aplikacji Windows, "O programie", copyright)
+AUTHORS = {
+    'en': 'Bartłomiej Kulesz and Oleh Nykorovych',
+    'pl': 'Bartłomiej Kulesz i Oleh Nykorovych',
+}
+COPYRIGHT_XTB = {
+    'en': 'Copyright <ph name="YEAR" /> {authors}. All rights reserved.',
+    'pl': 'Copyright <ph name="YEAR" /> {authors}. Wszelkie prawa zastrzeżone.',
+}
+
+# Pliki z napisami zawierajacymi nazwe produktu (czesci .grdp sa dolaczane automatycznie)
+GRD_FILES = (
+    'chrome/app/chromium_strings.grd',
+    'components/components_chromium_strings.grd',
+    'chrome/app/generated_resources.grd',
+    'components/components_strings.grd',
+)
+
+_MESSAGE_RE = re.compile(r'(<message\b[^>]*>)(.*?)(</message>)', re.DOTALL)
+_TRANSLATION_RE = re.compile(r'(<translation id=")(\d+)("[^>]*>)(.*?)(</translation>)', re.DOTALL)
+# "Chromium" (takze z odmiana: "Chromiumin", "Chromium을", zulu "kuChromium"), ale nie:
+# ChromiumOS, "Chromium OS", tekst linku do projektu Chromium, "Chromium open source project",
+# "The Chromium Projects" (przykladowy tytul strony)
+_NAME_RE = re.compile(r'Chromium(?!\s*OS\b)(?!\s*<ph name="END_LINK_CHROMIUM")'
+                      r'(?!\s+open[ -]source)(?!\s+Projects?\b)')
+_ORIGINAL_AUTHORS = 'The Chromium Authors'
+
+
+def _rebrand_text(text):
+    return _NAME_RE.sub(PRODUCT, text.replace(_ORIGINAL_AUTHORS, AUTHORS['en']))
+
+
+def _grd_parts(grd):
+    """The .grd file plus every .grdp it includes (recursively)."""
+    files = [grd]
+    for part in re.findall(r'<part file="([^"]+)"', grd.read_text(encoding='utf-8')):
+        files += _grd_parts(grd.parent / part)
+    return files
+
+
+def _xtb_files(grd):
+    text = grd.read_text(encoding='utf-8')
+    block = re.search(r'<translations>(.*?)</translations>', text, re.DOTALL)
+    for path, lang in re.findall(r'<file path="([^"]+)" lang="([^"]+)"', block.group(1)):
+        yield grd.parent / path, lang
+
+
+def _message_ids(grd):
+    """[(name, id, presentable text)] for every message, in document order."""
+    from grit import grd_reader  # pylint: disable=import-outside-toplevel
+    from grit.node import message  # pylint: disable=import-outside-toplevel
+    root = grd_reader.Parse(str(grd), skip_validation_checks=True, translate_genders=True)
+    result = []
+    for node in root.Preorder():
+        if isinstance(node, message.MessageNode):
+            msg = node.GetCliques()[0].GetMessage()
+            result.append((node.attrs['name'], msg.GetId(), msg.GetPresentableContent()))
+    return result
+
+
+def _rebrand_grd(grd):
+    old = _message_ids(grd)
+    changed_files = 0
+    for path in _grd_parts(grd):
+        text = path.read_text(encoding='utf-8')
+        new_text = _MESSAGE_RE.sub(lambda m: m.group(1) + _rebrand_text(m.group(2)) + m.group(3), text)
+        if new_text != text:
+            path.write_text(new_text, encoding='utf-8', newline='')
+            changed_files += 1
+    new = _message_ids(grd)
+    if [n for n, _, _ in old] != [n for n, _, _ in new]:
+        raise RuntimeError(f'{grd}: message list changed while rebranding')
+
+    id_map = {}  # old id -> (new id, kind)
+    for (name, old_id, old_text), (_, new_id, _) in zip(old, new):
+        if old_id == new_id:
+            continue
+        if old_id in id_map and id_map[old_id][0] != new_id:
+            raise RuntimeError(f'{grd}: message {name} maps to two different new ids')
+        if name == 'IDS_ABOUT_VERSION_COMPANY_NAME' and _ORIGINAL_AUTHORS in old_text:
+            kind = 'company'
+        elif name == 'IDS_ABOUT_VERSION_COPYRIGHT' and _ORIGINAL_AUTHORS in old_text:
+            kind = 'copyright'
+        else:
+            kind = 'name'
+        id_map[old_id] = (new_id, kind)
+
+    translations = 0
+    for xtb, lang in _xtb_files(grd):
+        authors = AUTHORS.get(lang, AUTHORS['en'])
+
+        def _translate(m, authors=authors, lang=lang):
+            nonlocal translations
+            if m.group(2) not in id_map:
+                return m.group(0)
+            new_id, kind = id_map[m.group(2)]
+            translations += 1
+            if kind == 'company':
+                body = authors
+            elif kind == 'copyright':
+                body = COPYRIGHT_XTB.get(lang, COPYRIGHT_XTB['en']).format(authors=authors)
+            else:
+                body = _NAME_RE.sub(PRODUCT, m.group(4))
+            return m.group(1) + new_id + m.group(3) + body + m.group(5)
+
+        text = xtb.read_text(encoding='utf-8')
+        new_text = _TRANSLATION_RE.sub(_translate, text)
+        if new_text != text:
+            xtb.write_text(new_text, encoding='utf-8', newline='')
+    print(f'LUM rebrand: {grd.name}: {len(id_map)} napisow, {changed_files} plikow .grd/.grdp, '
+          f'{translations} tlumaczen')
+
+
+def main():
+    if len(sys.argv) != 2:
+        sys.exit(__doc__)
+    source_tree = Path(sys.argv[1]).resolve()
+    sys.path.insert(0, str(source_tree / 'tools' / 'grit'))
+    for grd in GRD_FILES:
+        _rebrand_grd(source_tree / grd)
+
+
+if __name__ == '__main__':
+    main()

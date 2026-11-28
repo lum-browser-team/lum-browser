@@ -1,0 +1,25 @@
+const { _electron: electron } = require('playwright-core');
+const path = require('path');
+(async () => {
+  const cwd = path.join(__dirname, '..');
+  const app = await electron.launch({ args: ['.', '--user-data-dir=' + path.join(__dirname, '.profile-v5')], cwd, executablePath: require('electron') });
+  const win = await app.firstWindow();
+  await win.waitForTimeout(2500);
+  const homeActive = () => win.evaluate(() => S.tabs[0].wv.executeJavaScript("document.activeElement && document.activeElement.id"));
+  console.log('start focus:', await homeActive());
+  await win.evaluate(() => createTab('https://example.com'));
+  await win.waitForTimeout(2500);
+  await win.evaluate(() => activateTab(S.tabs[0].id));
+  await win.waitForTimeout(800);
+  console.log('after switching back:', await homeActive());
+  await win.evaluate(() => { S.debugHover = true; render(); });
+  await win.waitForTimeout(400);
+  await win.click('#newtab'); await win.waitForTimeout(500);
+  await win.keyboard.type('pierogi'); await win.waitForTimeout(300);
+  console.log('field:', JSON.stringify(await win.evaluate(() => ({ bg: getComputedStyle(newField).backgroundColor, typing: newField.classList.contains('typing'), ph: newInput.placeholder }))));
+  const img = await app.evaluate(async ({ BrowserWindow }) => (await BrowserWindow.getAllWindows()[0].webContents.capturePage({ x: 0, y: 0, width: 700, height: 40 })).resize({ width: 1400 }).toPNG().toString('base64'));
+  require('fs').writeFileSync(path.join(cwd, 'snap-field-zoom.png'), Buffer.from(img, 'base64'));
+  await win.keyboard.press('Escape'); await win.waitForTimeout(800);
+  console.log('after Esc on home:', await homeActive());
+  await app.close();
+})().catch((e) => { console.error(e); process.exit(1); });

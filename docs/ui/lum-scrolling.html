@@ -1,0 +1,341 @@
+<title>Lum in action</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500&display=swap">
+<style>
+  /* Layout: one 16:9 scene (1920x1080 screen scaled to width), controls below it. */
+  :root {
+    --ground: #0B0C0E;
+    --panel: #15171B;
+    --line: #262A30;
+    --ink: #E8E9EB;
+    --ink-soft: #9EA3AB;
+    --chrome: #FFFFFF;
+    --display: "Fraunces", Georgia, serif;
+    --body: "Inter", "Segoe UI", system-ui, sans-serif;
+    --ui: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+    color-scheme: dark;
+  }
+  body { background: var(--ground); color: var(--ink); font-family: var(--body); }
+  .wrap { max-width: 1600px; margin: 0 auto; padding-block: 24px 32px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 16px; }
+  .stage { position: relative; width: 100%; aspect-ratio: 16 / 9; max-width: 100%; border-radius: 10px; overflow: hidden; background: #000; }
+  .screen { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; transform-origin: 0 0; transform: scale(var(--s, 0.5)); overflow: hidden; }
+
+  /* Page: no tab frame, runs under the bar */
+  .page { position: absolute; top: 0; left: 0; width: 1920px; height: 4320px; will-change: transform; }
+  .page canvas { position: absolute; inset: 0; width: 1920px; height: 4320px; display: block; }
+  .art { position: absolute; left: 160px; width: 760px; display: flex; flex-direction: column; gap: 22px; }
+  .art h1, .art h2 { font-family: var(--display); font-weight: 600; margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+  .art h1 { font-size: 112px; line-height: 1; }
+  .art h2 { font-size: 64px; line-height: 1.05; }
+  .art p { margin: 0; font-size: 24px; line-height: 1.6; max-width: 34em; }
+  .kicker { font-size: 16px; letter-spacing: .14em; text-transform: uppercase; }
+  .on-dark { color: #F4F1EC; }
+  .on-dark p { color: #D6D9D3; }
+  .on-light { color: #1D2A33; }
+  .on-light p { color: #3A4A55; }
+  .hero-text { top: 640px; }
+  .hero-text h1, .hero-text .kicker, .hero-text p { text-shadow: 0 2px 18px rgba(20, 24, 26, .45); }
+  .forest-text { top: 1210px; }
+  .lake-text { top: 2420px; left: 1000px; }
+  .snow-text { top: 3420px; }
+
+  /* Lum bar: transparent, the same color as the page under it */
+  .bar { position: absolute; top: 0; left: 0; right: 0; height: 40px; z-index: 5; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; font-family: var(--ui); color: var(--chrome); }
+  .bar svg.ic { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; display: block; }
+  .nav, .right { display: flex; align-items: center; }
+  .nav { gap: 22px; }
+  .right { gap: 30px; }
+  .nav .off { opacity: .45; }
+  .url { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 14px; letter-spacing: .01em; white-space: nowrap; }
+  .url .path { opacity: .62; }
+  .tabs { display: flex; align-items: center; gap: 9px; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: .5; }
+  .dot.active { width: 22px; border-radius: 4px; opacity: 1; }
+  /* Visibility protection: the bar reads the lightness of the page under it and flips the icon color,
+     and a glow in the opposite color helps on borders between light and dark areas */
+  .bar .c { transition: color .35s ease, filter .35s ease; }
+  .bar.protected .c { filter: drop-shadow(0 0 1px rgba(0, 0, 0, .6)) drop-shadow(0 0 6px rgba(0, 0, 0, .3)); }
+  .bar.protected.on-light { color: #16181B; }
+  .bar.protected.on-light .c { filter: drop-shadow(0 0 1px rgba(255, 255, 255, .75)) drop-shadow(0 0 6px rgba(255, 255, 255, .45)); }
+  @media (prefers-reduced-motion: reduce) { .bar .c { transition: none; } }
+
+  /* Controls below the scene */
+  .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; }
+  .controls button, .jump a { font: 500 14px/1 var(--body); color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; cursor: pointer; text-decoration: none; min-height: 40px; box-sizing: border-box; display: inline-flex; align-items: center; }
+  .controls button:hover, .jump a:hover { border-color: #3A3F47; }
+  .controls button:focus-visible, .jump a:focus-visible, .slider input:focus-visible { outline: 2px solid #8FB4FF; outline-offset: 2px; }
+  .controls button[aria-pressed="false"] { color: var(--ink-soft); }
+  .slider { flex: 1 1 260px; display: flex; align-items: center; gap: 10px; min-width: 0; color: var(--ink-soft); font-size: 13px; }
+  .slider input { flex: 1; min-width: 0; accent-color: #E8E9EB; }
+  .jump { display: flex; flex-wrap: wrap; gap: 8px; }
+  .note { margin: 0; color: var(--ink-soft); font-size: 14px; line-height: 1.5; max-width: 70ch; }
+</style>
+
+<div class="wrap">
+  <div class="stage" id="stage" aria-label="Lum browser mockup with a scrolling nature page">
+    <div class="screen" id="screen">
+      <div class="page" id="page">
+        <canvas id="scene" width="1920" height="4320" aria-hidden="true"></canvas>
+
+        <section class="art hero-text on-dark">
+          <span class="kicker">Feature · 6 min read</span>
+          <h1>The valley at dawn</h1>
+          <p>Before the sun rises over the ridge, all you hear in the valley is the stream and the first tits. This is the hour when the mountains belong to no one.</p>
+        </section>
+
+        <section class="art forest-text on-dark">
+          <h2>A forest that breathes</h2>
+          <p>The spruces stand close here, one next to another. Under the crowns it is a few degrees cooler, and the moss muffles every step. The mist lingers between the trunks the longest, as if the forest did not want to let it go.</p>
+          <p>It is best to walk slowly. After a few minutes your eyes get used to the half-light and you see more: deer tracks in the mud, lichen on the bark, cones gnawed by a squirrel.</p>
+        </section>
+
+        <section class="art lake-text on-dark">
+          <h2>A lake like a mirror</h2>
+          <p>On a windless day the water reflects the ridge so precisely that it is hard to tell where the mountain ends. One gust is enough to scatter the image into a thousand silver lines.</p>
+        </section>
+
+        <section class="art snow-text on-light">
+          <h2>Higher up, only snow</h2>
+          <p>Above the lake the trail turns into a gully where snow lies until June. Bring crampons and check the forecast, because up high the weather can change within fifteen minutes.</p>
+          <p>The last spruces stay below. What remains is white, the sky and your own breath.</p>
+        </section>
+      </div>
+
+      <div class="bar protected" id="bar">
+        <div class="nav">
+          <svg class="ic c" viewBox="0 0 24 24" aria-label="Back"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+          <svg class="ic c off" viewBox="0 0 24 24" aria-label="Forward"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          <svg class="ic c" viewBox="0 0 24 24" aria-label="Reload"><path d="M20 11a8.1 8.1 0 0 0-15.5-2M4 5v4h4M4 13a8.1 8.1 0 0 0 15.5 2M20 19v-4h-4"/></svg>
+        </div>
+        <div class="url c"><span>nature.example</span><span class="path">/valley-at-dawn</span></div>
+        <div class="right">
+          <div class="tabs c" aria-label="Tabs: 2 of 5">
+            <span class="dot"></span><span class="dot active"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          </div>
+          <svg class="ic c" viewBox="0 0 24 24" aria-label="Settings"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 0 0-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 0 0-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 0 0-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 0 0-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 0 0 1.066-2.573c-.94-1.543.826-3.31 2.37-2.37 1 .608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+          <svg class="c" width="74" height="22" viewBox="0 0 74 22" fill="none" stroke-width="2.2" stroke-linecap="round" aria-label="Minimize, maximize, close">
+            <path d="M4 9 Q11 17 18 9" stroke="#3DDC84"/>
+            <path d="M30 14 Q37 4 44 14" stroke="#F5C542"/>
+            <circle cx="62" cy="11" r="7" stroke="#FF5F57"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button type="button" id="play" aria-pressed="true">Pause</button>
+    <button type="button" id="protect" aria-pressed="true">Icon protection: on</button>
+    <label class="slider" for="pos">Scroll
+      <input type="range" id="pos" min="0" max="3240" step="1" value="0">
+    </label>
+    <nav class="jump" aria-label="Jump to a spot on the page">
+      <a href="#start">Sky</a><a href="#forest">Forest</a><a href="#lake">Lake</a><a href="#snow">Snow</a>
+    </nav>
+  </div>
+  <p class="note">The bar has no background or line, the page scrolls under it. The bar checks the lightness of the page under it: on the bright sky and snow the icons turn dark, in the forest and over the lake light, and a soft glow helps on the border. Turn icon protection off to see what would happen without it.</p>
+</div>
+
+<script>
+(function () {
+  var W = 1920, H = 4320, MAX = H - 1080;
+  var stage = document.getElementById('stage');
+  var screen = document.getElementById('screen');
+  var page = document.getElementById('page');
+  var bar = document.getElementById('bar');
+  var playBtn = document.getElementById('play');
+  var protectBtn = document.getElementById('protect');
+  var slider = document.getElementById('pos');
+
+  function fit() { screen.style.setProperty('--s', stage.clientWidth / W); }
+  fit();
+  window.addEventListener('resize', fit);
+
+  /* ---------- Scene (canvas) ---------- */
+  var ctx = document.getElementById('scene').getContext('2d');
+  var seed = 7;
+  function rnd() { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
+  function ridgeY(x, base, amp, k) {
+    return base - amp * (0.55 * Math.sin(x * 0.0021 * k + 1.3 * k) + 0.3 * Math.sin(x * 0.0057 * k + 0.7) + 0.15 * Math.sin(x * 0.013 + k * 2.1));
+  }
+  function ridgePath(base, amp, k, bottom) {
+    ctx.beginPath(); ctx.moveTo(0, bottom);
+    for (var x = 0; x <= W; x += 8) ctx.lineTo(x, ridgeY(x, base, amp, k));
+    ctx.lineTo(W, bottom); ctx.closePath();
+  }
+  function vgrad(y0, y1, stops) {
+    var g = ctx.createLinearGradient(0, y0, 0, y1);
+    stops.forEach(function (s) { g.addColorStop(s[0], s[1]); });
+    return g;
+  }
+  function pine(x, base, h, color, snow) {
+    var w = h * 0.36;
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.moveTo(x, base - h); ctx.lineTo(x + w / 2, base); ctx.lineTo(x - w / 2, base); ctx.closePath(); ctx.fill();
+    if (snow) {
+      ctx.fillStyle = snow;
+      ctx.beginPath(); ctx.moveTo(x, base - h); ctx.lineTo(x + w * 0.16, base - h * 0.62); ctx.lineTo(x - w * 0.16, base - h * 0.62); ctx.closePath(); ctx.fill();
+    }
+  }
+
+  // 1. Sky at dawn and mountains (0-1080)
+  ctx.fillStyle = vgrad(0, 1080, [[0, '#F6F3EE'], [0.32, '#F4DEC4'], [0.62, '#E7AE8E'], [1, '#9A6C70']]);
+  ctx.fillRect(0, 0, W, 1080);
+  var sun = ctx.createRadialGradient(1360, 560, 0, 1360, 560, 320);
+  sun.addColorStop(0, 'rgba(255,247,228,0.95)'); sun.addColorStop(1, 'rgba(255,236,205,0)');
+  ctx.fillStyle = sun; ctx.fillRect(1000, 200, 720, 720);
+  ctx.fillStyle = '#FFF7E6'; ctx.beginPath(); ctx.arc(1360, 560, 64, 0, Math.PI * 2); ctx.fill();
+  ridgePath(640, 150, 1.0, 1080); ctx.fillStyle = '#F1EAEE'; ctx.fill();
+  ridgePath(690, 135, 1.0, 1080); ctx.fillStyle = '#B9A3AF'; ctx.fill();
+  ctx.fillStyle = vgrad(640, 800, [[0, 'rgba(255,250,245,0)'], [0.5, 'rgba(255,250,245,0.55)'], [1, 'rgba(255,250,245,0)']]);
+  ctx.fillRect(0, 640, W, 160);
+  ridgePath(790, 95, 1.7, 1080); ctx.fillStyle = '#7A6C86'; ctx.fill();
+  ridgePath(900, 55, 2.6, 1080); ctx.fillStyle = '#44504F'; ctx.fill();
+  ctx.fillStyle = '#22322D'; ctx.fillRect(0, 990, W, 90);
+  for (var x = -20; x < W + 40; x += 26 + rnd() * 22) pine(x, 1010, 70 + rnd() * 90, '#22322D');
+
+  // 2. Forest (1080-2160)
+  ctx.fillStyle = vgrad(1080, 2160, [[0, '#22322D'], [1, '#0D1913']]);
+  ctx.fillRect(0, 1080, W, 1080);
+  var mist = ctx.createLinearGradient(0, 1080, 0, 1300);
+  mist.addColorStop(0, 'rgba(200,214,205,0.18)'); mist.addColorStop(1, 'rgba(200,214,205,0)');
+  ctx.fillStyle = mist; ctx.fillRect(0, 1080, W, 220);
+  var rows = [[1760, '#1A2B24', 160, 260], [1900, '#14231D', 200, 320], [2060, '#0F1C16', 240, 380], [2180, '#0B1611', 260, 420]];
+  rows.forEach(function (r) {
+    for (var x = -40; x < W + 60; x += 34 + rnd() * 40) {
+      if (r[0] < 1950 && x > 1000 && x < 1880 && rnd() < 0.5) continue;
+      pine(x, r[0], r[2] + rnd() * (r[3] - r[2]), r[1]);
+    }
+  });
+  for (var i = 0; i < 70; i++) {
+    ctx.fillStyle = 'rgba(255,226,140,' + (0.25 + rnd() * 0.5) + ')';
+    ctx.beginPath(); ctx.arc(rnd() * W, 1350 + rnd() * 700, 1.5 + rnd() * 2.5, 0, Math.PI * 2); ctx.fill();
+  }
+
+  // 3. Lake (2160-3240)
+  ctx.fillStyle = '#0B1611'; ctx.fillRect(0, 2160, W, 120);
+  for (var x2 = -20; x2 < W + 40; x2 += 30 + rnd() * 30) {
+    var hh = 60 + rnd() * 110;
+    ctx.fillStyle = '#0B1611';
+    ctx.beginPath(); ctx.moveTo(x2, 2280 + hh); ctx.lineTo(x2 + hh * 0.18, 2280); ctx.lineTo(x2 - hh * 0.18, 2280); ctx.closePath(); ctx.fill();
+  }
+  ctx.fillStyle = vgrad(2280, 3240, [[0, '#2B4B5E'], [0.5, '#1E3A4C'], [1, '#112331']]);
+  ctx.fillRect(0, 2280, W, 960);
+  for (var x3 = -20; x3 < W + 40; x3 += 30 + rnd() * 30) {
+    var h3 = 50 + rnd() * 120;
+    ctx.fillStyle = 'rgba(8,18,14,0.55)';
+    ctx.beginPath(); ctx.moveTo(x3, 2280 + h3); ctx.lineTo(x3 + h3 * 0.16, 2280); ctx.lineTo(x3 - h3 * 0.16, 2280); ctx.closePath(); ctx.fill();
+  }
+  for (var j = 0; j < 220; j++) {
+    var ly = 2420 + rnd() * 800, lx = rnd() * W, lw = 30 + rnd() * 180;
+    ctx.fillStyle = 'rgba(214,232,240,' + (0.05 + rnd() * 0.22) + ')';
+    ctx.fillRect(lx, ly, lw, 2);
+  }
+
+  // 4. Snow (3240-4320)
+  ctx.fillStyle = vgrad(3200, 4320, [[0, '#F6F8FA'], [0.5, '#EEF2F6'], [1, '#FBFCFD']]);
+  ctx.beginPath(); ctx.moveTo(0, 4320);
+  for (var x4 = 0; x4 <= W; x4 += 10) ctx.lineTo(x4, 3180 + 10 * Math.sin(x4 * 0.006) + 6 * Math.sin(x4 * 0.019));
+  ctx.lineTo(W, 4320); ctx.closePath(); ctx.fill();
+  for (var d = 0; d < 9; d++) {
+    ctx.fillStyle = 'rgba(176,196,214,' + (0.16 + rnd() * 0.12) + ')';
+    ctx.beginPath(); ctx.ellipse(rnd() * W, 3700 + rnd() * 560, 220 + rnd() * 260, 26 + rnd() * 24, 0, 0, Math.PI * 2); ctx.fill();
+  }
+  [[1180, 3980, 46], [1240, 4010, 30], [1600, 3760, 38], [1720, 4150, 52]].forEach(function (r) {
+    ctx.fillStyle = '#4A535B'; ctx.beginPath(); ctx.ellipse(r[0], r[1], r[2] * 1.4, r[2] * 0.7, 0, Math.PI, 0); ctx.fill();
+    ctx.fillStyle = '#F6F8FA'; ctx.beginPath(); ctx.ellipse(r[0], r[1] - r[2] * 0.55, r[2] * 1.1, r[2] * 0.22, 0, 0, Math.PI * 2); ctx.fill();
+  });
+  [[1100, 4300, 260], [1290, 4310, 200], [1480, 4290, 300], [1760, 4305, 240], [1880, 4300, 180]].forEach(function (t) {
+    pine(t[0], t[1], t[2], '#2D4038', '#F4F7FA');
+  });
+
+  /* ---------- Page lightness under the bar ---------- */
+  // Downscaled copy of the scene: average lightness of each row (1 row = 8 px of the page).
+  var SX = 16, SY = 8, small = document.createElement('canvas');
+  small.width = W / SX; small.height = H / SY;
+  var sctx = small.getContext('2d');
+  sctx.drawImage(document.getElementById('scene'), 0, 0, small.width, small.height);
+  var px = sctx.getImageData(0, 0, small.width, small.height).data, rowLum = [];
+  for (var ry = 0; ry < small.height; ry++) {
+    var sum = 0;
+    for (var rx = 0; rx < small.width; rx++) {
+      var o = (ry * small.width + rx) * 4;
+      sum += (0.2126 * px[o] + 0.7152 * px[o + 1] + 0.0722 * px[o + 2]) / 255;
+    }
+    rowLum.push(sum / small.width);
+  }
+  function lumUnderBar(p) {
+    var a = Math.floor(p / SY), b = Math.ceil((p + 40) / SY), s = 0, n = 0;
+    for (var k = a; k < b && k < rowLum.length; k++) { s += rowLum[k]; n++; }
+    return n ? s / n : 0;
+  }
+  var onLight = null;
+  function updateChrome() {
+    var light = lumUnderBar(pos) > 0.55;
+    if (light !== onLight) { onLight = light; bar.classList.toggle('on-light', light); }
+  }
+
+  /* ---------- Scrolling ---------- */
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var keys = [[0, 0], [2.2, 0], [6, 1080], [7.6, 1080], [11.4, 2160], [13, 2160], [16.8, 3240], [19.6, 3240], [22.4, 0]];
+  var cycle = keys[keys.length - 1][0];
+  function ease(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+  function posAt(t) {
+    t = t % cycle;
+    for (var i = 1; i < keys.length; i++) {
+      if (t <= keys[i][0]) {
+        var a = keys[i - 1], b = keys[i], f = (t - a[0]) / (b[0] - a[0] || 1);
+        return a[1] + (b[1] - a[1]) * ease(f);
+      }
+    }
+    return 0;
+  }
+  var pos = 0, playing = !reduce, clock = 0, last = null;
+  function setPos(p) {
+    pos = Math.max(0, Math.min(MAX, p));
+    page.style.transform = 'translateY(' + (-pos).toFixed(1) + 'px)';
+    slider.value = Math.round(pos);
+    updateChrome();
+  }
+  function setPlaying(on) {
+    playing = on; last = null;
+    playBtn.textContent = on ? 'Pause' : 'Play';
+    playBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    if (on) {
+      // resume from where the page is
+      var best = 0, bestD = Infinity;
+      for (var t = 0; t < cycle; t += 0.05) { var dd = Math.abs(posAt(t) - pos); if (dd < bestD) { bestD = dd; best = t; } }
+      clock = best;
+      requestAnimationFrame(tick);
+    }
+  }
+  function tick(now) {
+    if (!playing) return;
+    if (last !== null) clock += (now - last) / 1000;
+    last = now;
+    setPos(posAt(clock));
+    requestAnimationFrame(tick);
+  }
+
+  playBtn.addEventListener('click', function () { setPlaying(!playing); });
+  protectBtn.addEventListener('click', function () {
+    var on = !bar.classList.contains('protected');
+    bar.classList.toggle('protected', on);
+    protectBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    protectBtn.textContent = 'Icon protection: ' + (on ? 'on' : 'off');
+  });
+  slider.addEventListener('input', function () { if (playing) setPlaying(false); setPos(Number(slider.value)); });
+
+  var spots = { start: 0, forest: 1080, lake: 2160, snow: 3240 };
+  function fromHash() {
+    var h = location.hash.slice(1);
+    if (Object.prototype.hasOwnProperty.call(spots, h)) { setPlaying(false); setPos(spots[h]); return true; }
+    return false;
+  }
+  window.addEventListener('hashchange', fromHash);
+  setPos(0);
+  if (!fromHash()) setPlaying(playing);
+  if (!playing) { playBtn.textContent = 'Play'; playBtn.setAttribute('aria-pressed', 'false'); }
+})();
+</script>

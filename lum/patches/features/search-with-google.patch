@@ -1,0 +1,37 @@
+Lum: Google as the search engine (the address bar and the start page).
+
+ungoogled-chromium swaps Google for "No Search", so a phrase typed in the address bar
+opens http://phrase. This brings Google back with a plain search URL only: no
+suggestions (Google does not get every keystroke), no preconnect, no prefetch and no
+location header. kCurrentDataVersion +1 so existing profiles pick it up.
+
+--- a/third_party/search_engines_data/resources/definitions/prepopulated_engines.json
++++ b/third_party/search_engines_data/resources/definitions/prepopulated_engines.json
+@@ -28,7 +28,7 @@
+     // existing data should get a new version. Otherwise, existing data may
+     // continue to be used and updates made here will not always appear.
+     // Also then run tools/search_engine_choice/generate_search_engine_icons.py.
+-    "kCurrentDataVersion": 215
++    "kCurrentDataVersion": 216
+   },
+ 
+   // The following engines are included in country lists and are added to the
+@@ -173,15 +173,11 @@
+     },
+ 
+     "google": {
+-      "name": "No Search",
+-      "keyword": "nosearch",
++      "name": "Google",
++      "keyword": "google.com",
+       "favicon_url": "about:blank",
+-      "search_url": "http://{searchTerms}",
+-      "new_tab_url": "about:blank",
++      "search_url": "https://www.google.com/search?q={searchTerms}&ie={inputEncoding}",
+       "type": "SEARCH_ENGINE_GOOGLE",
+-      "preconnect_to_search_url" : "ALLOWED",
+-      "prefetch_likely_navigations" : "ALLOWED",
+-      "send_x_geo_header": true,
+       "id": 1
+     },
+ 

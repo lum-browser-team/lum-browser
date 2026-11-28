@@ -82,6 +82,23 @@ python3 package.py
 - `--tarball` downloads the Chromium code as an archive without Git history - much less disk space.
 - The installer and a zip archive appear in `build/`.
 - The first build takes several hours.
+- Live progress (stages, percent, estimated end): run the build with a log (PowerShell **as administrator**,
+  otherwise unpacking the code fails on symbolic links)
+  (`python3 build.py --tarball *>&1 | Tee-Object -FilePath build-log.txt` in PowerShell), and in a second window
+  `powershell -ExecutionPolicy Bypass -File lum\devutils\build-status.ps1`.
+
+### Quick rebuild after changes
+
+After the first full build, further changes in `lum/` (new patches, icons, strings) build in minutes,
+not hours - only the changed files are compiled. In the repo folder (no administrator needed):
+
+```
+python3 lum\devutils\rebuild.py             # the browser: build\src\out\Default\chrome.exe
+python3 lum\devutils\rebuild.py --package   # + installer and zip in build\
+```
+
+Not enough (a full build is needed) when the diff of a patch already applied to `build/src` changed (the script
+detects it - better make the change a new patch), the flags in `lum/flags.gn` changed, or Chromium is updated.
 
 **If the build fails:**
 - while downloading the code → delete `build\download_cache` and run again,
