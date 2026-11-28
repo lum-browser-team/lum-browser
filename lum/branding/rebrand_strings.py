@@ -1,24 +1,24 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Lum: zmienia nazwe "Chromium" na "Lum" we wszystkich napisach przegladarki i instalatora,
-we wszystkich jezykach, oraz wpisuje tworcow Lum jako wydawce/autorow.
+Lum: changes the name "Chromium" to "Lum" in all browser and installer strings, in every
+language, and sets Lum's authors as the publisher/authors.
 
-Dlaczego skrypt, a nie latka: napisy sa w plikach .grd (angielski) i .xtb (81 tlumaczen).
-Tlumaczenia sa przypiete do identyfikatora liczonego z angielskiego tekstu, wiec po zmianie
-tekstu w .grd trzeba przeliczyc identyfikatory i podmienic je w kazdym .xtb. Latka na to
-mialaby tysiace linii i rozjezdzalaby sie przy kazdej aktualizacji Chromium.
+Why a script and not a patch: the strings live in .grd files (English) and .xtb files (81
+translations). Translations are keyed by an id computed from the English text, so after the
+text in a .grd changes the ids must be recomputed and replaced in every .xtb. A patch for that
+would have thousands of lines and break on every Chromium update.
 
-Uruchamiany przez build.py po latkach Lum (i przez lum/devutils/rebuild.py).
-Mozna puszczac wielokrotnie - drugi przebieg niczego nie zmienia.
+Run by build.py after the Lum patches (and by lum/devutils/rebuild.py).
+Safe to run many times - a second run changes nothing.
 
-Czego NIE zmienia (celowo):
-- "ChromiumOS" / "Chromium OS" - nazwa systemu, nie naszej przegladarki,
-- link do projektu Chromium na stronie "O programie" ("... mozliwe dzieki projektowi open
-  source Chromium") - to uczciwa informacja, na czym Lum jest zbudowany (licencja BSD),
-- opisy (atrybut desc) - nie sa widoczne dla uzytkownika.
+What it does NOT change (on purpose):
+- "ChromiumOS" / "Chromium OS" - the name of the OS, not of our browser,
+- the link to the Chromium project on the "About" page ("... made possible by the Chromium
+  open source project") - honest information about what Lum is built on (BSD license),
+- descriptions (the desc attribute) - not visible to the user.
 
-Uzycie: python3 rebrand_strings.py <build/src>
+Usage: python3 rebrand_strings.py <build/src>
 """
 
 import re
@@ -26,7 +26,7 @@ import sys
 from pathlib import Path
 
 PRODUCT = 'Lum'
-# Tworcy Lum (wydawca na liscie aplikacji Windows, "O programie", copyright)
+# Lum's authors (publisher in the Windows app list, "About", copyright)
 AUTHORS = {
     'en': 'Bartłomiej Kulesz and Oleh Nykorovych',
     'pl': 'Bartłomiej Kulesz i Oleh Nykorovych',
@@ -36,7 +36,7 @@ COPYRIGHT_XTB = {
     'pl': 'Copyright <ph name="YEAR" /> {authors}. Wszelkie prawa zastrzeżone.',
 }
 
-# Pliki z napisami zawierajacymi nazwe produktu (czesci .grdp sa dolaczane automatycznie)
+# String files that contain the product name (their .grdp parts are included automatically)
 GRD_FILES = (
     'chrome/app/chromium_strings.grd',
     'components/components_chromium_strings.grd',
@@ -46,9 +46,9 @@ GRD_FILES = (
 
 _MESSAGE_RE = re.compile(r'(<message\b[^>]*>)(.*?)(</message>)', re.DOTALL)
 _TRANSLATION_RE = re.compile(r'(<translation id=")(\d+)("[^>]*>)(.*?)(</translation>)', re.DOTALL)
-# "Chromium" (takze z odmiana: "Chromiumin", "Chromium을", zulu "kuChromium"), ale nie:
-# ChromiumOS, "Chromium OS", tekst linku do projektu Chromium, "Chromium open source project",
-# "The Chromium Projects" (przykladowy tytul strony)
+# "Chromium" (also inflected: "Chromiumin", "Chromium을", Zulu "kuChromium"), but not:
+# ChromiumOS, "Chromium OS", the link text to the Chromium project, "Chromium open source project",
+# "The Chromium Projects" (an example page title)
 _NAME_RE = re.compile(r'Chromium(?!\s*OS\b)(?!\s*<ph name="END_LINK_CHROMIUM")'
                       r'(?!\s+open[ -]source)(?!\s+Projects?\b)')
 _ORIGINAL_AUTHORS = 'The Chromium Authors'
@@ -135,8 +135,8 @@ def _rebrand_grd(grd):
         new_text = _TRANSLATION_RE.sub(_translate, text)
         if new_text != text:
             xtb.write_text(new_text, encoding='utf-8', newline='')
-    print(f'LUM rebrand: {grd.name}: {len(id_map)} napisow, {changed_files} plikow .grd/.grdp, '
-          f'{translations} tlumaczen')
+    print(f'LUM rebrand: {grd.name}: {len(id_map)} strings, {changed_files} .grd/.grdp files, '
+          f'{translations} translations')
 
 
 def main():

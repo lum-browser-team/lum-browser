@@ -1,6 +1,6 @@
-Lum: tworcy Lum (Bartlomiej Kulesz i Oleh Nykorovych) jako firma i copyright we
-wlasciwosciach plikow .exe/.dll. Tylko ASCII - kompilator zasobow (rc) nie przyjmuje
-polskich znakow w tych polach. Napisy w przegladarce i instalatorze (z "ł") ustawia
+Lum: Lum's authors (Bartlomiej Kulesz i Oleh Nykorovych) as the company and copyright in
+the .exe/.dll file properties. ASCII only - the resource compiler (rc) does not accept Polish
+letters in these fields. The browser and installer strings (with "ł") are set by
 lum/branding/rebrand_strings.py.
 
 --- a/chrome/app/theme/chromium/BRANDING
