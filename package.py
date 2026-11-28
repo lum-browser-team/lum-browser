@@ -61,8 +61,9 @@ def main():
 
     build_outputs = Path('build/src/out/Default')
 
+    # LUM: Lum file names for the installer and the zip
     shutil.copyfile('build/src/out/Default/mini_installer.exe',
-        'build/ungoogled-chromium_{}-{}.{}_installer_{}.exe'.format(
+        'build/lum_{}-{}.{}_installer_{}.exe'.format(
             get_chromium_version(), _get_release_revision(),
             _get_packaging_revision(), _get_target_cpu(build_outputs)))
 
@@ -73,7 +74,7 @@ def main():
     except FileNotFoundError:
         pass
 
-    output = Path('build/ungoogled-chromium_{}-{}.{}_windows_{}.zip'.format(
+    output = Path('build/lum_{}-{}.{}_windows_{}.zip'.format(
         get_chromium_version(), _get_release_revision(),
         _get_packaging_revision(), _get_target_cpu(build_outputs)))
 

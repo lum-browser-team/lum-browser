@@ -260,8 +260,14 @@ def main():
             source_tree,
             patch_bin_path=(source_tree / _PATCH_BIN_RELPATH)
         )
+        # LUM: remember which Lum patches are applied (used by lum/devutils/rebuild.py)
+        subprocess.run([sys.executable, str(_ROOT_DIR / 'lum' / 'devutils' / 'rebuild.py'),
+                        '--record-applied'], check=True)
         # LUM: Lum's binary branding files (icons) from lum/branding/overlay
         _apply_lum_overlay(_ROOT_DIR / 'lum' / 'branding' / 'overlay', source_tree)
+        # LUM: "Chromium" -> "Lum" in all browser/installer strings, in every language
+        subprocess.run([sys.executable, str(_ROOT_DIR / 'lum' / 'branding' / 'rebrand_strings.py'),
+                        str(source_tree)], check=True)
 
         # Substitute domains
         domain_substitution_list = (_ROOT_DIR / 'ungoogled-chromium' / 'domain_substitution.list') if args.tarball else (_ROOT_DIR  / 'domain_substitution.list')

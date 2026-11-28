@@ -87,6 +87,19 @@ python3 package.py
   (`python3 build.py --tarball *>&1 | Tee-Object -FilePath build-log.txt` w PowerShell), a w drugim oknie
   `powershell -ExecutionPolicy Bypass -File lum\devutils\build-status.ps1`.
 
+### Szybka przebudowa po zmianach
+
+Po pierwszej pełnej kompilacji kolejne zmiany w `lum/` (nowe łatki, ikony, napisy) buduje się w minutach,
+a nie godzinach - kompilują się tylko zmienione pliki. W folderze repo (administrator niepotrzebny):
+
+```
+python3 lum\devutils\rebuild.py             # przeglądarka: build\src\out\Default\chrome.exe
+python3 lum\devutils\rebuild.py --package   # + instalator i zip w build\
+```
+
+Nie wystarczy (trzeba pełnej kompilacji), gdy zmieniła się łatka już nałożona na `build/src` (skrypt to wykryje -
+zmianę lepiej zrobić jako nową łatkę), zmieniły się flagi w `lum/flags.gn` albo aktualizujemy Chromium.
+
 **Jeśli kompilacja się wywali:**
 - przy pobieraniu kodu → usuń `build\download_cache` i uruchom ponownie,
 - później → usuń wszystko w `build` **oprócz** `build\download_cache` i uruchom ponownie.
