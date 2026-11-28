@@ -390,7 +390,8 @@ function renderTabs() {
   });
   Array.from(tabsEl.children).forEach((c) => { if (!S.tabs.some((t) => t.el === c)) c.remove(); });
   plusBtn.style.setProperty('--i', Math.min(S.tabs.length, 11));
-  const avail = leftEl.clientWidth - tabsEl.offsetLeft + leftEl.offsetLeft - (plusBtn.offsetWidth || newField.offsetWidth) - 8;
+  // tabsEl.offsetLeft is relative to #left (it is positioned), so it is already the space before the tabs
+  const avail = leftEl.clientWidth - tabsEl.offsetLeft - (plusBtn.offsetWidth || newField.offsetWidth) - 8;
   tabsEl.classList.toggle('dense', avail / Math.max(1, S.tabs.length) < 110);
   updateTrack(tabsVisible());
 }
@@ -457,10 +458,17 @@ const track = { L: 0, R: 0, ready: false, timer: null };
 const TK = { t: 6, b: 37, r: uiStyle === 'square' ? 0 : 8 };
 // The line starts at the top of the left window edge, runs down, goes to the open tab,
 // wraps around it, continues and at the right edge goes back up - it becomes the window border.
-function edgeStart() { const { b, r } = TK, x = 0.6; return 'M' + x + ' 0V' + (b - r) + 'Q' + x + ' ' + b + ' ' + (x + r) + ' ' + b; }
-function edgeEnd() { const { b, r } = TK, x = bar.clientWidth - 0.6; return 'H' + (x - r) + 'Q' + x + ' ' + b + ' ' + x + ' ' + (b - r) + 'V0'; }
+// Crisp line on any screen scaling (100%, 125%, 150%...): a whole number of screen pixels thick
+// and straight parts placed on the screen pixel grid, so they do not smear across two pixels.
+function pixelGrid() {
+  const d = window.devicePixelRatio || 1, w = Math.max(1, Math.round(1.2 * d)), o = w % 2 ? 0.5 : 0;
+  return { width: w / d, snap: (v) => (Math.round(v * d - o) + o) / d };
+}
+function edgeStart() { const { r } = TK, { snap } = pixelGrid(), b = snap(TK.b), x = snap(0.6); return 'M' + x + ' 0V' + (b - r) + 'Q' + x + ' ' + b + ' ' + (x + r) + ' ' + b; }
+function edgeEnd() { const { r } = TK, { snap } = pixelGrid(), b = snap(TK.b), x = snap(bar.clientWidth - 0.6); return 'H' + (x - r) + 'Q' + x + ' ' + b + ' ' + x + ' ' + (b - r) + 'V0'; }
 function trackD(L, R) {
-  const { t, b, r } = TK;
+  const { r } = TK, { snap } = pixelGrid(), t = snap(TK.t), b = snap(TK.b);
+  L = snap(L); R = snap(R);
   return edgeStart() + 'H' + (L - r) + 'Q' + L + ' ' + b + ' ' + L + ' ' + (b - r) + 'V' + (t + r) + 'Q' + L + ' ' + t + ' ' + (L + r) + ' ' + t +
     'H' + (R - r) + 'Q' + R + ' ' + t + ' ' + R + ' ' + (t + r) + 'V' + (b - r) + 'Q' + R + ' ' + b + ' ' + (R + r) + ' ' + b + edgeEnd();
 }
@@ -473,6 +481,7 @@ function underShape(e) {
 }
 function setShapes(e) {
   const w = bar.clientWidth, rect = 'M0 0H' + w + 'V' + (TK.b + 1) + 'H0Z';
+  trackPath.style.strokeWidth = pixelGrid().width + 'px';
   trackPath.setAttribute('d', e ? trackD(e.L, e.R) : edgeStart() + edgeEnd());
   // The tab bump only while the tabs are shown; otherwise the line under the bar is straight
   const under = underShape(e && tabsVisible() ? e : null);
@@ -483,8 +492,10 @@ function setShapes(e) {
 function activeEdges() {
   const a = tabsEl.querySelector('.tab.active');
   if (!a) return null;
-  const minL = tabsEl.offsetLeft, maxR = tabsEl.offsetLeft + tabsEl.clientWidth;
-  let L = a.offsetLeft - tabsEl.scrollLeft, R = L + a.offsetWidth;
+  // Offsets of the tabs are relative to #left (positioned); add #left's own offset to get bar/window coordinates
+  const base = leftEl.offsetLeft;
+  const minL = base + tabsEl.offsetLeft, maxR = minL + tabsEl.clientWidth;
+  let L = base + a.offsetLeft - tabsEl.scrollLeft, R = L + a.offsetWidth;
   if (R <= minL + 12 || L >= maxR - 12) return null;
   return { L: Math.max(minL, L), R: Math.min(maxR, R) };
 }

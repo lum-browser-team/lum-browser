@@ -38,6 +38,9 @@ const fs = require('fs');
     webviewClickable: getComputedStyle(tab().wv).pointerEvents
   }));
   console.log('full, cursor away', JSON.stringify(st));
+  // the line must wrap exactly the open tab (it was once 10 px off when #left became positioned)
+  console.log('line matches tab:', await win.evaluate(() => { const r = tab().el.getBoundingClientRect(), b = bar.getBoundingClientRect(), e = activeEdges();
+    return Math.abs(e.L - (r.left - b.left)) < 1 && Math.abs(e.R - (r.right - b.left)) < 1; }));
   await shot('1-full.png');
   // zoom on the active tab's bottom left corner: the curve should be the tab color
   const e = await win.evaluate(() => activeEdges());
