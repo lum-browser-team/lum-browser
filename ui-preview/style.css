@@ -115,9 +115,11 @@ body.btn-plain .arcs .btn:hover svg { opacity: 1; }
    it stays when the cursor is near it or while you edit it */
 .bar.show:not(.near-label):not(.editing) .label, .bar.searching .label { opacity: 0; transform: translateY(-4px); transition: opacity .2s ease, transform .3s ease; }
 /* Address: plain text with an invisible field exactly on top of it (same font and position).
-   Hovering near it (40 px around) makes it clickable; clicking turns the field's text visible. */
-.addr { position: relative; display: flex; align-items: center; height: 38px; max-width: 100%; padding: 0 40px; box-sizing: border-box; pointer-events: none; }
-.addr-in { position: absolute; left: 40px; right: 40px; top: 0; height: 38px; margin: 0; padding: 0; border: 0; outline: none; background: transparent;
+   Hovering near it (60 px around) makes it clickable; clicking turns the field's text visible. The field itself covers
+   those 60 px on both sides too (as padding, so the text stays in place): a click past the end puts the caret at the end,
+   a click before the start at the start - easy to grab the whole address. */
+.addr { position: relative; display: flex; align-items: center; height: 38px; max-width: 100%; padding: 0 60px; box-sizing: border-box; pointer-events: none; }
+.addr-in { position: absolute; left: 0; right: 0; top: 0; height: 38px; margin: 0; padding: 0 60px; box-sizing: border-box; border: 0; outline: none; background: transparent;
   font: 400 12.5px var(--ui); letter-spacing: .01em; color: transparent; caret-color: var(--chrome); user-select: text; pointer-events: none; cursor: text; }
 .addr-in::selection { background: rgba(143,180,255,.38); }
 .bar.show .addr.has-url, .bar.show .addr.has-url .addr-in { pointer-events: auto; -webkit-app-region: no-drag; }

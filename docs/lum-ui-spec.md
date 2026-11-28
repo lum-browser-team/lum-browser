@@ -47,10 +47,12 @@ last one (close) the right edge. Icons keep their size inside the squares.
 
 In the middle: the **page address** (13 px; host in full color, path at 60% opacity, path decoded, e.g. `en.wikipedia.org/wiki/Café`).
 On a new tab the middle is empty. When the tabs appear, the address fades out in 0.2 s (and comes back in 0.7 s) –
-**unless the cursor is near it** (within 40 px): then it stays and works like an address bar that looks like plain text:
+**unless the cursor is near it** (within 60 px): then it stays and works like an address bar that looks like plain text:
 click places the caret where you click, drag selects, typing edits it; **Enter** opens it in this tab, **Esc** or a click
 outside restores it. While editing, the text has one color (no dimmed path) and the bar stays shown.
 The text does not move when you click it (the edit field sits exactly on top of the label, same font and position).
+The edit field is 60 px longer than the text on both sides: a click past the end puts the caret at the end, before the start
+at the start, so dragging from just past one end to just past the other selects the whole address.
 Tabs and buttons always lie above the address, so it never blocks clicks on them.
 
 On the right: **settings** (two-sliders icon, 1.4 stroke) and the **window buttons** (38 × 38 px squares like the rest):
@@ -189,6 +191,7 @@ The icon that opens settings (two sliders) stays on the bar, left of the window 
 Kept so Claude on the other machine can see what changed since it last read this file.
 
 - **2026-11-28**
+  - The address field is 60 px longer than the text on both sides (easy to select the whole address).
   - All bar buttons are equal 38 × 38 squares over the full bar height (bigger click areas, reaching the window edges).
   - New setting **Window buttons: Colored / Plain**.
   - Settings panel tidied (colors in even columns, equal section spacing).

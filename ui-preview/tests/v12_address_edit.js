@@ -27,7 +27,7 @@ const fs = require('fs');
   await win.mouse.move(box.x - 20, box.y + box.h / 2); await win.waitForTimeout(900);
   console.log('cursor near address', JSON.stringify(await st()));
   // text alignment: label text vs field text start
-  console.log('alignment (label left / field left):', await win.evaluate(() => [Math.round(labelEl.getBoundingClientRect().left), Math.round(addrIn.getBoundingClientRect().left)]));
+  console.log('alignment (label text left / field text left):', await win.evaluate(() => [Math.round(labelEl.getBoundingClientRect().left), Math.round(addrIn.getBoundingClientRect().left + parseFloat(getComputedStyle(addrIn).paddingLeft))]));
   await shot('1-near.png');
 
   // drag to select part of the address
@@ -37,6 +37,13 @@ const fs = require('fs');
   console.log('drag select        ', JSON.stringify(await st()), 'selected:', JSON.stringify(await win.evaluate(() => addrIn.value.slice(addrIn.selectionStart, addrIn.selectionEnd))));
   await shot('2-selected.png');
 
+  // click 40 px past the end of the text (outside the text, inside the longer field) -> caret at the end;
+  // then drag from there to 40 px before the start -> the whole address is selected
+  await win.keyboard.press('Escape'); await win.waitForTimeout(200);
+  await win.mouse.move(box.x + box.w + 40, box.y + box.h / 2); await win.waitForTimeout(300);
+  await win.mouse.down(); await win.mouse.move(box.x - 40, box.y + box.h / 2, { steps: 8 }); await win.mouse.up();
+  await win.waitForTimeout(300);
+  console.log('drag past both ends ', JSON.stringify(await st()), 'all selected:', await win.evaluate(() => addrIn.selectionStart === 0 && addrIn.selectionEnd === addrIn.value.length));
   // click at the end and append something, Enter opens it
   await win.keyboard.press('End');
   await win.keyboard.type('#Description');
