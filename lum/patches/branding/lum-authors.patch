@@ -1,0 +1,17 @@
+Lum: tworcy Lum (Bartlomiej Kulesz i Oleh Nykorovych) jako firma i copyright we
+wlasciwosciach plikow .exe/.dll. Tylko ASCII - kompilator zasobow (rc) nie przyjmuje
+polskich znakow w tych polach. Napisy w przegladarce i instalatorze (z "ł") ustawia
+lum/branding/rebrand_strings.py.
+
+--- a/chrome/app/theme/chromium/BRANDING
++++ b/chrome/app/theme/chromium/BRANDING
+@@ -1,7 +1,7 @@
+-COMPANY_FULLNAME=Lum
++COMPANY_FULLNAME=Bartlomiej Kulesz i Oleh Nykorovych
+ COMPANY_SHORTNAME=Lum
+ PRODUCT_FULLNAME=Lum
+ PRODUCT_SHORTNAME=Lum
+ PRODUCT_INSTALLER_FULLNAME=Lum Installer
+ PRODUCT_INSTALLER_SHORTNAME=Lum Installer
+-COPYRIGHT=Copyright @LASTCHANGE_YEAR@ The Chromium Authors and the Lum contributors. All rights reserved.
++COPYRIGHT=Copyright @LASTCHANGE_YEAR@ Bartlomiej Kulesz i Oleh Nykorovych. Based on Chromium.
