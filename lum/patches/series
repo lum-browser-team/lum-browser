@@ -9,3 +9,5 @@
 branding/rename-chromium-to-lum.patch
 branding/lum-authors.patch
 perf/enable-memory-saver-by-default.patch
+features/search-with-google.patch
+ui/start-page.patch
