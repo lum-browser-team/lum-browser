@@ -8,7 +8,7 @@ contextBridge.exposeInMainWorld('lum', {
   qr: (text) => ipcRenderer.invoke('qr', String(text)),
   dragStart: () => ipcRenderer.send('drag-start'),
   dragEnd: () => ipcRenderer.send('drag-end'),
-  sample: (id, width, fx0, fx1) => ipcRenderer.invoke('sample', id, width, fx0, fx1),
+  sample: (id, width, opts) => ipcRenderer.invoke('sample', id, width, opts),
   hook: (id) => ipcRenderer.invoke('hook', id),
   on: (channel, fn) => {
     if (CHANNELS.includes(channel)) ipcRenderer.on(channel, (_e, data) => fn(data));

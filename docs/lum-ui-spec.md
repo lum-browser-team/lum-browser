@@ -108,8 +108,11 @@ page color. The theme color is strictly above the line (it must not show as a li
 ### Bar colors when shown
 
 - **Above the line**: the browser theme color (the same as the new tab background).
-- **Inside of the open tab** (the area wrapped by the line): the most common color at the top of the page in a strip around this tab
-  (sample of the top ~64 px of the page, ±60 px on the tab's sides). The tab looks like an extension of the page; its text is light or dark depending on that color.
+- **Inside of the open tab** (the area wrapped by the line): the color of the **page pixels right under the tab** – a 2 px row
+  directly below the line, across the tab's width (the most common exact color in that row). Not the area around the tab:
+  a nearby element (e.g. a lighter search box a bit lower) must not color the tab, otherwise a darker/lighter strip shows
+  between the tab and the page. The same color fills everything else below the line in the bar. The tab's text is light or
+  dark depending on that color.
 - The page starts below the line.
 
 In Hidden mode nothing is drawn while the bar is invisible. Icon/text color on the bar: light on dark, dark on light.
@@ -194,7 +197,7 @@ The icon that opens settings (two sliders) stays on the bar, left of the window 
   so window snapping works; window buttons drawn by us.
 - Hidden mode resembles the toolbar reveal in fullscreen mode (reveal at the top edge) – page in the full window, bar over it.
 - Tabs and toolbar: a simplified tab strip + toolbar in a single 38 px row; the line around the active tab as custom painting.
-- Active tab inside color: from the page color (e.g. `theme-color` or a sample of the last frame) – cheap, only on page change/scroll.
+- Active tab inside color: from the page color (a sample of the pixel row right under the tab in the last frame) – cheap, only on page change/scroll.
   **While loading and reloading the previous color stays**; the new one is sampled only when the page is ready
   (`load` event, fonts loaded, a frame painted) and once more a moment later – never from a blank, unloaded page.
 - New tab: our own local page (WebUI) instead of the default one, with no network requests.
@@ -218,6 +221,7 @@ The icon that opens settings (two sliders) stays on the bar, left of the window 
 Kept so Claude on the other machine can see what changed since it last read this file.
 
 - **2026-11-28**
+  - Tab color = the page pixels right under the tab (not the dominant color around it), so no strip shows between tab and page.
   - Built-in ad and tracker blocking with uBlock Origin's filter lists (see Other).
   - Downloads go straight to the Downloads folder, no dialog, nothing shown.
   - Tabs can be dragged to reorder them; the dragged tab is a solid layer on top (nothing shows through it).

@@ -146,35 +146,41 @@ ipcMain.on('win', (_e, action) => {
   else if (action === 'close') win.close();
 });
 
-// Top edge of the page: average lightness (icon color while the bar is transparent)
-// and the most common color there (bar color while the cursor is near the top).
-// fx0..fx1 (0-1): horizontal strip around the open tab used for the tab color.
-ipcMain.handle('sample', async (_e, id, width, fx0 = 0, fx1 = 1) => {
+// Two things from the page:
+//  - lum: average lightness of the page's top 64 px (icon color while the bar is transparent)
+//  - color: the tab color = the color of the page pixels RIGHT UNDER the open tab (a 2 px row starting at `y`,
+//    from x0 to x1 in page coordinates) - the nearest pixels, not the area around, so the tab flows into the page
+//    without a seam (e.g. not the color of a search box a bit lower). The most common exact color in that row wins.
+ipcMain.handle('sample', async (_e, id, width, opts = {}) => {
   const wc = webContents.fromId(id);
   if (!wc || wc.isDestroyed()) return null;
   try {
-    const img = await wc.capturePage({ x: 0, y: 0, width: Math.max(1, Math.round(width)), height: 64 });
-    if (img.isEmpty()) return null;
-    const W = 160, H = 8;
-    const buf = img.resize({ width: W, height: H, quality: 'good' }).toBitmap(); // BGRA
-    const c0 = Math.max(0, Math.floor(fx0 * W)), c1 = Math.min(W, Math.max(c0 + 1, Math.ceil(fx1 * W)));
-    const buckets = new Map();
+    const W = Math.max(1, Math.round(width));
+    const top = await wc.capturePage({ x: 0, y: 0, width: W, height: 64 });
+    if (top.isEmpty()) return null;
+    const small = top.resize({ width: 160, height: 8, quality: 'good' }).toBitmap(); // BGRA
     let sum = 0;
-    for (let i = 0; i < buf.length; i += 4) {
+    for (let i = 0; i < small.length; i += 4) sum += 0.0722 * small[i] + 0.7152 * small[i + 1] + 0.2126 * small[i + 2];
+
+    const x0 = Math.max(0, Math.min(W - 1, Math.round(opts.x0 ?? 0)));
+    const x1 = Math.max(x0 + 1, Math.min(W, Math.round(opts.x1 ?? W)));
+    const y = Math.max(0, Math.round(opts.y ?? 0));
+    const row = await wc.capturePage({ x: x0, y, width: x1 - x0, height: 2 });
+    const rs = row.getSize(), buf = row.toBitmap();
+    const buckets = new Map();
+    for (let i = 0; i + 3 < buf.length && i < rs.width * rs.height * 4; i += 4) {
       const b = buf[i], g = buf[i + 1], r = buf[i + 2];
-      sum += 0.0722 * b + 0.7152 * g + 0.2126 * r;
-      const col = (i / 4) % W;
-      if (col < c0 || col >= c1) continue;
-      const key = ((r >> 4) << 8) | ((g >> 4) << 4) | (b >> 4);
+      const key = ((r >> 3) << 10) | ((g >> 3) << 5) | (b >> 3);
       const e = buckets.get(key) || { n: 0, r: 0, g: 0, b: 0 };
       e.n++; e.r += r; e.g += g; e.b += b;
       buckets.set(key, e);
     }
-    let top = null;
-    for (const e of buckets.values()) if (!top || e.n > top.n) top = e;
-    const r = Math.round(top.r / top.n), g = Math.round(top.g / top.n), b = Math.round(top.b / top.n);
+    let best = null;
+    for (const e of buckets.values()) if (!best || e.n > best.n) best = e;
+    if (!best) return null;
+    const r = Math.round(best.r / best.n), g = Math.round(best.g / best.n), b = Math.round(best.b / best.n);
     return {
-      lum: sum / (buf.length / 4) / 255,
+      lum: sum / (small.length / 4) / 255,
       color: '#' + [r, g, b].map((v) => v.toString(16).padStart(2, '0')).join(''),
       colorLum: (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255
     };

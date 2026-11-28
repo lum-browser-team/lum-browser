@@ -552,12 +552,13 @@ function sample(t) {
   if (!t || !t.ready || t.error || t.loading || document.hidden) return;
   let id;
   try { id = t.wv.getWebContentsId(); } catch { return; }
-  // Tab color: a strip around the open tab (with margin on the sides), lightness: full width
+  // Tab color: the page pixels right under the open tab - the row just below the line in page coordinates
+  // (y = 38 when the page runs under the bar, 0 when it starts below the bar); lightness: the top of the page
   const w = t.wv.clientWidth || window.innerWidth;
-  let fx0 = 0, fx1 = 1;
+  const wvTop = t.wv.getBoundingClientRect().top;
   const e = t.id === S.active ? activeEdges() : null;
-  if (e) { fx0 = Math.max(0, (e.L - 60) / w); fx1 = Math.min(1, (e.R + 60) / w); }
-  window.lum.sample(id, w, fx0, fx1).then((v) => {
+  const opts = { y: Math.max(0, TK.b + 1 - wvTop), x0: e ? e.L + 4 : 0, x1: e ? e.R - 4 : w };
+  window.lum.sample(id, w, opts).then((v) => {
     if (!v) return;
     t.light = v.lum > 0.55;
     t.color = v.color;
