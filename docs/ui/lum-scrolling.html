@@ -1,9 +1,9 @@
-<title>Lum w akcji</title>
+<title>Lum in action</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500&display=swap">
 <style>
-  /* Layout: jedna scena 16:9 (ekran 1920x1080 skalowany do szerokości), pod nią sterowanie. */
+  /* Layout: one 16:9 scene (1920x1080 screen scaled to width), controls below it. */
   :root {
     --ground: #0B0C0E;
     --panel: #15171B;
@@ -21,7 +21,7 @@
   .stage { position: relative; width: 100%; aspect-ratio: 16 / 9; max-width: 100%; border-radius: 10px; overflow: hidden; background: #000; }
   .screen { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; transform-origin: 0 0; transform: scale(var(--s, 0.5)); overflow: hidden; }
 
-  /* Strona: bez ramki karty, idzie pod pasek */
+  /* Page: no tab frame, runs under the bar */
   .page { position: absolute; top: 0; left: 0; width: 1920px; height: 4320px; will-change: transform; }
   .page canvas { position: absolute; inset: 0; width: 1920px; height: 4320px; display: block; }
   .art { position: absolute; left: 160px; width: 760px; display: flex; flex-direction: column; gap: 22px; }
@@ -40,7 +40,7 @@
   .lake-text { top: 2420px; left: 1000px; }
   .snow-text { top: 3420px; }
 
-  /* Pasek Lum: przezroczysty, ten sam kolor co strona pod nim */
+  /* Lum bar: transparent, the same color as the page under it */
   .bar { position: absolute; top: 0; left: 0; right: 0; height: 40px; z-index: 5; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; font-family: var(--ui); color: var(--chrome); }
   .bar svg.ic { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; display: block; }
   .nav, .right { display: flex; align-items: center; }
@@ -52,15 +52,15 @@
   .tabs { display: flex; align-items: center; gap: 9px; }
   .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: .5; }
   .dot.active { width: 22px; border-radius: 4px; opacity: 1; }
-  /* Ochrona widoczności: pasek czyta jasność strony pod sobą i odwraca kolor ikon,
-     a poświata w przeciwnym kolorze pomaga na granicach jasnych i ciemnych miejsc */
+  /* Visibility protection: the bar reads the lightness of the page under it and flips the icon color,
+     and a glow in the opposite color helps on borders between light and dark areas */
   .bar .c { transition: color .35s ease, filter .35s ease; }
   .bar.protected .c { filter: drop-shadow(0 0 1px rgba(0, 0, 0, .6)) drop-shadow(0 0 6px rgba(0, 0, 0, .3)); }
   .bar.protected.on-light { color: #16181B; }
   .bar.protected.on-light .c { filter: drop-shadow(0 0 1px rgba(255, 255, 255, .75)) drop-shadow(0 0 6px rgba(255, 255, 255, .45)); }
   @media (prefers-reduced-motion: reduce) { .bar .c { transition: none; } }
 
-  /* Sterowanie pod sceną */
+  /* Controls below the scene */
   .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; }
   .controls button, .jump a { font: 500 14px/1 var(--body); color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; cursor: pointer; text-decoration: none; min-height: 40px; box-sizing: border-box; display: inline-flex; align-items: center; }
   .controls button:hover, .jump a:hover { border-color: #3A3F47; }
@@ -73,48 +73,48 @@
 </style>
 
 <div class="wrap">
-  <div class="stage" id="stage" aria-label="Makieta przeglądarki Lum z przewijaną stroną o przyrodzie">
+  <div class="stage" id="stage" aria-label="Lum browser mockup with a scrolling nature page">
     <div class="screen" id="screen">
       <div class="page" id="page">
         <canvas id="scene" width="1920" height="4320" aria-hidden="true"></canvas>
 
         <section class="art hero-text on-dark">
-          <span class="kicker">Reportaż · 6 min czytania</span>
-          <h1>Dolina o świcie</h1>
-          <p>Zanim słońce wyjdzie zza grani, w dolinie słychać tylko strumień i pierwsze sikory. To godzina, w której góry nie należą do nikogo.</p>
+          <span class="kicker">Feature · 6 min read</span>
+          <h1>The valley at dawn</h1>
+          <p>Before the sun rises over the ridge, all you hear in the valley is the stream and the first tits. This is the hour when the mountains belong to no one.</p>
         </section>
 
         <section class="art forest-text on-dark">
-          <h2>Las, który oddycha</h2>
-          <p>Świerki stoją tu ciasno, jeden przy drugim. Pod koronami jest o kilka stopni chłodniej, a mech tłumi każdy krok. Mgła zostaje między pniami najdłużej, jakby las nie chciał jej oddać.</p>
-          <p>Najlepiej iść powoli. Po kilku minutach oczy przyzwyczajają się do półmroku i widać więcej: tropy sarny w błocie, porosty na korze, szyszki obgryzione przez wiewiórkę.</p>
+          <h2>A forest that breathes</h2>
+          <p>The spruces stand close here, one next to another. Under the crowns it is a few degrees cooler, and the moss muffles every step. The mist lingers between the trunks the longest, as if the forest did not want to let it go.</p>
+          <p>It is best to walk slowly. After a few minutes your eyes get used to the half-light and you see more: deer tracks in the mud, lichen on the bark, cones gnawed by a squirrel.</p>
         </section>
 
         <section class="art lake-text on-dark">
-          <h2>Staw jak lustro</h2>
-          <p>Przy bezwietrznej pogodzie woda odbija grań tak dokładnie, że trudno powiedzieć, gdzie kończy się góra. Wystarczy jeden podmuch, żeby obraz rozsypał się na tysiąc srebrnych kresek.</p>
+          <h2>A lake like a mirror</h2>
+          <p>On a windless day the water reflects the ridge so precisely that it is hard to tell where the mountain ends. One gust is enough to scatter the image into a thousand silver lines.</p>
         </section>
 
         <section class="art snow-text on-light">
-          <h2>Wyżej już tylko śnieg</h2>
-          <p>Nad stawem szlak skręca w żleb, w którym śnieg leży do czerwca. Warto mieć raki i sprawdzić prognozę, bo w wysokich partiach pogoda potrafi zmienić się w kwadrans.</p>
-          <p>Ostatnie świerki zostają w dole. Zostaje biel, niebo i własny oddech.</p>
+          <h2>Higher up, only snow</h2>
+          <p>Above the lake the trail turns into a gully where snow lies until June. Bring crampons and check the forecast, because up high the weather can change within fifteen minutes.</p>
+          <p>The last spruces stay below. What remains is white, the sky and your own breath.</p>
         </section>
       </div>
 
       <div class="bar protected" id="bar">
         <div class="nav">
-          <svg class="ic c" viewBox="0 0 24 24" aria-label="Wstecz"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
-          <svg class="ic c off" viewBox="0 0 24 24" aria-label="Dalej"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-          <svg class="ic c" viewBox="0 0 24 24" aria-label="Odśwież"><path d="M20 11a8.1 8.1 0 0 0-15.5-2M4 5v4h4M4 13a8.1 8.1 0 0 0 15.5 2M20 19v-4h-4"/></svg>
+          <svg class="ic c" viewBox="0 0 24 24" aria-label="Back"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+          <svg class="ic c off" viewBox="0 0 24 24" aria-label="Forward"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          <svg class="ic c" viewBox="0 0 24 24" aria-label="Reload"><path d="M20 11a8.1 8.1 0 0 0-15.5-2M4 5v4h4M4 13a8.1 8.1 0 0 0 15.5 2M20 19v-4h-4"/></svg>
         </div>
-        <div class="url c"><span>przyroda.example</span><span class="path">/dolina-o-swicie</span></div>
+        <div class="url c"><span>nature.example</span><span class="path">/valley-at-dawn</span></div>
         <div class="right">
-          <div class="tabs c" aria-label="Karty: 2 z 5">
+          <div class="tabs c" aria-label="Tabs: 2 of 5">
             <span class="dot"></span><span class="dot active"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
           </div>
-          <svg class="ic c" viewBox="0 0 24 24" aria-label="Ustawienia"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 0 0-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 0 0-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 0 0-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 0 0-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 0 0 1.066-2.573c-.94-1.543.826-3.31 2.37-2.37 1 .608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
-          <svg class="c" width="74" height="22" viewBox="0 0 74 22" fill="none" stroke-width="2.2" stroke-linecap="round" aria-label="Minimalizuj, maksymalizuj, zamknij">
+          <svg class="ic c" viewBox="0 0 24 24" aria-label="Settings"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 0 0-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 0 0-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 0 0-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 0 0-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 0 0 1.066-2.573c-.94-1.543.826-3.31 2.37-2.37 1 .608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+          <svg class="c" width="74" height="22" viewBox="0 0 74 22" fill="none" stroke-width="2.2" stroke-linecap="round" aria-label="Minimize, maximize, close">
             <path d="M4 9 Q11 17 18 9" stroke="#3DDC84"/>
             <path d="M30 14 Q37 4 44 14" stroke="#F5C542"/>
             <circle cx="62" cy="11" r="7" stroke="#FF5F57"/>
@@ -125,16 +125,16 @@
   </div>
 
   <div class="controls">
-    <button type="button" id="play" aria-pressed="true">Pauza</button>
-    <button type="button" id="protect" aria-pressed="true">Ochrona ikon: włączona</button>
-    <label class="slider" for="pos">Przewiń
+    <button type="button" id="play" aria-pressed="true">Pause</button>
+    <button type="button" id="protect" aria-pressed="true">Icon protection: on</button>
+    <label class="slider" for="pos">Scroll
       <input type="range" id="pos" min="0" max="3240" step="1" value="0">
     </label>
-    <nav class="jump" aria-label="Skocz do miejsca na stronie">
-      <a href="#start">Niebo</a><a href="#las">Las</a><a href="#jezioro">Staw</a><a href="#snieg">Śnieg</a>
+    <nav class="jump" aria-label="Jump to a spot on the page">
+      <a href="#start">Sky</a><a href="#forest">Forest</a><a href="#lake">Lake</a><a href="#snow">Snow</a>
     </nav>
   </div>
-  <p class="note">Pasek nie ma tła ani linii, strona przewija się pod nim. Pasek sprawdza jasność strony pod sobą: na jasnym niebie i śniegu ikony robią się ciemne, w lesie i nad stawem jasne, a delikatna poświata pomaga na granicy. Wyłącz ochronę ikon, żeby zobaczyć, co by się stało bez niej.</p>
+  <p class="note">The bar has no background or line, the page scrolls under it. The bar checks the lightness of the page under it: on the bright sky and snow the icons turn dark, in the forest and over the lake light, and a soft glow helps on the border. Turn icon protection off to see what would happen without it.</p>
 </div>
 
 <script>
@@ -152,7 +152,7 @@
   fit();
   window.addEventListener('resize', fit);
 
-  /* ---------- Scena (canvas) ---------- */
+  /* ---------- Scene (canvas) ---------- */
   var ctx = document.getElementById('scene').getContext('2d');
   var seed = 7;
   function rnd() { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
@@ -179,7 +179,7 @@
     }
   }
 
-  // 1. Niebo o świcie i góry (0-1080)
+  // 1. Sky at dawn and mountains (0-1080)
   ctx.fillStyle = vgrad(0, 1080, [[0, '#F6F3EE'], [0.32, '#F4DEC4'], [0.62, '#E7AE8E'], [1, '#9A6C70']]);
   ctx.fillRect(0, 0, W, 1080);
   var sun = ctx.createRadialGradient(1360, 560, 0, 1360, 560, 320);
@@ -195,7 +195,7 @@
   ctx.fillStyle = '#22322D'; ctx.fillRect(0, 990, W, 90);
   for (var x = -20; x < W + 40; x += 26 + rnd() * 22) pine(x, 1010, 70 + rnd() * 90, '#22322D');
 
-  // 2. Las (1080-2160)
+  // 2. Forest (1080-2160)
   ctx.fillStyle = vgrad(1080, 2160, [[0, '#22322D'], [1, '#0D1913']]);
   ctx.fillRect(0, 1080, W, 1080);
   var mist = ctx.createLinearGradient(0, 1080, 0, 1300);
@@ -213,7 +213,7 @@
     ctx.beginPath(); ctx.arc(rnd() * W, 1350 + rnd() * 700, 1.5 + rnd() * 2.5, 0, Math.PI * 2); ctx.fill();
   }
 
-  // 3. Staw (2160-3240)
+  // 3. Lake (2160-3240)
   ctx.fillStyle = '#0B1611'; ctx.fillRect(0, 2160, W, 120);
   for (var x2 = -20; x2 < W + 40; x2 += 30 + rnd() * 30) {
     var hh = 60 + rnd() * 110;
@@ -233,7 +233,7 @@
     ctx.fillRect(lx, ly, lw, 2);
   }
 
-  // 4. Śnieg (3240-4320)
+  // 4. Snow (3240-4320)
   ctx.fillStyle = vgrad(3200, 4320, [[0, '#F6F8FA'], [0.5, '#EEF2F6'], [1, '#FBFCFD']]);
   ctx.beginPath(); ctx.moveTo(0, 4320);
   for (var x4 = 0; x4 <= W; x4 += 10) ctx.lineTo(x4, 3180 + 10 * Math.sin(x4 * 0.006) + 6 * Math.sin(x4 * 0.019));
@@ -250,8 +250,8 @@
     pine(t[0], t[1], t[2], '#2D4038', '#F4F7FA');
   });
 
-  /* ---------- Jasność strony pod paskiem ---------- */
-  // Zmniejszona kopia sceny: średnia jasność każdego wiersza (1 wiersz = 8 px strony).
+  /* ---------- Page lightness under the bar ---------- */
+  // Downscaled copy of the scene: average lightness of each row (1 row = 8 px of the page).
   var SX = 16, SY = 8, small = document.createElement('canvas');
   small.width = W / SX; small.height = H / SY;
   var sctx = small.getContext('2d');
@@ -276,7 +276,7 @@
     if (light !== onLight) { onLight = light; bar.classList.toggle('on-light', light); }
   }
 
-  /* ---------- Przewijanie ---------- */
+  /* ---------- Scrolling ---------- */
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var keys = [[0, 0], [2.2, 0], [6, 1080], [7.6, 1080], [11.4, 2160], [13, 2160], [16.8, 3240], [19.6, 3240], [22.4, 0]];
   var cycle = keys[keys.length - 1][0];
@@ -300,10 +300,10 @@
   }
   function setPlaying(on) {
     playing = on; last = null;
-    playBtn.textContent = on ? 'Pauza' : 'Odtwórz';
+    playBtn.textContent = on ? 'Pause' : 'Play';
     playBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
     if (on) {
-      // wznów od miejsca, w którym jest strona
+      // resume from where the page is
       var best = 0, bestD = Infinity;
       for (var t = 0; t < cycle; t += 0.05) { var dd = Math.abs(posAt(t) - pos); if (dd < bestD) { bestD = dd; best = t; } }
       clock = best;
@@ -323,11 +323,11 @@
     var on = !bar.classList.contains('protected');
     bar.classList.toggle('protected', on);
     protectBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
-    protectBtn.textContent = 'Ochrona ikon: ' + (on ? 'włączona' : 'wyłączona');
+    protectBtn.textContent = 'Icon protection: ' + (on ? 'on' : 'off');
   });
   slider.addEventListener('input', function () { if (playing) setPlaying(false); setPos(Number(slider.value)); });
 
-  var spots = { start: 0, las: 1080, jezioro: 2160, snieg: 3240 };
+  var spots = { start: 0, forest: 1080, lake: 2160, snow: 3240 };
   function fromHash() {
     var h = location.hash.slice(1);
     if (Object.prototype.hasOwnProperty.call(spots, h)) { setPlaying(false); setPos(spots[h]); return true; }
@@ -336,6 +336,6 @@
   window.addEventListener('hashchange', fromHash);
   setPos(0);
   if (!fromHash()) setPlaying(playing);
-  if (!playing) { playBtn.textContent = 'Odtwórz'; playBtn.setAttribute('aria-pressed', 'false'); }
+  if (!playing) { playBtn.textContent = 'Play'; playBtn.setAttribute('aria-pressed', 'false'); }
 })();
 </script>

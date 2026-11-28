@@ -1,9 +1,9 @@
-<title>Lum prototyp</title>
+<title>Lum prototype</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@300;400;500;600&family=Sacramento&display=swap">
 <style>
-  /* Layout: scena 16:9 z ekranem 1920x1080 skalowanym do szerokości, pod nią sterowanie pokazem. */
+  /* Layout: a 16:9 scene with a 1920x1080 screen scaled to width, demo controls below it. */
   :root {
     --ground: #0B0C0E; --panel: #15171B; --line: #262A30; --ink: #E8E9EB; --ink-soft: #9EA3AB;
     --display: "Fraunces", Georgia, serif;
@@ -17,13 +17,13 @@
   .stage { position: relative; width: 100%; max-width: 100%; aspect-ratio: 16 / 9; border-radius: 10px; overflow: hidden; background: #000; }
   .screen { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; transform-origin: 0 0; transform: scale(var(--s, .5)); overflow: hidden; font-family: var(--ui); }
 
-  /* ---------- Strona ---------- */
+  /* ---------- Page ---------- */
   .vp { position: absolute; inset: 0; overflow: hidden; }
   .doc { position: absolute; top: 0; left: 0; width: 1920px; will-change: transform; animation: fade .28s ease; }
   @keyframes fade { from { opacity: .35; } to { opacity: 1; } }
   .clickable { cursor: pointer; }
 
-  /* Pole jak notatka na nowej karcie */
+  /* Note-like field on the new tab */
   .note-field { width: 640px; display: flex; flex-direction: column; gap: 14px; }
   .note-line { display: flex; align-items: center; gap: 16px; min-height: 40px; }
   .nin { flex: 1; min-width: 0; background: transparent; border: 0; padding: 0; font: 300 26px/1.3 var(--body); color: var(--n-text); caret-color: var(--n-text); }
@@ -42,7 +42,7 @@
   .note-field.is-link .nhint .h-search { display: none; }
   .note-field.is-link .nhint .h-link { display: inline; }
 
-  /* Pasek po najechaniu przestaje być przezroczysty; dół łagodnie się rozmywa w stronę */
+  /* On hover the bar stops being transparent; its bottom blurs softly into the page */
   .veil { position: absolute; top: 0; left: 0; right: 0; height: 84px; z-index: 9; pointer-events: none;
     background: linear-gradient(to bottom, var(--veil) 0, var(--veil) 48px, transparent 84px);
     -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
@@ -52,7 +52,7 @@
   .screen { --veil: #0B0B0D; }
   .screen.theme-light { --veil: #F7F7F7; }
 
-  /* ---------- Pasek Lum ---------- */
+  /* ---------- Lum bar ---------- */
   .bar { position: absolute; top: 0; left: 0; right: 0; height: 48px; z-index: 10; display: flex; align-items: center; justify-content: space-between; padding: 0 16px;
     --chrome: #FFFFFF; --dim: rgba(255,255,255,.7); --tab-bg: rgba(18,18,20,.42); --tab-line: rgba(255,255,255,.22); --hov: rgba(255,255,255,.12);
     --track: rgba(255,255,255,.42);
@@ -73,22 +73,22 @@
     filter: var(--halo); opacity: .8; transition: opacity .45s ease, filter .45s ease, transform .5s cubic-bezier(.22,1,.36,1); }
   .btn.off svg { opacity: .32; }
   .btn:focus-visible, .tab:focus-visible { outline: 2px solid #8FB4FF; outline-offset: 1px; }
-  /* ----- Efekty najechania, do wyboru pod oknem (bez żadnej obwódki) ----- */
-  /* A: ikona rozjaśnia się i lekko rośnie */
+  /* ----- Hover effects, selectable below the window (no outline at all) ----- */
+  /* A: the icon brightens and grows slightly */
   .fx-a .btn:hover svg, .fx-a .btn.hot svg { opacity: 1; transform: scale(1.15); }
-  /* B: sama ikona zaczyna świecić */
+  /* B: the icon itself starts to glow */
   .fx-b .btn:hover svg, .fx-b .btn.hot svg { opacity: 1; filter: var(--halo) drop-shadow(0 0 3px var(--glow-icon)) drop-shadow(0 0 9px var(--glow-icon)); }
-  /* C: pod ikoną pojawia się kropka */
+  /* C: a dot appears under the icon */
   .btn::after { content: ""; position: absolute; left: 50%; bottom: 0; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: currentColor; opacity: 0; transform: translateY(3px) scale(.3); transition: opacity .35s ease, transform .5s cubic-bezier(.22,1,.36,1); pointer-events: none; }
   .fx-c .btn:hover::after, .fx-c .btn.hot::after { opacity: .9; transform: none; }
   .fx-c .btn:hover svg, .fx-c .btn.hot svg { opacity: 1; }
-  /* D: ikona unosi się z cieniem pod spodem */
+  /* D: the icon lifts with a shadow underneath */
   .fx-d .btn:hover svg, .fx-d .btn.hot svg { opacity: 1; transform: translateY(-2px); filter: var(--halo) drop-shadow(0 4px 3px var(--lift)); }
-  /* E: miękka plama światła za ikoną, bez krawędzi */
+  /* E: a soft spot of light behind the icon, no edges */
   .btn::before { content: ""; position: absolute; inset: -12px; border-radius: 50%; background: radial-gradient(closest-side, var(--spot), transparent); opacity: 0; transform: scale(.5); transition: opacity .55s ease, transform .7s cubic-bezier(.22,1,.36,1); pointer-events: none; }
   .fx-e .btn:hover::before, .fx-e .btn.hot::before { opacity: 1; transform: none; }
   .fx-e .btn:hover svg, .fx-e .btn.hot svg { opacity: 1; }
-  /* Kliknięcie: wciśnięcie i krótki błysk samej ikony */
+  /* Click: press and a short flash of the icon itself */
   .btn.pressed { transform: scale(.8); transition: transform .08s ease; }
   .btn.pressed svg { opacity: 1; filter: var(--halo) drop-shadow(0 0 5px var(--flash)) drop-shadow(0 0 13px var(--flash)); transition: filter .05s ease, opacity .05s ease; }
   .arcs { display: flex; align-items: center; gap: 2px; margin-left: 10px; }
@@ -100,7 +100,7 @@
   .label { font-size: 14px; letter-spacing: .01em; white-space: nowrap; filter: var(--halo); transition: opacity .7s ease, transform .8s cubic-bezier(.22,1,.36,1); }
   .label .path { opacity: .6; }
   .label.brand { font-family: var(--mark); font-size: 34px; font-weight: 400; letter-spacing: .02em; line-height: 1; padding-top: 4px; }
-  /* Karty: po lewej, zaraz obok odświeżania, bez obwódek; pojawiają się znikąd, jedna po drugiej */
+  /* Tabs: on the left, right next to reload, no outlines; they appear out of nowhere, one after another */
   .tabs { flex: 1; min-width: 0; display: flex; align-items: center; gap: 2px; margin-left: 14px; pointer-events: none; }
   .tab { position: relative; flex: 0 1 200px; min-width: 40px; height: 32px; box-sizing: border-box; display: flex; align-items: center; gap: 9px; padding: 0 6px 0 12px; border-radius: 10px; font: 500 13px/1 var(--ui); color: var(--dim); cursor: pointer;
     filter: var(--halo); opacity: 0; transform: translateX(-10px);
@@ -108,8 +108,8 @@
   .tab:hover, .tab.hot, .tab.active { color: var(--chrome); }
   .newtab { opacity: 0; transform: translateX(-10px); margin-left: 2px; transition: opacity .8s ease calc(var(--i, 0) * 55ms), transform 1s cubic-bezier(.22,1,.36,1) calc(var(--i, 0) * 55ms); }
   .newtab.pressed { transition: transform .08s ease; }
-  /* Linia karty: od lewej krawędzi, obejmuje otwartą kartę i biegnie do prawej krawędzi.
-     Pojawia się wolniej i później niż karty. */
+  /* Tab line: from the left edge, wraps around the open tab and runs to the right edge.
+     It appears slower and later than the tabs. */
   .track { position: absolute; top: 0; left: 0; width: 1920px; height: 48px; pointer-events: none; overflow: visible; }
   .track path { fill: none; stroke: var(--track); stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; filter: var(--halo);
     stroke-dasharray: 2600 2600; stroke-dashoffset: 2600; opacity: 0;
@@ -125,14 +125,14 @@
   .tab:hover .x, .tab.hot .x { opacity: .8; }
   .tab .x:hover, .tab .x.hot { background: var(--hov); opacity: 1; }
   .tab .x svg { width: 12px; height: 12px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; }
-  /* Dużo kart: zostaje sama ikonka, a po najechaniu w jej miejscu krzyżyk */
+  /* Many tabs: only the icon stays, and on hover a cross replaces it */
   .tabs.dense .tab { padding: 0; justify-content: center; gap: 0; }
   .tabs.dense .tab .t { display: none; }
   .tabs.dense .tab .x { display: none; }
   .tabs.dense .tab:hover .x, .tabs.dense .tab.hot .x { display: grid; }
   .tabs.dense .tab:hover .fav, .tabs.dense .tab.hot .fav { display: none; }
 
-  /* Ustawienia: jedno ustawienie, motyw */
+  /* Settings: one setting, the theme */
   .screen { --panel-bg: rgba(22,23,26,.8); --panel-ink: #EDEEF0; --panel-line: rgba(255,255,255,.1); --seg-bg: rgba(255,255,255,.07); --seg-on: rgba(255,255,255,.16); }
   .screen.theme-light { --panel-bg: rgba(252,252,252,.86); --panel-ink: #16181B; --panel-line: rgba(0,0,0,.1); --seg-bg: rgba(0,0,0,.05); --seg-on: #FFFFFF; }
   .panel { position: absolute; top: 54px; right: 112px; z-index: 12; width: 270px; box-sizing: border-box; padding: 14px; border-radius: 14px; font-family: var(--ui);
@@ -159,7 +159,7 @@
   .progress.run { animation: prog .7s ease-out forwards; }
   @keyframes prog { 0% { width: 0; opacity: .9; } 80% { width: 100%; opacity: .9; } 100% { width: 100%; opacity: 0; } }
 
-  /* ---------- Kursor pokazu ---------- */
+  /* ---------- Demo cursor ---------- */
   .cursor { position: absolute; top: 0; left: 0; z-index: 40; width: 28px; height: 28px; pointer-events: none; will-change: transform; }
   .cursor svg { width: 28px; height: 28px; filter: drop-shadow(0 2px 3px rgba(0,0,0,.35)); }
   .ring { position: absolute; z-index: 39; width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%; border: 2px solid rgba(255,255,255,.9); box-shadow: 0 0 0 1px rgba(0,0,0,.25); pointer-events: none; animation: ring .45s ease-out forwards; }
@@ -167,7 +167,7 @@
   .caption { position: absolute; left: 50%; bottom: 34px; transform: translateX(-50%); z-index: 30; padding: 10px 18px; border-radius: 999px; background: rgba(12,13,15,.72); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); color: #F1F2F4; font: 500 18px/1 var(--body); border: 1px solid rgba(255,255,255,.1); transition: opacity .3s ease; white-space: nowrap; }
   .caption:empty { opacity: 0; }
 
-  /* ---------- Sterowanie pod sceną ---------- */
+  /* ---------- Controls below the scene ---------- */
   .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
   .controls button { font: 500 14px/1 var(--body); color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; min-height: 40px; cursor: pointer; transition: transform .35s cubic-bezier(.34,1.8,.64,1); }
   .controls button:active { transform: scale(.95); transition-duration: .06s; }
@@ -181,7 +181,7 @@
 </style>
 
 <div class="wrap">
-  <div class="stage" id="stage" aria-label="Interaktywny prototyp przeglądarki Lum">
+  <div class="stage" id="stage" aria-label="Interactive Lum browser prototype">
     <div class="screen" id="screen">
       <div class="vp" id="vp"></div>
 
@@ -190,31 +190,31 @@
       <div class="bar mode-label fx-b" id="bar">
         <svg class="track" viewBox="0 0 1920 48" aria-hidden="true"><path id="trackPath" d="M0 44H1"/></svg>
         <div class="side" id="left">
-          <button class="btn" data-act="back" aria-label="Wstecz"><svg viewBox="0 0 24 24"><path d="M10 5.5Q4.6 12 10 18.5"/><path d="M5.9 12H19"/></svg></button>
-          <button class="btn" data-act="forward" aria-label="Dalej"><svg viewBox="0 0 24 24"><path d="M14 5.5Q19.4 12 14 18.5"/><path d="M5 12h13.1"/></svg></button>
-          <button class="btn" data-act="reload" aria-label="Odśwież"><svg viewBox="0 0 24 24"><path d="M18.4 9.2A7 7 0 1 0 19 13"/><path d="M19 5.5v3.9h-3.9"/></svg></button>
-          <div class="tabs" id="tabs" role="tablist" aria-label="Karty"></div>
+          <button class="btn" data-act="back" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M10 5.5Q4.6 12 10 18.5"/><path d="M5.9 12H19"/></svg></button>
+          <button class="btn" data-act="forward" aria-label="Forward"><svg viewBox="0 0 24 24"><path d="M14 5.5Q19.4 12 14 18.5"/><path d="M5 12h13.1"/></svg></button>
+          <button class="btn" data-act="reload" aria-label="Reload"><svg viewBox="0 0 24 24"><path d="M18.4 9.2A7 7 0 1 0 19 13"/><path d="M19 5.5v3.9h-3.9"/></svg></button>
+          <div class="tabs" id="tabs" role="tablist" aria-label="Tabs"></div>
         </div>
         <div class="center">
           <div class="label" id="label"></div>
-          <div class="sbox"><input id="q" type="text" placeholder="Szukaj lub wpisz adres" autocomplete="off" aria-label="Szukaj lub wpisz adres"><button class="btn" data-act="submit" aria-label="Szukaj"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 4.5 4.5"/></svg></button></div>
+          <div class="sbox"><input id="q" type="text" placeholder="Search or enter an address" autocomplete="off" aria-label="Search or enter an address"><button class="btn" data-act="submit" aria-label="Search"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 4.5 4.5"/></svg></button></div>
         </div>
         <div class="side" id="right">
-          <button class="btn" data-act="search" aria-label="Nowa karta i wyszukiwanie"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 4.5 4.5"/></svg></button>
-          <button class="btn" data-act="settings" aria-label="Ustawienia"><svg viewBox="0 0 24 24" style="stroke-width:1.4"><path d="M5 8h8M17 8h2M5 16h2M11 16h8"/><circle cx="15" cy="8" r="2"/><circle cx="9" cy="16" r="2"/></svg></button>
+          <button class="btn" data-act="search" aria-label="New tab and search"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 4.5 4.5"/></svg></button>
+          <button class="btn" data-act="settings" aria-label="Settings"><svg viewBox="0 0 24 24" style="stroke-width:1.4"><path d="M5 8h8M17 8h2M5 16h2M11 16h8"/><circle cx="15" cy="8" r="2"/><circle cx="9" cy="16" r="2"/></svg></button>
           <div class="arcs">
-            <button class="btn" data-act="none" aria-label="Minimalizuj" style="--glow-icon: rgba(61,220,132,.9); --flash: rgba(61,220,132,1); --spot: rgba(61,220,132,.22)"><svg viewBox="0 0 24 24"><path d="M6 10.5q6 6.5 12 0" stroke="#3DDC84"/></svg></button>
-            <button class="btn" data-act="none" aria-label="Maksymalizuj" style="--glow-icon: rgba(245,197,66,.9); --flash: rgba(245,197,66,1); --spot: rgba(245,197,66,.22)"><svg viewBox="0 0 24 24"><path d="M6 14.5q6-8 12 0" stroke="#F5C542"/></svg></button>
-            <button class="btn" data-act="none" aria-label="Zamknij" style="--glow-icon: rgba(255,95,87,.9); --flash: rgba(255,95,87,1); --spot: rgba(255,95,87,.22)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5.5" stroke="#FF5F57"/></svg></button>
+            <button class="btn" data-act="none" aria-label="Minimize" style="--glow-icon: rgba(61,220,132,.9); --flash: rgba(61,220,132,1); --spot: rgba(61,220,132,.22)"><svg viewBox="0 0 24 24"><path d="M6 10.5q6 6.5 12 0" stroke="#3DDC84"/></svg></button>
+            <button class="btn" data-act="none" aria-label="Maximize" style="--glow-icon: rgba(245,197,66,.9); --flash: rgba(245,197,66,1); --spot: rgba(245,197,66,.22)"><svg viewBox="0 0 24 24"><path d="M6 14.5q6-8 12 0" stroke="#F5C542"/></svg></button>
+            <button class="btn" data-act="none" aria-label="Close" style="--glow-icon: rgba(255,95,87,.9); --flash: rgba(255,95,87,1); --spot: rgba(255,95,87,.22)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5.5" stroke="#FF5F57"/></svg></button>
           </div>
         </div>
       </div>
 
-      <div class="panel" id="panel" role="dialog" aria-label="Ustawienia">
-        <div class="ttl">Motyw</div>
+      <div class="panel" id="panel" role="dialog" aria-label="Settings">
+        <div class="ttl">Theme</div>
         <div class="seg">
-          <button type="button" data-theme="dark" aria-pressed="true"><svg viewBox="0 0 24 24"><path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z"/></svg>Ciemny</button>
-          <button type="button" data-theme="light" aria-pressed="false"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4"/></svg>Jasny</button>
+          <button type="button" data-theme="dark" aria-pressed="true"><svg viewBox="0 0 24 24"><path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z"/></svg>Dark</button>
+          <button type="button" data-theme="light" aria-pressed="false"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4"/></svg>Light</button>
         </div>
       </div>
 
@@ -224,20 +224,20 @@
   </div>
 
   <div class="controls">
-    <button type="button" id="demoBtn">Pauza pokazu</button>
-    <button type="button" id="restartBtn">Pokaz od początku</button>
-    <button type="button" id="manyBtn">Otwórz 12 kart</button>
-    <span class="status" id="status" aria-live="polite">Trwa pokaz. Kliknij w okno, żeby sterować samemu.</span>
+    <button type="button" id="demoBtn">Pause demo</button>
+    <button type="button" id="restartBtn">Restart demo</button>
+    <button type="button" id="manyBtn">Open 12 tabs</button>
+    <span class="status" id="status" aria-live="polite">Demo running. Click the window to take control.</span>
   </div>
-  <div class="controls fxpick" role="group" aria-label="Efekt najechania na przycisk">
-    <span>Efekt najechania na przycisk:</span>
-    <button type="button" data-fx="a" aria-pressed="false">A · Rozjaśnienie</button>
-    <button type="button" data-fx="b" aria-pressed="true">B · Świecąca ikona</button>
-    <button type="button" data-fx="c" aria-pressed="false">C · Kropka</button>
-    <button type="button" data-fx="d" aria-pressed="false">D · Uniesienie</button>
-    <button type="button" data-fx="e" aria-pressed="false">E · Plama światła</button>
+  <div class="controls fxpick" role="group" aria-label="Button hover effect">
+    <span>Button hover effect:</span>
+    <button type="button" data-fx="a" aria-pressed="false">A · Brighten</button>
+    <button type="button" data-fx="b" aria-pressed="true">B · Glowing icon</button>
+    <button type="button" data-fx="c" aria-pressed="false">C · Dot</button>
+    <button type="button" data-fx="d" aria-pressed="false">D · Lift</button>
+    <button type="button" data-fx="e" aria-pressed="false">E · Light spot</button>
   </div>
-  <p class="note">Przyciski są zawsze na górze. Najedź na górną krawędź okna: obok odświeżania płynnie pojawią się karty, a chwilę później linia, która obejmuje otwartą kartę i biegnie od lewej do prawej krawędzi. Plus otwiera pustą kartę, lupa otwiera kartę z wyszukiwaniem, ustawienia zmieniają motyw. Pod oknem możesz wybrać efekt najechania na przycisk i otworzyć naraz 12 kart. Wszystkie strony są zmyślone, na potrzeby makiety.</p>
+  <p class="note">The buttons are always at the top. Move to the top edge of the window: tabs smoothly appear next to reload, and a moment later a line that wraps around the open tab and runs from the left to the right edge. Plus opens an empty tab, the magnifier opens a tab with search, settings change the theme. Below the window you can pick the button hover effect and open 12 tabs at once. All pages are made up for the mockup.</p>
 </div>
 
 <script>
@@ -257,7 +257,7 @@
   fit(); window.addEventListener('resize', fit);
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 
-  /* ================= Scena przyrodnicza (canvas) ================= */
+  /* ================= Nature scene (canvas) ================= */
   var NH = 4320, natureCanvas = document.createElement('canvas');
   natureCanvas.width = W; natureCanvas.height = NH;
   (function draw(ctx) {
@@ -303,24 +303,24 @@
     return rows;
   })();
 
-  /* ================= Treść stron ================= */
+  /* ================= Page content ================= */
   var VIDEOS = [
-    ['Świt w górach, 4K bez muzyki', 'Cisza Gór', '48 tys.', '2 dni', '12:08', ['#F3D7B6', '#E59C7E', '#6E5C78']],
-    ['Jak odróżnić świerk od jodły', 'Leśny Kadr', '21 tys.', 'tydzień', '8:41', ['#CFE3D2', '#7FAE8C', '#2F4D3B']],
-    ['Szum strumienia na trzy godziny', 'Natura z bliska', '310 tys.', 'miesiąc', '3:00:00', ['#BFD9E6', '#6F9FB7', '#294456']],
-    ['Wędrówka przez zamglony las', 'Szlakiem', '15 tys.', '4 dni', '22:15', ['#DADFDB', '#9BAA9F', '#46564C']],
-    ['Burza nad jeziorem z bliska', 'Niebo i chmury', '96 tys.', '3 tygodnie', '6:32', ['#9AA6B8', '#5A6680', '#232B3D']],
-    ['Pierwszy śnieg w dolinie', 'Cisza Gór', '33 tys.', '5 dni', '10:47', ['#F2F5F8', '#C9D5E0', '#6F8396']],
-    ['Sowy nocą, nagrania z kamery', 'Leśny Kadr', '72 tys.', '2 miesiące', '18:20', ['#4C4F6B', '#2D2F48', '#14152A']],
-    ['Mgła nad stawem, timelapse', 'Natura z bliska', '12 tys.', 'wczoraj', '4:05', ['#E8E3EF', '#B4AFC9', '#5E5A7A']],
-    ['Kajakiem po rzece o świcie', 'Szlakiem', '27 tys.', '6 dni', '31:44', ['#F7E2C4', '#E7B27A', '#3D5A55']],
-    ['Las w deszczu, dźwięki do snu', 'Natura z bliska', '1,1 mln', 'rok', '10:00:00', ['#B9C7BE', '#6F8576', '#26352C']],
-    ['Zimowy biwak w namiocie', 'Szlakiem', '58 tys.', '3 miesiące', '27:12', ['#DCE6F0', '#93A9C0', '#34465A']],
-    ['Jesienne kolory z drona', 'Niebo i chmury', '44 tys.', '2 tygodnie', '7:58', ['#F5D6A0', '#D9844A', '#6B3B2A']],
-    ['Ptaki w karmniku przez cały dzień', 'Leśny Kadr', '19 tys.', '9 dni', '1:12:30', ['#E9E4CF', '#B9B08A', '#5D5A3D']],
-    ['Wodospad po roztopach', 'Cisza Gór', '63 tys.', 'miesiąc', '9:16', ['#D3E7EE', '#86B5C7', '#2F5867']],
-    ['Nocne niebo nad połoniną', 'Niebo i chmury', '88 tys.', '5 tygodni', '15:03', ['#3C4570', '#1E2448', '#0B0F26']],
-    ['Mapa szlaku krok po kroku', 'Szlakiem', '9 tys.', '3 dni', '11:29', ['#EDE5D3', '#C2B08A', '#6E5F43']]
+    ['Dawn in the mountains, 4K, no music', 'Mountain Quiet', '48K', '2 days', '12:08', ['#F3D7B6', '#E59C7E', '#6E5C78']],
+    ['How to tell a spruce from a fir', 'Forest Frame', '21K', 'a week', '8:41', ['#CFE3D2', '#7FAE8C', '#2F4D3B']],
+    ['Three hours of a babbling stream', 'Nature Up Close', '310K', 'a month', '3:00:00', ['#BFD9E6', '#6F9FB7', '#294456']],
+    ['A walk through a misty forest', 'On the Trail', '15K', '4 days', '22:15', ['#DADFDB', '#9BAA9F', '#46564C']],
+    ['A storm over the lake up close', 'Sky and Clouds', '96K', '3 weeks', '6:32', ['#9AA6B8', '#5A6680', '#232B3D']],
+    ['First snow in the valley', 'Mountain Quiet', '33K', '5 days', '10:47', ['#F2F5F8', '#C9D5E0', '#6F8396']],
+    ['Owls at night, camera trap footage', 'Forest Frame', '72K', '2 months', '18:20', ['#4C4F6B', '#2D2F48', '#14152A']],
+    ['Mist over the lake, timelapse', 'Nature Up Close', '12K', '1 day', '4:05', ['#E8E3EF', '#B4AFC9', '#5E5A7A']],
+    ['Kayaking down the river at dawn', 'On the Trail', '27K', '6 days', '31:44', ['#F7E2C4', '#E7B27A', '#3D5A55']],
+    ['Forest in the rain, sounds for sleep', 'Nature Up Close', '1.1M', 'a year', '10:00:00', ['#B9C7BE', '#6F8576', '#26352C']],
+    ['Winter camping in a tent', 'On the Trail', '58K', '3 months', '27:12', ['#DCE6F0', '#93A9C0', '#34465A']],
+    ['Autumn colors from a drone', 'Sky and Clouds', '44K', '2 weeks', '7:58', ['#F5D6A0', '#D9844A', '#6B3B2A']],
+    ['Birds at the feeder all day long', 'Forest Frame', '19K', '9 days', '1:12:30', ['#E9E4CF', '#B9B08A', '#5D5A3D']],
+    ['A waterfall after the thaw', 'Mountain Quiet', '63K', 'a month', '9:16', ['#D3E7EE', '#86B5C7', '#2F5867']],
+    ['Night sky over a mountain meadow', 'Sky and Clouds', '88K', '5 weeks', '15:03', ['#3C4570', '#1E2448', '#0B0F26']],
+    ['Trail map step by step', 'On the Trail', '9K', '3 days', '11:29', ['#EDE5D3', '#C2B08A', '#6E5F43']]
   ];
   function thumb(i, w, h, big) {
     var c = VIDEOS[i % VIDEOS.length][5];
@@ -341,7 +341,7 @@
 
   var PAGES = {
     start: {
-      info: function () { return { title: 'Nowa karta', host: '', path: '', brand: true }; },
+      info: function () { return { title: 'New tab', host: '', path: '', brand: true }; },
       light: function () { return S.theme === 'light'; },
       html: function () {
         var L = S.theme === 'light';
@@ -350,22 +350,22 @@
         return '<div style="height:1080px;background:' + c.bg + ';' + c.vars + ';display:flex;flex-direction:column;align-items:center;justify-content:center;gap:40px;font-family:var(--ui);transition:background-color .5s ease">' +
           '<svg width="76" height="76" viewBox="0 0 120 120"><path d="M52.34 0.5 A60 60 0 1 0 119.5 67.67 A48 48 0 1 1 52.34 0.5 Z" fill="' + c.moon + '"/><path d="M96 12 Q98.4 27.6 114 30 Q98.4 32.4 96 48 Q93.6 32.4 78 30 Q93.6 27.6 96 12 Z" fill="' + c.star + '"/></svg>' +
           '<div class="note-field" id="noteField"><div class="note-line">' +
-          '<input class="nin" id="nin" type="text" placeholder="Napisz coś albo wklej link…" autocomplete="off" aria-label="Napisz coś albo wklej link">' +
-          '<span class="nact" data-act="nsubmit" role="button" aria-label="Szukaj albo otwórz">' +
+          '<input class="nin" id="nin" type="text" placeholder="Type something or paste a link…" autocomplete="off" aria-label="Type something or paste a link">' +
+          '<span class="nact" data-act="nsubmit" role="button" aria-label="Search or open">' +
           '<svg class="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 20 20"/></svg>' +
           '<svg class="i-link" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>' +
-          '<div class="nhint"><span class="h-search"><b>Enter</b> szukaj</span><span class="h-link"><b>Enter</b> otwórz stronę</span></div></div>' +
-          '<div style="position:absolute;bottom:30px;font-size:13px;color:' + c.foot + ';letter-spacing:.02em"><b style="color:' + c.key + ';font-weight:500">Ctrl+T</b> nowa karta &nbsp;·&nbsp; <b style="color:' + c.key + ';font-weight:500">Ctrl+L</b> adres</div></div>';
+          '<div class="nhint"><span class="h-search"><b>Enter</b> search</span><span class="h-link"><b>Enter</b> open page</span></div></div>' +
+          '<div style="position:absolute;bottom:30px;font-size:13px;color:' + c.foot + ';letter-spacing:.02em"><b style="color:' + c.key + ';font-weight:500">Ctrl+T</b> new tab &nbsp;·&nbsp; <b style="color:' + c.key + ';font-weight:500">Ctrl+L</b> address</div></div>';
       }
     },
     results: {
-      info: function (t) { return { title: '„' + t.q + '” – Szukaj', host: 'szukaj.example', path: '/?q=' + encodeURIComponent(t.q).replace(/%20/g, '+') }; },
+      info: function (t) { return { title: '"' + t.q + '" – Search', host: 'search.example', path: '/?q=' + encodeURIComponent(t.q).replace(/%20/g, '+') }; },
       light: function () { return true; },
       html: function (t) {
         var q = t.q.toLowerCase(), list = [
-          { go: 'wiki', host: 'wiedza.example › wiki › Świerk_pospolity', title: 'Świerk pospolity – encyklopedia Wiedza', text: 'Wiecznie zielone drzewo iglaste z rodziny sosnowatych. Wygląd, występowanie w Europie i zastosowanie drewna.', fav: 'wiki', key: /świerk|swierk|drzew|wiki|wiedz/ },
-          { go: 'video', host: 'filmy.example', title: 'Filmy – przyroda, góry i dźwięki natury', text: 'Nagrania z lasów, gór i znad wody. Szum strumienia, timelapse mgły, wędrówki krok po kroku.', fav: 'video', key: /film|wideo|nagran|video/ },
-          { go: 'nature', host: 'przyroda.example › dolina-o-swicie', title: 'Dolina o świcie – reportaż', text: 'Zanim słońce wyjdzie zza grani, w dolinie słychać tylko strumień. Las, staw i śnieg w jednej wędrówce.', fav: 'nature', key: /dolin|świt|swit|gór|gor|przyrod/ }
+          { go: 'wiki', host: 'knowledge.example › wiki › Norway_spruce', title: 'Norway spruce – Knowledge encyclopedia', text: 'An evergreen conifer of the pine family. Appearance, range in Europe and uses of the wood.', fav: 'wiki', key: /spruce|tree|wiki|knowledge/ },
+          { go: 'video', host: 'videos.example', title: 'Videos – nature, mountains and nature sounds', text: 'Footage from forests, mountains and the waterside. A babbling stream, mist timelapses, hikes step by step.', fav: 'video', key: /video|film|clip|footage/ },
+          { go: 'nature', host: 'nature.example › valley-at-dawn', title: 'The valley at dawn – a feature', text: 'Before the sun rises over the ridge, all you hear in the valley is the stream. Forest, lake and snow in one hike.', fav: 'nature', key: /valley|dawn|mountain|nature/ }
         ];
         list.sort(function (a, b) { return (b.key.test(q) ? 1 : 0) - (a.key.test(q) ? 1 : 0); });
         var items = list.map(function (r) {
@@ -376,11 +376,11 @@
         }).join('');
         return '<div style="min-height:1180px;background:#FAFAF8;color:#1B1D21;font-family:var(--body)">' +
           '<div style="padding:116px 0 0 260px;display:flex;flex-direction:column;gap:44px">' +
-          '<div style="font-size:15px;color:#777B82">Wyniki dla <b style="color:#1B1D21;font-weight:600">„' + esc(t.q) + '”</b> · bez śledzenia i bez reklam</div>' + items + '</div></div>';
+          '<div style="font-size:15px;color:#777B82">Results for <b style="color:#1B1D21;font-weight:600">"' + esc(t.q) + '"</b> · no tracking and no ads</div>' + items + '</div></div>';
       }
     },
     wiki: {
-      info: function () { return { title: 'Świerk pospolity – Wiedza', host: 'wiedza.example', path: '/wiki/Świerk_pospolity' }; },
+      info: function () { return { title: 'Norway spruce – Knowledge', host: 'knowledge.example', path: '/wiki/Norway_spruce' }; },
       light: function () { return true; },
       html: function () {
         var P = 'font:400 19px/1.7 var(--body);color:#222;margin:0';
@@ -388,57 +388,57 @@
         var L = 'color:#2A55C4';
         return '<div style="background:#fff;color:#1A1A1A;font-family:var(--body);padding-bottom:160px">' +
           '<div style="height:120px;border-bottom:1px solid #ECE8E0;display:flex;align-items:flex-end;padding:0 160px 18px;gap:26px">' +
-          '<span style="font:600 30px/1 var(--display)">Wiedza</span><span style="font-size:15px;color:#777">encyklopedia</span>' +
-          '<span style="margin-left:auto;width:420px;height:40px;border:1px solid #D9D5CC;border-radius:8px;display:flex;align-items:center;padding:0 14px;color:#999;font-size:15px">Szukaj w Wiedzy</span></div>' +
+          '<span style="font:600 30px/1 var(--display)">Knowledge</span><span style="font-size:15px;color:#777">encyclopedia</span>' +
+          '<span style="margin-left:auto;width:420px;height:40px;border:1px solid #D9D5CC;border-radius:8px;display:flex;align-items:center;padding:0 14px;color:#999;font-size:15px">Search Knowledge</span></div>' +
           '<div style="display:flex;gap:80px;padding:56px 160px 0">' +
           '<article style="flex:1;min-width:0;display:flex;flex-direction:column;gap:20px">' +
-          '<h1 style="font:600 60px/1.05 var(--display);margin:0">Świerk pospolity</h1>' +
-          '<div style="font-size:15px;color:#777">Artykuł z encyklopedii Wiedza · <i>Picea abies</i></div>' +
-          '<p style="' + P + '"><b>Świerk pospolity</b> to wiecznie zielone drzewo iglaste z rodziny <span style="' + L + '">sosnowatych</span>. Rośnie w dużej części Europy, zwłaszcza w górach i na północy kontynentu. W Polsce jest jednym z najczęściej spotykanych drzew leśnych.</p>' +
-          '<h2 style="' + H2 + '">Wygląd</h2>' +
-          '<p style="' + P + '">Ma prosty pień i stożkową koronę, która u starszych drzew sięga daleko w dół. Igły są krótkie, sztywne i czterokanciaste, osadzone pojedynczo na gałązkach. Szyszki są długie i zwisają w dół, a po dojrzeniu odpadają w całości.</p>' +
-          '<p style="' + P + '">Może dorastać do około 50 metrów wysokości. Kora młodych drzew jest gładka i rdzawobrązowa, z wiekiem staje się łuskowata.</p>' +
-          '<h2 style="' + H2 + '">Występowanie</h2>' +
-          '<p style="' + P + '">Naturalnie występuje w <span style="' + L + '">Alpach</span>, <span style="' + L + '">Karpatach</span> i Skandynawii oraz na niżu w północno-wschodniej Europie. W górach tworzy rozległe lasy w reglu górnym, a wyżej przechodzi w kosodrzewinę.</p>' +
-          '<p style="' + P + '">Lubi chłodny, wilgotny klimat. Ma płytki system korzeniowy, przez co jest wrażliwy na silny wiatr i suszę.</p>' +
-          '<h2 style="' + H2 + '">Zastosowanie</h2>' +
-          '<p style="' + P + '">Drewno świerka jest lekkie i łatwe w obróbce. Używa się go w budownictwie, do produkcji papieru i mebli. Wyselekcjonowane drewno rezonansowe trafia do lutników, którzy robią z niego płyty wierzchnie skrzypiec i gitar.</p>' +
-          '<p style="' + P + '">Młode świerki są popularnymi choinkami bożonarodzeniowymi.</p>' +
+          '<h1 style="font:600 60px/1.05 var(--display);margin:0">Norway spruce</h1>' +
+          '<div style="font-size:15px;color:#777">An article from the Knowledge encyclopedia · <i>Picea abies</i></div>' +
+          '<p style="' + P + '">The <b>Norway spruce</b> is an evergreen conifer of the <span style="' + L + '">pine family</span>. It grows across much of Europe, especially in the mountains and in the north of the continent. It is one of the most common forest trees in Central Europe.</p>' +
+          '<h2 style="' + H2 + '">Appearance</h2>' +
+          '<p style="' + P + '">It has a straight trunk and a conical crown that reaches far down on older trees. The needles are short, stiff and four-sided, set singly on the twigs. The cones are long and hang down, and fall off whole once ripe.</p>' +
+          '<p style="' + P + '">It can grow to about 50 meters tall. The bark of young trees is smooth and rusty brown, becoming scaly with age.</p>' +
+          '<h2 style="' + H2 + '">Range</h2>' +
+          '<p style="' + P + '">It grows naturally in the <span style="' + L + '">Alps</span>, the <span style="' + L + '">Carpathians</span> and Scandinavia, and in the lowlands of north-eastern Europe. In the mountains it forms vast forests in the upper montane belt and gives way to dwarf pine higher up.</p>' +
+          '<p style="' + P + '">It likes a cool, humid climate. Its root system is shallow, which makes it sensitive to strong wind and drought.</p>' +
+          '<h2 style="' + H2 + '">Uses</h2>' +
+          '<p style="' + P + '">Spruce wood is light and easy to work. It is used in construction and for making paper and furniture. Selected tonewood goes to luthiers, who make the tops of violins and guitars from it.</p>' +
+          '<p style="' + P + '">Young spruces are popular Christmas trees.</p>' +
           '</article>' +
           '<aside style="width:400px;flex:none;border:1px solid #E2DED6;background:#F8F7F3;border-radius:10px;overflow:hidden;align-self:flex-start">' +
-          '<div style="font:600 20px/1.2 var(--display);padding:16px 18px;text-align:center;border-bottom:1px solid #E2DED6">Świerk pospolity</div>' +
+          '<div style="font:600 20px/1.2 var(--display);padding:16px 18px;text-align:center;border-bottom:1px solid #E2DED6">Norway spruce</div>' +
           '<div style="height:280px;background:linear-gradient(#E8EEF0,#F8F7F3);display:flex;align-items:flex-end;justify-content:center">' +
           '<svg width="200" height="250" viewBox="0 0 200 250"><rect x="94" y="200" width="12" height="44" fill="#6B4A33"/><path d="M100 14 140 84H118L156 148H128L172 210H28L72 148H44L82 84H60Z" fill="#2F5A40"/></svg></div>' +
-          ['Królestwo|rośliny', 'Gromada|nagonasienne', 'Rodzina|sosnowate', 'Rodzaj|świerk', 'Gatunek|świerk pospolity'].map(function (r) {
+          ['Kingdom|plants', 'Division|gymnosperms', 'Family|pine family', 'Genus|spruce', 'Species|Norway spruce'].map(function (r) {
             var p = r.split('|'); return '<div style="display:flex;justify-content:space-between;gap:12px;padding:11px 18px;border-top:1px solid #ECE8E0;font-size:16px"><span style="color:#777">' + p[0] + '</span><span>' + p[1] + '</span></div>';
           }).join('') + '</aside></div></div>';
       }
     },
     video: {
-      info: function () { return { title: 'Filmy', host: 'filmy.example', path: '' }; },
+      info: function () { return { title: 'Videos', host: 'videos.example', path: '' }; },
       light: function () { return false; },
       html: function () {
         var cards = VIDEOS.map(function (v, i) {
           return '<div class="clickable" data-go="watch" data-v="' + i + '" style="display:flex;flex-direction:column;gap:12px">' +
             '<div style="position:relative">' + thumb(i, 400, 225) + '<span style="position:absolute;right:10px;bottom:10px;background:rgba(0,0,0,.75);color:#fff;font:500 13px/1 var(--body);padding:4px 6px;border-radius:5px">' + v[4] + '</span></div>' +
             '<div style="font:500 18px/1.35 var(--body);color:#F1F1F1">' + esc(v[0]) + '</div>' +
-            '<div style="font:400 14px/1.4 var(--body);color:#9C9C9C">' + esc(v[1]) + '<br>' + v[2] + ' wyświetleń · ' + v[3] + ' temu</div></div>';
+            '<div style="font:400 14px/1.4 var(--body);color:#9C9C9C">' + esc(v[1]) + '<br>' + v[2] + ' views · ' + v[3] + ' ago</div></div>';
         }).join('');
-        var chips = ['Wszystko', 'Przyroda', 'Góry', 'Dźwięki natury', 'Timelapse', 'Na żywo'].map(function (c, i) {
+        var chips = ['All', 'Nature', 'Mountains', 'Nature sounds', 'Timelapse', 'Live'].map(function (c, i) {
           return '<span style="padding:9px 16px;border-radius:9px;font:500 15px/1 var(--body);' + (i === 0 ? 'background:#F1F1F1;color:#111' : 'background:#232325;color:#E8E8E8') + '">' + c + '</span>';
         }).join('');
         return '<div style="background:#0F0F10;color:#F1F1F1;font-family:var(--body);padding-bottom:120px">' +
           '<div style="height:120px;display:flex;align-items:flex-end;padding:0 112px 14px;gap:16px">' +
           '<span style="width:34px;height:34px;border-radius:10px;background:#22B59A;display:grid;place-items:center"><svg viewBox="0 0 10 10" width="14" height="14"><path d="M3 2l5 3-5 3z" fill="#fff"/></svg></span>' +
-          '<span style="font:600 24px/1 var(--body);letter-spacing:-.01em">Filmy</span>' +
-          '<span style="margin:0 auto;width:640px;height:44px;border-radius:22px;background:#1C1C1E;border:1px solid #2C2C2F;display:flex;align-items:center;padding:0 20px;color:#8A8A8A;font-size:16px">Szukaj filmów</span>' +
+          '<span style="font:600 24px/1 var(--body);letter-spacing:-.01em">Videos</span>' +
+          '<span style="margin:0 auto;width:640px;height:44px;border-radius:22px;background:#1C1C1E;border:1px solid #2C2C2F;display:flex;align-items:center;padding:0 20px;color:#8A8A8A;font-size:16px">Search videos</span>' +
           '<span style="width:40px;height:40px;border-radius:50%;background:#3A4E46"></span></div>' +
           '<div style="display:flex;gap:10px;padding:18px 112px 26px">' + chips + '</div>' +
           '<div style="display:grid;grid-template-columns:repeat(4,400px);gap:40px 32px;padding:0 112px">' + cards + '</div></div>';
       }
     },
     watch: {
-      info: function (t) { return { title: VIDEOS[t.v][0], host: 'filmy.example', path: '/ogladaj?v=' + (7341 + t.v * 13).toString(36) }; },
+      info: function (t) { return { title: VIDEOS[t.v][0], host: 'videos.example', path: '/watch?v=' + (7341 + t.v * 13).toString(36) }; },
       light: function () { return false; },
       html: function (t) {
         var v = VIDEOS[t.v];
@@ -456,15 +456,15 @@
           '<span>' + v[4] + '</span></div></div>' +
           '<div style="font:600 28px/1.3 var(--body)">' + esc(v[0]) + '</div>' +
           '<div style="display:flex;align-items:center;gap:14px"><span style="width:44px;height:44px;border-radius:50%;background:' + v[5][1] + '"></span>' +
-          '<div><div style="font:600 16px/1.3 var(--body)">' + esc(v[1]) + '</div><div style="font-size:13px;color:#9C9C9C">12,4 tys. obserwujących</div></div>' +
-          '<span style="margin-left:14px;background:#F1F1F1;color:#111;font:600 14px/1 var(--body);padding:11px 18px;border-radius:20px">Obserwuj</span></div>' +
-          '<div style="background:#1C1C1E;border-radius:12px;padding:16px 18px;font:400 15px/1.6 var(--body);color:#D6D6D6"><b>' + v[2] + ' wyświetleń · ' + v[3] + ' temu</b><br>Nagranie bez muzyki i bez komentarza, tylko dźwięki miejsca. Najlepiej oglądać w słuchawkach.</div></div>' +
-          '<div style="flex:1;display:flex;flex-direction:column;gap:14px;min-width:0"><div style="font:600 17px/1 var(--body);margin-bottom:4px">Następne</div>' + next + '</div></div>' +
+          '<div><div style="font:600 16px/1.3 var(--body)">' + esc(v[1]) + '</div><div style="font-size:13px;color:#9C9C9C">12.4K followers</div></div>' +
+          '<span style="margin-left:14px;background:#F1F1F1;color:#111;font:600 14px/1 var(--body);padding:11px 18px;border-radius:20px">Follow</span></div>' +
+          '<div style="background:#1C1C1E;border-radius:12px;padding:16px 18px;font:400 15px/1.6 var(--body);color:#D6D6D6"><b>' + v[2] + ' views · ' + v[3] + ' ago</b><br>Footage with no music and no commentary, only the sounds of the place. Best watched with headphones.</div></div>' +
+          '<div style="flex:1;display:flex;flex-direction:column;gap:14px;min-width:0"><div style="font:600 17px/1 var(--body);margin-bottom:4px">Up next</div>' + next + '</div></div>' +
           '<style>@keyframes playbar{to{width:100%}}</style>';
       }
     },
     nature: {
-      info: function () { return { title: 'Dolina o świcie', host: 'przyroda.example', path: '/dolina-o-swicie' }; },
+      info: function () { return { title: 'The valley at dawn', host: 'nature.example', path: '/valley-at-dawn' }; },
       light: function (s) {
         var a = Math.floor(s / 8), b = Math.ceil((s + 48) / 8), sum = 0, n = 0;
         for (var k = a; k < b && k < natureLum.length; k++) { sum += natureLum[k]; n++; }
@@ -475,15 +475,15 @@
         var H = 'font-family:var(--display);font-weight:600;margin:0;letter-spacing:-.01em;';
         var Pd = 'margin:0;font:400 24px/1.6 var(--body);color:#D6D9D3;';
         return '<div style="position:relative;height:' + NH + 'px"><canvas class="nat" width="1920" height="' + NH + '" style="position:absolute;inset:0;display:block"></canvas>' +
-          '<section style="' + ART + 'top:640px;color:#F4F1EC;text-shadow:0 2px 18px rgba(20,24,26,.45)"><span style="font:500 16px/1 var(--body);letter-spacing:.14em;text-transform:uppercase">Reportaż · 6 min czytania</span><h1 style="' + H + 'font-size:112px;line-height:1">Dolina o świcie</h1><p style="' + Pd + 'color:#F1EEE8">Zanim słońce wyjdzie zza grani, w dolinie słychać tylko strumień i pierwsze sikory. To godzina, w której góry nie należą do nikogo.</p></section>' +
-          '<section style="' + ART + 'top:1210px;color:#F4F1EC"><h2 style="' + H + 'font-size:64px;line-height:1.05">Las, który oddycha</h2><p style="' + Pd + '">Świerki stoją tu ciasno, jeden przy drugim. Pod koronami jest o kilka stopni chłodniej, a mech tłumi każdy krok. Mgła zostaje między pniami najdłużej.</p></section>' +
-          '<section style="' + ART + 'top:2420px;left:1000px;color:#F4F1EC"><h2 style="' + H + 'font-size:64px;line-height:1.05">Staw jak lustro</h2><p style="' + Pd + '">Przy bezwietrznej pogodzie woda odbija grań tak dokładnie, że trudno powiedzieć, gdzie kończy się góra.</p></section>' +
-          '<section style="' + ART + 'top:3420px;color:#1D2A33"><h2 style="' + H + 'font-size:64px;line-height:1.05">Wyżej już tylko śnieg</h2><p style="' + Pd + 'color:#3A4A55">Nad stawem szlak skręca w żleb, w którym śnieg leży do czerwca. Ostatnie świerki zostają w dole. Zostaje biel, niebo i własny oddech.</p></section></div>';
+          '<section style="' + ART + 'top:640px;color:#F4F1EC;text-shadow:0 2px 18px rgba(20,24,26,.45)"><span style="font:500 16px/1 var(--body);letter-spacing:.14em;text-transform:uppercase">Feature · 6 min read</span><h1 style="' + H + 'font-size:112px;line-height:1">The valley at dawn</h1><p style="' + Pd + 'color:#F1EEE8">Before the sun rises over the ridge, all you hear in the valley is the stream and the first tits. This is the hour when the mountains belong to no one.</p></section>' +
+          '<section style="' + ART + 'top:1210px;color:#F4F1EC"><h2 style="' + H + 'font-size:64px;line-height:1.05">A forest that breathes</h2><p style="' + Pd + '">The spruces stand close here, one next to another. Under the crowns it is a few degrees cooler, and the moss muffles every step. The mist lingers between the trunks the longest.</p></section>' +
+          '<section style="' + ART + 'top:2420px;left:1000px;color:#F4F1EC"><h2 style="' + H + 'font-size:64px;line-height:1.05">A lake like a mirror</h2><p style="' + Pd + '">On a windless day the water reflects the ridge so precisely that it is hard to tell where the mountain ends.</p></section>' +
+          '<section style="' + ART + 'top:3420px;color:#1D2A33"><h2 style="' + H + 'font-size:64px;line-height:1.05">Higher up, only snow</h2><p style="' + Pd + 'color:#3A4A55">Above the lake the trail turns into a gully where snow lies until June. The last spruces stay below. What remains is white, the sky and your own breath.</p></section></div>';
       }
     }
   };
 
-  /* ================= Stan przeglądarki ================= */
+  /* ================= Browser state ================= */
   var S, docEl = null;
   function freshState() {
     return { tabs: [{ id: 1, kind: 'start', q: '', v: 0, scroll: 0, back: [], fwd: [] }], active: 1, nextId: 2, hover: false, search: false, settings: false, theme: 'dark' };
@@ -506,7 +506,7 @@
     if (docEl) docEl.style.transform = 'translateY(' + (-t.scroll).toFixed(1) + 'px)';
     updateTone();
   }
-  // Pasek pokazany: nieprzezroczysty, w kolorze motywu Lum. Schowany: przezroczysty, kolor ikon według strony.
+  // Bar shown: opaque, in the Lum theme color. Hidden: transparent, icon color follows the page.
   function updateTone() {
     var t = tab(), shown = S.hover || S.search || S.settings;
     var light = shown ? S.theme === 'light' : !!PAGES[t.kind].light(t.scroll);
@@ -532,9 +532,9 @@
       var i = PAGES[x.kind].info(x);
       return '<div class="tab' + (x.id === S.active ? ' active' : '') + '" style="--i:' + idx + '" role="tab" tabindex="0" aria-selected="' + (x.id === S.active) + '" data-tab="' + x.id + '">' +
         FAV[x.kind] + '<span class="t">' + esc(i.title) + '</span>' +
-        '<span class="x" data-close="' + x.id + '" aria-label="Zamknij kartę"><svg viewBox="0 0 12 12"><path d="M3 3l6 6M9 3 3 9"/></svg></span></div>';
-    }).join('') + '<button class="btn newtab" style="--i:' + S.tabs.length + '" data-act="newtab" aria-label="Nowa karta"><svg viewBox="0 0 24 24"><path d="M12 6.5v11M6.5 12h11"/></svg></button>';
-    // przy wielu kartach zostają same ikonki
+        '<span class="x" data-close="' + x.id + '" aria-label="Close tab"><svg viewBox="0 0 12 12"><path d="M3 3l6 6M9 3 3 9"/></svg></span></div>';
+    }).join('') + '<button class="btn newtab" style="--i:' + S.tabs.length + '" data-act="newtab" aria-label="New tab"><svg viewBox="0 0 24 24"><path d="M12 6.5v11M6.5 12h11"/></svg></button>';
+    // with many tabs only the icons stay
     tabsEl.classList.toggle('dense', (tabsEl.clientWidth - 44) / S.tabs.length < 120);
     panelEl.classList.toggle('open', S.settings);
     panelEl.querySelectorAll('[data-theme]').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.theme === S.theme ? 'true' : 'false'); });
@@ -545,7 +545,7 @@
     updateTrack(show && !S.search);
   }
 
-  /* Linia karty: z lewej (za przyciskami) do otwartej karty, nad nią i dalej w prawo do końca */
+  /* Tab line: from the left (after the buttons) to the open tab, over it and on to the right end */
   var trackPath = document.getElementById('trackPath'), track = { L: 0, R: 0, ready: false, timer: null };
   function trackD(L, R) {
     var t = 8, b = 44, r = 10, end = 1920, x0 = 0;
@@ -589,7 +589,7 @@
   }
   function setTheme(t) { S.theme = t; renderPage(); }
   function openMany(n) {
-    var kinds = [['wiki'], ['video'], ['nature'], ['results', { q: 'mapa szlaków' }], ['watch', { v: 2 }], ['results', { q: 'pogoda w górach' }], ['watch', { v: 9 }], ['start']];
+    var kinds = [['wiki'], ['video'], ['nature'], ['results', { q: 'trail map' }], ['watch', { v: 2 }], ['results', { q: 'mountain weather' }], ['watch', { v: 9 }], ['start']];
     for (var i = 0; i < n; i++) { var k = kinds[i % kinds.length]; newTab(k[0], k[1]); }
     S.search = false; S.settings = false; renderPage();
   }
@@ -605,9 +605,9 @@
     S.search = false; input.blur();
     var low = text.toLowerCase();
     if (/^\S+\.\S+/.test(low)) {
-      if (low.indexOf('filmy') >= 0) return navigate('video');
-      if (low.indexOf('wiedza') >= 0) return navigate('wiki');
-      if (low.indexOf('przyroda') >= 0) return navigate('nature');
+      if (low.indexOf('videos') >= 0) return navigate('video');
+      if (low.indexOf('knowledge') >= 0) return navigate('wiki');
+      if (low.indexOf('nature') >= 0) return navigate('nature');
     }
     navigate('results', { q: text });
   }
@@ -624,7 +624,7 @@
   function setHover(h) { if (h !== S.hover) { S.hover = h; renderBar(); } }
   function closePanel() { if (S.settings) { S.settings = false; renderBar(); } }
 
-  /* ================= Efekt kliknięcia ================= */
+  /* ================= Click effect ================= */
   function pressFx(el) {
     var target = el.closest('.btn, .tab, .seg button');
     if (!target) return;
@@ -632,7 +632,7 @@
     setTimeout(function () { target.classList.remove('pressed'); }, 140);
   }
 
-  /* ================= Akcje (kliknięcia: prawdziwe i z pokazu) ================= */
+  /* ================= Actions (clicks: real and from the demo) ================= */
   screen.addEventListener('click', function (e) {
     var el = e.target;
     var close = el.closest('[data-close]'); if (close) { e.stopPropagation(); closeTab(Number(close.dataset.close)); return; }
@@ -679,7 +679,7 @@
     var t = tab(); t.scroll = Math.max(0, Math.min(maxScroll(), t.scroll + e.deltaY / scale * .5)); applyScroll();
   }, { passive: false });
 
-  /* ================= Pokaz z kursorem ================= */
+  /* ================= Demo with a cursor ================= */
   var demo = { running: false, token: 0, x: 960, y: 760 };
   function placeCursor() { cursorEl.style.transform = 'translate(' + (demo.x - 6) + 'px,' + (demo.y - 3) + 'px)'; }
   function Cancel() {}
@@ -703,7 +703,7 @@
       setHover(demo.y < 60); hoverAt();
     }, tok);
   }
-  // Kursor pokazu podświetla przycisk, nad którym jest (jak prawdziwe najechanie)
+  // The demo cursor highlights the button it is over (like a real hover)
   var hotEl = null;
   function setHot(h) { if (h !== hotEl) { if (hotEl) hotEl.classList.remove('hot'); hotEl = h; if (h) h.classList.add('hot'); } }
   function hoverAt() {
@@ -750,58 +750,58 @@
 
   async function runDemo(tok) {
     S = freshState(); renderPage(); demo.x = 960; demo.y = 760; placeCursor();
-    caption('Po starcie na środku paska jest napis Lum, przyciski są zawsze widoczne'); await sleep(2400, tok);
-    caption('Przy górnej krawędzi pasek przestaje być przezroczysty i pojawiają się karty');
+    caption('At start the Lum wordmark is in the middle of the bar, the buttons are always visible'); await sleep(2400, tok);
+    caption('At the top edge the bar stops being transparent and the tabs appear');
     await moveTo(980, 22, tok); await sleep(1300, tok);
-    caption('Na nowej karcie piszesz jak w notatce, lupa pojawia się sama');
+    caption('On a new tab you type like in a note, the magnifier appears by itself');
     await clickEl($('#nin'), tok);
-    await type('świerk pospolity', tok, document.getElementById('nin')); await sleep(800, tok);
+    await type('norway spruce', tok, document.getElementById('nin')); await sleep(800, tok);
     await clickEl($('[data-act=nsubmit]'), tok); await sleep(900, tok);
-    caption('Po zabraniu kursora karty znikają, a na środku wraca adres');
+    caption('When the cursor leaves, the tabs disappear and the address comes back in the middle');
     await clickEl($('[data-go=wiki]'), tok); await sleep(800, tok);
     await moveTo(1160, 640, tok, 600);
-    caption('Strona przewija się pod przezroczystym paskiem');
+    caption('The page scrolls under the transparent bar');
     await scrollTo(1250, 3200, tok); await sleep(900, tok);
-    caption('Nowa karta: znowu lupa');
+    caption('New tab: the magnifier again');
     await moveTo(1500, 22, tok); await sleep(700, tok);
     await clickEl($('#right [data-act=search]'), tok);
-    await type('filmy przyroda', tok); await sleep(300, tok);
+    await type('nature videos', tok); await sleep(300, tok);
     await clickEl($('.sbox [data-act=submit]'), tok); await sleep(800, tok);
-    await clickEl($('[data-go=video]'), tok, 'Strona z filmami'); await sleep(700, tok);
+    await clickEl($('[data-go=video]'), tok, 'A video site'); await sleep(700, tok);
     await moveTo(1000, 700, tok, 500);
     await scrollTo(460, 2000, tok); await sleep(500, tok);
-    await clickEl($('[data-go=watch][data-v="5"]'), tok, 'Otwieram film'); await sleep(2600, tok);
-    caption('Linia obejmuje otwartą kartę, pozostałe są bez obwódki');
+    await clickEl($('[data-go=watch][data-v="5"]'), tok, 'Opening a video'); await sleep(2600, tok);
+    caption('The line wraps around the open tab, the others have no outline');
     await moveTo(900, 22, tok); await sleep(1500, tok);
-    await clickEl(tabEl(0), tok, 'Przełączam kartę, linia przesuwa się za nią'); await sleep(1100, tok);
+    await clickEl(tabEl(0), tok, 'Switching tabs, the line follows'); await sleep(1100, tok);
     await clickEl($('[data-act=back]'), tok, 'Wstecz'); await sleep(900, tok);
     await clickEl($('[data-act=forward]'), tok, 'Dalej'); await sleep(900, tok);
-    await clickEl($('[data-act=reload]'), tok, 'Odśwież'); await sleep(1000, tok);
-    await clickEl($('#right [data-act=search]'), tok, 'Jeszcze jedna karta');
-    await type('dolina o świcie', tok); await sleep(300, tok);
+    await clickEl($('[data-act=reload]'), tok, 'Reload'); await sleep(1000, tok);
+    await clickEl($('#right [data-act=search]'), tok, 'One more tab');
+    await type('valley at dawn', tok); await sleep(300, tok);
     await clickEl($('.sbox [data-act=submit]'), tok); await sleep(800, tok);
-    await clickEl($('[data-go=nature]'), tok, 'Reportaż o przyrodzie'); await sleep(600, tok);
+    await clickEl($('[data-go=nature]'), tok, 'A nature feature'); await sleep(600, tok);
     await moveTo(1200, 760, tok, 600);
-    caption('Kolor adresu sam się dopasowuje do tła');
+    caption('The address color adapts to the background by itself');
     await scrollTo(3240, 7600, tok); await sleep(900, tok);
     await moveTo(1700, 22, tok); await sleep(600, tok);
     await moveTo(1300, 22, tok); await sleep(700, tok);
-    await clickEl($('[data-act=newtab]'), tok, 'Plus obok kart otwiera nową kartę'); await sleep(900, tok);
-    await clickEl($('#right [data-act=settings]'), tok, 'Ustawienia: jasny albo ciemny motyw'); await sleep(900, tok);
-    await clickEl($('[data-theme=light]'), tok, 'Jasny motyw'); await sleep(1900, tok);
-    await clickEl($('[data-theme=dark]'), tok, 'I z powrotem ciemny'); await sleep(1300, tok);
+    await clickEl($('[data-act=newtab]'), tok, 'The plus next to the tabs opens a new tab'); await sleep(900, tok);
+    await clickEl($('#right [data-act=settings]'), tok, 'Settings: light or dark theme'); await sleep(900, tok);
+    await clickEl($('[data-theme=light]'), tok, 'Light theme'); await sleep(1900, tok);
+    await clickEl($('[data-theme=dark]'), tok, 'And back to dark'); await sleep(1300, tok);
     await clickEl($('#right [data-act=settings]'), tok); await sleep(600, tok);
-    caption('Kart może być dowolnie dużo');
+    caption('There can be any number of tabs');
     for (var n = 0; n < 10; n++) { await clickEl($('[data-act=newtab]'), tok); closeSearch(); await sleep(200, tok); }
     await sleep(1400, tok);
-    caption('Przy wielu kartach zostają ikonki, a krzyżyk po najechaniu');
+    caption('With many tabs only icons stay, with a cross on hover');
     for (var m = 0; m < 5; m++) { await closeTabAt(2, tok); await sleep(450, tok); }
-    await moveTo(960, 760, tok); caption('Koniec pokazu, za chwilę od nowa'); await sleep(2600, tok);
+    await moveTo(960, 760, tok); caption('End of the demo, starting over in a moment'); await sleep(2600, tok);
   }
   function startDemo() {
     var tok = ++demo.token; demo.running = true;
-    cursorEl.style.display = ''; demoBtn.textContent = 'Pauza pokazu';
-    statusEl.textContent = 'Trwa pokaz. Kliknij w okno, żeby sterować samemu.';
+    cursorEl.style.display = ''; demoBtn.textContent = 'Pause demo';
+    statusEl.textContent = 'Demo running. Click the window to take control.';
     (async function loop() {
       try { while (true) await runDemo(tok); }
       catch (err) { if (!(err instanceof Cancel)) throw err; }
@@ -810,8 +810,8 @@
   function stopDemo(manual) {
     demo.token++; demo.running = false;
     cursorEl.style.display = 'none'; caption(''); setHot(null);
-    demoBtn.textContent = 'Odtwórz pokaz';
-    statusEl.textContent = manual ? 'Sterujesz samodzielnie. Najedź na górę okna, żeby zobaczyć karty.' : 'Pokaz zatrzymany.';
+    demoBtn.textContent = 'Play demo';
+    statusEl.textContent = manual ? 'You are in control. Move to the top of the window to see the tabs.' : 'Demo paused.';
     setHover(false);
   }
   demoBtn.addEventListener('click', function () {
