@@ -82,6 +82,10 @@ python3 package.py
 - `--tarball` pobiera kod Chromium jako paczkę bez historii Gita - dużo mniej miejsca na dysku.
 - Instalator i archiwum zip pojawią się w `build/`.
 - Pierwsza kompilacja trwa kilka godzin.
+- Podgląd postępu na żywo (etapy, procent, szacowany koniec): uruchom kompilację z zapisem do logu (PowerShell **jako administrator**,
+  inaczej rozpakowanie kodu wywali się na dowiązaniach symbolicznych)
+  (`python3 build.py --tarball *>&1 | Tee-Object -FilePath build-log.txt` w PowerShell), a w drugim oknie
+  `powershell -ExecutionPolicy Bypass -File lum\devutils\build-status.ps1`.
 
 **Jeśli kompilacja się wywali:**
 - przy pobieraniu kodu → usuń `build\download_cache` i uruchom ponownie,
