@@ -1,0 +1,410 @@
+Lum: own start page (new tab), as in Lum Preview (docs/lum-ui-spec.md, "New tab").
+
+The logo and a single field in the middle: a phrase is searched with Google, an address
+opens the page. Polish UI in Polish, English otherwise. Uses the third-party new tab page
+(chrome://new-tab-page-third-party) for every search engine, with its contents replaced.
+No network requests. A new tab focuses this field instead of the address bar.
+
+--- a/chrome/browser/search/search.cc
++++ b/chrome/browser/search/search.cc
+@@ -177,7 +177,8 @@ struct NewTabURLDetails {
+       return NewTabURLDetails(GURL(), NEW_TAB_URL_INCOGNITO);
+     }
+ 
+-    const bool default_is_google = DefaultSearchProviderIsGoogle(profile);
++    [[maybe_unused]] const bool default_is_google =
++        DefaultSearchProviderIsGoogle(profile);
+ 
+ #if BUILDFLAG(IS_ANDROID)
+     const bool is_desktop_android = IsWebUiNtpEnabledForDesktopAndroid();
+@@ -197,9 +198,8 @@ struct NewTabURLDetails {
+       }
+     }
+ #else
+-    const GURL local_url(default_is_google
+-                             ? chrome::ChromeUINewTabPageURLAsGURL()
+-                             : GURL(chrome::kChromeUINewTabPageThirdPartyURL));
++    // Lum: always Lum's own start page, whatever the search engine.
++    const GURL local_url(chrome::kChromeUINewTabPageThirdPartyURL);
+ #endif
+     return NewTabURLDetails(local_url, NEW_TAB_URL_VALID);
+   }
+--- a/chrome/browser/ui/browser_web_contents_delegate/browser_web_contents_delegate.cc
++++ b/chrome/browser/ui/browser_web_contents_delegate/browser_web_contents_delegate.cc
+@@ -945,11 +945,13 @@ bool BrowserWebContentsDelegate::ShouldFocusLocationBarByDefault(
+       return false;
+     }
+ 
++    // Lum: the start page has its own field, so the new tab focuses the page,
++    // not the address bar.
+     if ((url.SchemeIs(content::kChromeUIScheme) &&
+          url.host() == chrome::kChromeUINewTabHost) ||
+         (virtual_url.SchemeIs(content::kChromeUIScheme) &&
+          virtual_url.host() == chrome::kChromeUINewTabHost)) {
+-      return true;
++      return false;
+     }
+ 
+     if (url.spec() == chrome::kChromeUISplitViewNewTabPageURL) {
+--- a/chrome/browser/resources/new_tab_page_third_party/new_tab_page_third_party.html
++++ b/chrome/browser/resources/new_tab_page_third_party/new_tab_page_third_party.html
+@@ -1,57 +1,143 @@
+ <!doctype html>
+-<html dir="$i18n{textdirection}" lang="$i18n{language}"
+-    $i18n{hascustombackground} $i18n{isdark} $i18n{webuiRoundedIconsAttribute}>
++<!-- Lum: start page (new tab). One field in the middle: a phrase is searched, an address is opened.
++     Design: Lum Preview (docs/lum-ui-spec.md, "New tab"). No network requests. -->
++<html dir="$i18n{textdirection}" lang="$i18n{language}">
+   <head>
+     <meta charset="utf-8">
+     <title>$i18n{title}</title>
+     <style>
+-      html {
+-        --ntp-focus-shadow-color: rgba(var(--google-blue-600-rgb), .4);
+-        --ntp-theme-text-color: var(--google-grey-800);
+-        background-attachment: fixed;
+-        background-color: $i18n{colorBackground};
+-        background-position: $i18n{backgroundPosition};
+-        background-repeat: $i18n{backgroundTiling};
++      :root {
++        --bg: #000000;
++        --text: #ECECEC;
++        --ph: color-mix(in srgb, var(--text) 50%, var(--bg));
++        --icon: color-mix(in srgb, var(--text) 68%, var(--bg));
++        --star: color-mix(in srgb, var(--text) 55%, var(--bg));
++        --hint: color-mix(in srgb, var(--text) 52%, var(--bg));
++        --hint-b: color-mix(in srgb, var(--text) 68%, var(--bg));
++        --foot: color-mix(in srgb, var(--text) 46%, var(--bg));
++        color-scheme: dark;
++      }
++      html, body {
++        background: var(--bg);
++        font-family: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+         height: 100%;
+-        overflow: auto;
+-      }
+-
+-      @media (prefers-color-scheme: dark) {
+-        html {
+-          --ntp-focus-shadow-color: rgba(var(--google-blue-300-rgb), .5);
+-          --ntp-theme-text-color: white;
+-        }
+-      }
+-
+-      html[has-custom-background] {
+-        background-image: image-set(
+-            url(chrome://theme/IDR_THEME_NTP_BACKGROUND?$i18n{themeId}) 1x,
+-            url(chrome://theme/IDR_THEME_NTP_BACKGROUND@2x?$i18n{themeId}) 2x);
+-      }
+-
+-      body {
++        margin: 0;
++        overflow: hidden;
++      }
++      main {
+         align-items: center;
++        box-sizing: border-box;
+         display: flex;
+-        height: 100vh;
++        flex-direction: column;
++        height: 100%;
+         justify-content: center;
+-        margin: 0;
++        padding: 0 24px;
++      }
++      .logo {
++        color: var(--text);
++        height: 72px;
++        margin-bottom: 44px;
++        pointer-events: none;
++        user-select: none;
++        width: 72px;
++      }
++      .logo .star { fill: var(--star); }
++      .logo .moon { fill: currentColor; }
++      .note {
++        display: flex;
++        flex-direction: column;
++        gap: 14px;
++        width: min(640px, 100%);
++      }
++      .line {
++        align-items: center;
++        display: flex;
++        gap: 16px;
++        min-height: 40px;
++      }
++      input {
++        background: transparent;
++        border: 0;
++        caret-color: var(--text);
++        color: var(--text);
++        flex: 1;
++        font: 300 26px/1.3 "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
++        min-width: 0;
++        padding: 0;
++      }
++      input::placeholder { color: var(--ph); }
++      input:focus { outline: none; }
++      .act {
++        background: transparent;
++        border: 0;
++        color: var(--icon);
++        display: grid;
++        flex: none;
++        height: 34px;
++        opacity: 0;
++        padding: 0;
++        place-items: center;
++        transform: translateX(-6px);
++        transition: opacity .35s ease, transform .45s cubic-bezier(.22, 1, .36, 1);
++        width: 34px;
++      }
++      .act svg {
++        fill: none;
++        height: 22px;
++        stroke: currentColor;
++        stroke-linecap: round;
++        stroke-linejoin: round;
++        stroke-width: 1.6;
++        width: 22px;
+       }
+-
+-      cr-most-visited {
+-        --most-visited-focus-shadow: 0 0 0 2px var(--ntp-focus-shadow-color);
+-        --most-visited-text-color: var(--ntp-theme-text-color);
+-        --most-visited-text-shadow: none;
++      .act .i-link, .hint .h-link { display: none; }
++      .hint {
++        color: var(--hint);
++        font-size: 13px;
++        height: 16px;
++        opacity: 0;
++        transition: opacity .35s ease;
+       }
+-
+-      html[has-custom-background] cr-most-visited {
+-        --most-visited-text-shadow: 0 0 16px rgba(0, 0, 0, .3);
++      .hint b, .foot b { font-weight: 500; }
++      .hint b { color: var(--hint-b); }
++      .note.typing .act { opacity: 1; transform: none; }
++      .note.typing .hint { opacity: 1; }
++      .note.is-link .i-search, .note.is-link .h-search { display: none; }
++      .note.is-link .i-link { display: block; }
++      .note.is-link .h-link { display: inline; }
++      .foot {
++        bottom: 26px;
++        color: var(--foot);
++        font-size: 12px;
++        left: 0;
++        letter-spacing: .02em;
++        position: fixed;
++        right: 0;
++        text-align: center;
+       }
+     </style>
+   </head>
+   <body>
+-    <script type="module" src="strings.m.js"></script>
+-    <cr-most-visited></cr-most-visited>
++    <main>
++      <svg class="logo" viewBox="-6 -6 132 132" aria-hidden="true">
++        <path class="moon" d="M52.34 0.5 A60 60 0 1 0 119.5 67.67 A48 48 0 1 1 52.34 0.5 Z"/>
++        <path class="star" d="M96 12 Q98.4 27.6 114 30 Q98.4 32.4 96 48 Q93.6 32.4 78 30 Q93.6 27.6 96 12 Z"/>
++      </svg>
++      <div class="note" id="note">
++        <div class="line">
++          <input id="field" type="text" autocomplete="off" spellcheck="false" autofocus>
++          <button class="act" id="act">
++            <svg class="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 20 20"/></svg>
++            <svg class="i-link" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
++          </button>
++        </div>
++        <div class="hint">
++          <span class="h-search"><b>Enter</b> <span id="hint-search"></span></span>
++          <span class="h-link"><b>Enter</b> <span id="hint-link"></span></span>
++        </div>
++      </div>
++    </main>
++    <div class="foot" id="foot"></div>
+     <script type="module" src="new_tab_page_third_party.js"></script>
+-    <link rel="stylesheet" href="chrome://resources/css/text_defaults_md.css">
+   </body>
+ </html>
+--- a/chrome/browser/resources/new_tab_page_third_party/new_tab_page_third_party.ts
++++ b/chrome/browser/resources/new_tab_page_third_party/new_tab_page_third_party.ts
+@@ -2,31 +2,153 @@
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+-import 'chrome://resources/cr_components/most_visited/most_visited.js';
++// Lum: start page. A phrase goes to the search engine, an address opens the
++// page. Logic as in Lum Preview (ui-preview/start.js).
+ 
+-import {assert} from 'chrome://resources/js/assert.js';
+-import {skColorToRgba} from 'chrome://resources/js/color_utils.js';
++const SEARCH_URL = 'https://www.google.com/search?q=';
+ 
+-import {browserProxyFactory} from './new_tab_page_third_party.mojom-webui.js';
++interface Strings {
++  placeholder: string;
++  search: string;
++  open: string;
++  footer: Array<[string, string]>;
++}
+ 
++// Polish for the Polish UI, English everywhere else. Non-ASCII as escapes.
++const STRINGS: {[lang: string]: Strings} = {
++  pl: {
++    placeholder: 'Napisz coś albo wklej link…',
++    search: 'szukaj',
++    open: 'otwórz stronę',
++    footer: [
++      ['Ctrl+L', 'adres'],
++      ['Ctrl+T', 'nowa karta'],
++      ['Ctrl+Tab', 'następna karta'],
++    ],
++  },
++  en: {
++    placeholder: 'Type something or paste a link…',
++    search: 'search',
++    open: 'open page',
++    footer: [
++      ['Ctrl+L', 'address'],
++      ['Ctrl+T', 'new tab'],
++      ['Ctrl+Tab', 'next tab'],
++    ],
++  },
++};
+ 
+-const {callbackRouter, handler} = browserProxyFactory.getInstance();
++function getElement<T extends HTMLElement>(id: string): T {
++  const element = document.getElementById(id);
++  if (!element) {
++    throw new Error(`Missing #${id}`);
++  }
++  return element as T;
++}
+ 
+-callbackRouter.setTheme.addListener(theme => {
+-  const html = document.documentElement;
+-  html.toggleAttribute('has-custom-background', theme.hasCustomBackground);
+-  const style = html.style;
+-  style.backgroundColor = theme.colorBackground;
+-  const backgroundImage = `image-set(
+-      url(chrome://theme/IDR_THEME_NTP_BACKGROUND?${theme.id}) 1x,
+-      url(chrome://theme/IDR_THEME_NTP_BACKGROUND@2x?${theme.id}) 2x)`;
+-  style.backgroundImage = theme.hasCustomBackground ? backgroundImage : 'unset';
+-  style.backgroundRepeat = theme.backgroundTiling;
+-  style.backgroundPosition = theme.backgroundPosition;
+-  style.setProperty('--ntp-theme-text-color', skColorToRgba(theme.textColor));
++const lang = document.documentElement.lang.toLowerCase().split('-')[0] || 'en';
++const strings: Strings = STRINGS[lang] || STRINGS['en']!;
+ 
+-  const mostVisitedElement = document.querySelector('cr-most-visited');
+-  assert(mostVisitedElement);
+-  mostVisitedElement.theme = theme.mostVisited;
++const note = getElement<HTMLElement>('note');
++const field = getElement<HTMLInputElement>('field');
++const action = getElement<HTMLButtonElement>('act');
++
++field.placeholder = strings.placeholder;
++field.setAttribute('aria-label', strings.placeholder);
++action.setAttribute('aria-label', strings.search);
++getElement<HTMLElement>('hint-search').textContent = strings.search;
++getElement<HTMLElement>('hint-link').textContent = strings.open;
++
++const foot = getElement<HTMLElement>('foot');
++strings.footer.forEach(([key, label], index) => {
++  if (index > 0) {
++    foot.append('  ·  ');
++  }
++  const bold = document.createElement('b');
++  bold.textContent = key;
++  foot.append(bold, ' ' + label);
++});
++
++type Target = {kind: 'url' | 'search', url: string}|{kind: 'blocked'};
++
++const FILE_EXT =
++    /\.(js|mjs|ts|html?|css|json|md|txt|py|exe|png|jpe?g|gif|svg|pdf|zip|docx?|xlsx?)$/i;
++
++// http(s) links, localhost, IPv4 and domains with a letter TLD open a page;
++// file names and everything else is searched; other schemes do nothing.
++function classify(text: string): Target|null {
++  const value = text.trim();
++  if (!value) {
++    return null;
++  }
++  if (/^https?:\/\/\S+$/i.test(value)) {
++    return {kind: 'url', url: value};
++  }
++  if (/^[a-z][a-z0-9+.-]*:(\/\/|[^\d])/i.test(value) &&
++      !/^localhost:/i.test(value)) {
++    return {kind: 'blocked'};
++  }
++  const match = value.match(/^([^\s\/?#:]+)(:\d{1,5})?([\/?#]\S*)?$/);
++  if (match) {
++    const host = match[1]!;
++    const ip = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
++    if (host.toLowerCase() === 'localhost' ||
++        (ip && ip.slice(1).every(part => Number(part) <= 255))) {
++      return {kind: 'url', url: 'http://' + value};
++    }
++    if (!ip && /^[^.]+(\.[^.]+)*\.[a-z]{2,}$/i.test(host) &&
++        !(FILE_EXT.test(host) && !match[3])) {
++      return {kind: 'url', url: 'https://' + value};
++    }
++  }
++  return {kind: 'search', url: SEARCH_URL + encodeURIComponent(value)};
++}
++
++function go() {
++  const target = classify(field.value);
++  if (target && target.kind !== 'blocked') {
++    window.location.href = target.url;
++  }
++}
++
++field.addEventListener('input', () => {
++  const target = classify(field.value);
++  note.classList.toggle('typing', !!target && target.kind !== 'blocked');
++  note.classList.toggle('is-link', !!target && target.kind === 'url');
++});
++field.addEventListener('keydown', (e: KeyboardEvent) => {
++  if (e.key === 'Enter') {
++    e.preventDefault();
++    go();
++  }
++});
++action.addEventListener('click', go);
++
++// The field is always ready: typing or pasting anywhere goes into it and a
++// click anywhere puts the caret in it.
++function focusField() {
++  if (document.activeElement !== field) {
++    field.focus();
++    const end = field.value.length;
++    field.setSelectionRange(end, end);
++  }
++}
++
++document.addEventListener('keydown', (e: KeyboardEvent) => {
++  if (document.activeElement === field) {
++    return;
++  }
++  const paste = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v';
++  if (paste || (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey)) {
++    focusField();
++  }
++}, true);
++document.addEventListener('mousedown', (e: MouseEvent) => {
++  const target = e.target as Element | null;
++  if (target !== field && !(target && target.closest('#act'))) {
++    e.preventDefault();
++    focusField();
++  }
+ });
+-handler.updateTheme();
++window.addEventListener('focus', () => setTimeout(focusField, 0));
++focusField();
