@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https: http:;">
+<title>Lum Preview</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="fx-b">
+  <div id="pages"></div>
+  <div class="err" id="err" hidden>
+    <div class="err-in">
+      <div class="err-t">Couldn't open the page</div>
+      <div class="err-u" id="errUrl"></div>
+      <div class="err-d" id="errDesc"></div>
+      <button type="button" class="err-b" data-act="retry">Try again</button>
+    </div>
+  </div>
+
+  <div class="progress" id="progress"></div>
+  <!-- "Clear" bar mode: a dark shade behind the transparent bar while the page is scrolled under it -->
+  <div class="scrim" id="scrim" aria-hidden="true"></div>
+
+  <div class="bar" id="bar">
+    <!-- On hover: theme color above the line (band), the inside of the open tab in the page color (tabFill), the line itself (trackPath) -->
+    <svg class="track" id="track" aria-hidden="true"><path id="band" fill-rule="evenodd" d="M0 0H1"/><path id="tabFill" d="M0 0H1"/><path id="trackPath" d="M0 34H1"/><path id="edgePath" d="M0 0H1"/></svg>
+
+    <div class="side" id="left">
+      <button class="btn nav" data-act="back" title="Back (Alt+←)" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M15.5 5.5C13.2 8.4 10.6 10.2 7.5 12C10.6 13.8 13.2 15.6 15.5 18.5"/></svg></button>
+      <button class="btn nav" data-act="forward" title="Forward (Alt+→)" aria-label="Forward"><svg viewBox="0 0 24 24"><path d="M8.5 5.5C10.8 8.4 13.4 10.2 16.5 12C13.4 13.8 10.8 15.6 8.5 18.5"/></svg></button>
+      <button class="btn" data-act="reload" title="Reload (F5)" aria-label="Reload"><svg viewBox="0 0 24 24"><path d="M18.4 9.2A7 7 0 1 0 19 13"/><path d="M19 5.5v3.9h-3.9"/></svg></button>
+      <div class="tabs" id="tabs" role="tablist" aria-label="Tabs"></div>
+      <button class="btn newtab" id="newtab" data-act="newtab" title="New tab (Ctrl+T)" aria-label="New tab"><svg viewBox="0 0 24 24"><path d="M12 6.5v11M6.5 12h11"/></svg></button>
+      <!-- After clicking +: a field in its place; the new tab is created on Enter -->
+      <div class="newfield" id="newfield">
+        <input id="nq" type="text" placeholder="Type something or paste a link…" autocomplete="off" spellcheck="false" aria-label="Address or search, opens in a new tab">
+        <button class="btn" data-act="addgo" title="Open in a new tab (Enter)" aria-label="Open in a new tab"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 4.5 4.5"/></svg></button>
+      </div>
+    </div>
+
+    <div class="center">
+      <!-- Page address: looks like plain text; an invisible field on top of it lets you click, select and edit it -->
+      <div class="addr" id="addr">
+        <div class="label" id="label"></div>
+        <input id="addrIn" class="addr-in" type="text" autocomplete="off" spellcheck="false" aria-label="Page address">
+      </div>
+      <div class="sbox" id="sbox">
+        <input id="q" type="text" placeholder="Search or enter an address" autocomplete="off" spellcheck="false" aria-label="Search or enter an address">
+        <button class="btn" data-act="submit" aria-label="Search"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 4.5 4.5"/></svg></button>
+      </div>
+    </div>
+
+    <div class="side" id="right">
+      <button class="btn" data-act="settings" title="Settings" aria-label="Settings"><svg viewBox="0 0 24 24" style="stroke-width:1.4"><path d="M5 8h8M17 8h2M5 16h2M11 16h8"/><circle cx="15" cy="8" r="2"/><circle cx="9" cy="16" r="2"/></svg></button>
+      <div class="arcs">
+        <!-- Each button has two icons: arcs (round style) and classic — □ ✕ (square style) -->
+        <button class="btn" data-act="min" title="Minimize" aria-label="Minimize"><svg class="ic-round" viewBox="0 0 24 24"><path d="M6 10.5q6 6.5 12 0"/></svg><svg class="ic-square" viewBox="0 0 24 24"><path d="M6.5 12h11"/></svg></button>
+        <button class="btn" data-act="max" title="Maximize" aria-label="Maximize"><svg class="ic-round" viewBox="0 0 24 24"><path d="M6 14.5q6-8 12 0"/></svg><svg class="ic-square" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10"/></svg></button>
+        <button class="btn" data-act="close" title="Close" aria-label="Close"><svg class="ic-round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5.5"/></svg><svg class="ic-square" viewBox="0 0 24 24"><path d="M7 7l10 10M17 7 7 17"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel" role="dialog" aria-label="Settings">
+    <div class="ttl">Theme · <span id="tname">Black</span></div>
+    <div class="swatches" role="group" aria-label="Theme">
+      <button type="button" class="sw-btn" data-theme="black" title="Black" aria-label="Black"><span style="background:#000000"></span></button>
+      <button type="button" class="sw-btn" data-theme="graphite" title="Graphite" aria-label="Graphite"><span style="background:#1C1D20"></span></button>
+      <button type="button" class="sw-btn" data-theme="gray" title="Gray" aria-label="Gray"><span style="background:#3A3B40"></span></button>
+      <button type="button" class="sw-btn" data-theme="silver" title="Light gray" aria-label="Light gray"><span style="background:#DFE0E3"></span></button>
+      <button type="button" class="sw-btn" data-theme="white" title="White" aria-label="White"><span style="background:#FAFAFA"></span></button>
+    </div>
+    <div class="swatches" role="group" aria-label="Pastel themes and custom color">
+      <button type="button" class="sw-btn" data-theme="mint" title="Mint" aria-label="Mint"><span style="background:#CFEBDD"></span></button>
+      <button type="button" class="sw-btn" data-theme="sky" title="Sky" aria-label="Sky"><span style="background:#CFE3F3"></span></button>
+      <button type="button" class="sw-btn" data-theme="lavender" title="Lavender" aria-label="Lavender"><span style="background:#DCD3F2"></span></button>
+      <button type="button" class="sw-btn" data-theme="rose" title="Rose" aria-label="Rose"><span style="background:#F3D3DE"></span></button>
+      <!-- Custom color: any color, from the system picker -->
+      <label class="sw-btn sw-custom" data-theme="custom" title="Custom color" aria-label="Custom color">
+        <span id="customSwatch"></span>
+        <input type="color" id="customColor" value="#B9D7EA" aria-label="Pick a custom color">
+      </label>
+    </div>
+    <div class="ttl">Style</div>
+    <div class="seg">
+      <button type="button" data-style="round" aria-pressed="true" title="Arcs instead of window buttons, rounded tab line"><svg viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="5"/></svg>Round</button>
+      <button type="button" data-style="square" aria-pressed="false" title="Classic — □ ✕ buttons, square tab line"><svg viewBox="0 0 24 24" style="stroke-linejoin:miter;stroke-linecap:square"><rect x="4" y="6" width="16" height="12"/></svg>Square</button>
+    </div>
+    <div class="ttl">Window buttons</div>
+    <div class="seg">
+      <button type="button" data-btncolor="color" aria-pressed="true" title="Minimize, maximize and close in green, yellow and red"><svg viewBox="0 0 24 24" style="stroke-width:4.5"><path d="M5 12h.01" stroke="#3DDC84"/><path d="M12 12h.01" stroke="#F5C542"/><path d="M19 12h.01" stroke="#FF5F57"/></svg>Colored</button>
+      <button type="button" data-btncolor="plain" aria-pressed="false" title="Window buttons in the same color as the other icons"><svg viewBox="0 0 24 24" style="stroke-width:2.4"><path d="M5 12h.01M12 12h.01M19 12h.01"/></svg>Plain</button>
+    </div>
+    <div class="ttl">Bar</div>
+    <div class="seg grid2">
+      <button type="button" data-barmode="auto" aria-pressed="true" title="The bar hides; it comes back when you move to the very top of the window"><svg viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M8 12l4 4 4-4" opacity=".7"/></svg>Hidden</button>
+      <button type="button" data-barmode="clear" aria-pressed="false" title="The bar stays and is transparent; at the top the page starts below it, when you scroll the page goes under it with a dark shade"><svg viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M4 11h16M4 15h16" opacity=".35"/></svg>Clear</button>
+      <button type="button" data-barmode="fixed" aria-pressed="false" title="The bar is always visible, the page starts below it"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2.5"/><path d="M4 9.5h16"/></svg>Always</button>
+      <button type="button" data-barmode="full" aria-pressed="false" title="Everything always visible: the bar, the tabs and the line; the page starts below the bar. Right-click a tab to copy its link"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2.5"/><path d="M4 9.5h16"/><path d="M7 7.3h4" opacity=".8"/></svg>Full</button>
+    </div>
+  </div>
+
+  <!-- Right click on a tab -->
+  <div class="ctx" id="ctx" role="menu">
+    <button type="button" data-ctx="copy" role="menuitem"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="11" height="11" rx="2.5"/><path d="M16 8V6.5A2.5 2.5 0 0 0 13.5 4h-7A2.5 2.5 0 0 0 4 6.5v7A2.5 2.5 0 0 0 6.5 16H8"/></svg>Copy link</button>
+    <button type="button" data-ctx="qr" role="menuitem"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h2v2h-2zM18 18h2v2h-2zM14 18h2M18 14h2"/></svg>Show QR code</button>
+    <button type="button" data-ctx="close" role="menuitem"><svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7 7 17"/></svg>Close tab<span class="k">Ctrl+W</span></button>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <!-- QR code of a tab's link: scan it with a phone to open the same page there -->
+  <div class="qr-wrap" id="qrWrap" aria-hidden="true">
+    <div class="qr-card" role="dialog" aria-label="QR code">
+      <div class="qr-t">Scan to open on your phone</div>
+      <div class="qr-img" id="qrImg"></div>
+      <div class="qr-u" id="qrUrl"></div>
+      <div class="qr-actions">
+        <button type="button" data-qr="copy">Copy link</button>
+        <button type="button" data-qr="close" class="primary">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

@@ -1,0 +1,319 @@
+@font-face {
+  font-family: "Sacramento";
+  src: url("node_modules/@fontsource/sacramento/files/sacramento-latin-400-normal.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+
+:root {
+  --ui: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  --band: #0E0E10;                    /* bar color above the line on hover (dark theme) */
+  --band-ink: #FFFFFF;
+  --panel-bg: rgba(22,23,26,.82); --panel-ink: #EDEEF0; --panel-line: rgba(255,255,255,.1); --seg-bg: rgba(255,255,255,.07); --seg-on: rgba(255,255,255,.16);
+  color-scheme: dark;
+}
+body.theme-light {
+  --band: #F1F1F2;                    /* light theme */
+  --band-ink: #16181B;
+  --panel-bg: rgba(252,252,252,.9); --panel-ink: #16181B; --panel-line: rgba(0,0,0,.1); --seg-bg: rgba(0,0,0,.05); --seg-on: #FFFFFF;
+}
+html, body { margin: 0; height: 100%; overflow: hidden; background: #000; font-family: var(--ui); user-select: none; }
+body { background: var(--page, #000); }
+
+/* ---------- Pages: full window, also under the bar ---------- */
+#pages { position: absolute; inset: 0; }
+#pages webview { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+#pages webview.hidden { visibility: hidden; pointer-events: none; }
+/* The page in <webview> captures clicks even where the bar or panel lies over it.
+   While the bar is shown, the page temporarily ignores clicks, so they reach the buttons. */
+body.bar-shown #pages webview, #pages webview.errored { pointer-events: none; }
+
+/* ---------- Bar (38 px) ---------- */
+.bar { position: fixed; top: 0; left: 0; right: 0; height: 38px; z-index: 10; display: flex; align-items: center; justify-content: space-between; padding: 0;
+  pointer-events: none;
+  --chrome: #FFFFFF; --dim: rgba(255,255,255,.68); --hov: rgba(255,255,255,.12); --track: rgba(255,255,255,.4);
+  --glow-icon: rgba(255,255,255,.55); --flash: rgba(255,255,255,.8);
+  --halo: drop-shadow(0 0 1px rgba(0,0,0,.6)) drop-shadow(0 0 5px rgba(0,0,0,.28));
+  color: var(--chrome); }
+.bar.on-light { --chrome: #16181B; --dim: rgba(22,24,27,.66); --hov: rgba(0,0,0,.07); --track: rgba(22,24,27,.28);
+  --glow-icon: rgba(22,24,27,.25); --flash: rgba(22,24,27,.4);
+  --halo: drop-shadow(0 0 1px rgba(255,255,255,.8)) drop-shadow(0 0 5px rgba(255,255,255,.4)); }
+/* On hover the bar has the theme color, so the halo is not needed */
+.bar.show { pointer-events: auto; }
+body:not(.bar-clear) .bar.show { --halo: drop-shadow(0 0 0 transparent); }
+.bar, .bar * { transition: color .35s ease; }
+.bar { transition: color .35s ease, opacity .45s ease; }
+
+/* "Hidden" mode: the whole bar disappears when the cursor is not at the top edge */
+body.bar-auto .bar:not(.show) { opacity: 0; }
+body.bar-auto .bar:not(.show) * { pointer-events: none !important; }
+/* "Always visible" mode: the bar has the theme color and the page starts below it (nothing overlaps it) */
+body.bar-fixed #pages, body.bar-fixed .err { top: 38px; }
+body.bar-fixed .bar { pointer-events: auto; --halo: drop-shadow(0 0 0 transparent); }
+body.bar-fixed #band, body.bar-fixed #tabFill { opacity: 1; }
+/* "Clear" mode: the bar never hides and stays transparent (no theme color, also on hover).
+   A web page scrolled to the very top starts below the bar (docked), so its own buttons do not collide
+   with ours; scrolled down, it runs under the bar with a dark shade behind it that fades into the page. */
+#pages webview { transition: top .22s ease, height .22s ease; }
+body.bar-clear #pages webview.docked { top: 38px; height: calc(100% - 38px); }
+.scrim { position: fixed; top: 0; left: 0; right: 0; height: 84px; z-index: 9; pointer-events: none; opacity: 0; transition: opacity .5s ease;
+  }
+/* On hover the shade stays exactly the same; only the tabs and the line are drawn in. */
+.scrim::before { content: ""; position: absolute; inset: 0; background: linear-gradient(rgba(0,0,0,.7), rgba(0,0,0,.6) 30%, rgba(0,0,0,.34) 55%, rgba(0,0,0,.12) 78%, transparent); }
+body.bar-clear .scrim { opacity: 1; }
+body.bar-clear .scrim.off { opacity: 0; }
+body.bar-clear #band, body.bar-clear #tabFill { opacity: 0 !important; }
+body.bar-clear .bar.show .tab.active { color: var(--chrome); }
+@media (prefers-reduced-motion: reduce) { .scrim, #pages webview { transition-duration: .01s; } }
+
+/* The window moves by dragging an empty spot on the bar (see "Window dragging" below) */
+.side { display: flex; align-items: center; gap: 0; }
+#left { flex: 1; min-width: 0; margin-right: 20px; }
+/* Buttons and tabs lie above the address in the middle, so the address never blocks them;
+   the empty parts of both sides let clicks through (to the address or the drag area) */
+#left, #right { position: relative; z-index: 2; pointer-events: none; }
+.center { z-index: 1; }
+/* There is always free space to grab and move the window, even with many tabs */
+#left::after { content: ""; flex: 0 0 120px; }
+#right { flex: none; }
+
+/* Bar buttons: equal 38 x 38 squares over the full bar height, so the whole area around an icon is clickable;
+   the first and last ones reach the window edges (the bar has no side padding). */
+.btn { position: relative; flex: none; width: 38px; height: 38px; border-radius: 8px; border: 0; padding: 0; background: transparent; color: inherit; display: grid; place-items: center; cursor: default;
+  pointer-events: auto; transition: transform .45s cubic-bezier(.34,1.9,.64,1); }
+.btn svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round;
+  filter: var(--halo); opacity: .8; transition: opacity .45s ease, filter .45s ease, transform .5s cubic-bezier(.22,1,.36,1); }
+.btn.nav svg { width: 19px; height: 19px; stroke-width: 1.7; }
+.btn.off svg { opacity: .3; }
+.btn:focus-visible, .tab:focus-visible { outline: 2px solid #8FB4FF; outline-offset: 1px; }
+/* Hover: the icon brightens slightly and glows a little */
+.btn:hover svg { opacity: 1; filter: var(--halo) drop-shadow(0 0 3px var(--glow-icon)); }
+.btn.off:hover svg { opacity: .3; filter: var(--halo); }
+/* Click: press and a short icon flash */
+.btn.pressed { transform: scale(.82); transition: transform .08s ease; }
+.btn.pressed svg { opacity: 1; filter: var(--halo) drop-shadow(0 0 4px var(--flash)); transition: filter .05s, opacity .05s; }
+.arcs { display: flex; align-items: center; gap: 0; }
+/* Window buttons: same size and position in both styles, packed tightly */
+.arcs svg { width: 17px; height: 17px; stroke-width: 2; opacity: 1; }
+/* Window button colors ("Window buttons" setting: Colored / Plain). Colored: green, yellow, red, darker on a light
+   background so they stay visible. Plain: the same color as the other icons. Same in both styles (arcs and — □ ✕). */
+body:not(.btn-plain) .arcs [data-act=min] { --glow-icon: rgba(61,220,132,.9); --flash: #3DDC84; --wb: #3DDC84; }
+body:not(.btn-plain) .arcs [data-act=max] { --glow-icon: rgba(245,197,66,.9); --flash: #F5C542; --wb: #F5C542; }
+body:not(.btn-plain) .arcs [data-act=close] { --glow-icon: rgba(255,95,87,.9); --flash: #FF5F57; --wb: #FF5F57; }
+body:not(.btn-plain) .bar.on-light .arcs [data-act=min] { --wb: #16A34A; }
+body:not(.btn-plain) .bar.on-light .arcs [data-act=max] { --wb: #C98A00; }
+body:not(.btn-plain) .bar.on-light .arcs [data-act=close] { --wb: #E5483E; }
+.arcs svg path, .arcs svg circle, .arcs svg rect { stroke: var(--wb, currentColor); }
+body.btn-plain .arcs svg { opacity: .8; }
+body.btn-plain .arcs .btn:hover svg { opacity: 1; }
+
+/* ---------- Center: page address or search ---------- */
+.center { position: absolute; left: 50%; top: 0; height: 38px; transform: translateX(-50%); display: flex; align-items: center; justify-content: center; pointer-events: none; max-width: 52%; }
+.label { font-size: 12.5px; letter-spacing: .01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; filter: var(--halo); transition: opacity .7s ease, transform .8s cubic-bezier(.22,1,.36,1); }
+.label .path { opacity: .6; }
+/* The label fades out fast (before the tabs appear) and comes back slowly;
+   it stays when the cursor is near it or while you edit it */
+.bar.show:not(.near-label):not(.editing) .label, .bar.searching .label { opacity: 0; transform: translateY(-4px); transition: opacity .2s ease, transform .3s ease; }
+/* Address: plain text with an invisible field exactly on top of it (same font and position).
+   Hovering near it (60 px around) makes it clickable; clicking turns the field's text visible. The field itself covers
+   those 60 px on both sides too (as padding, so the text stays in place): a click past the end puts the caret at the end,
+   a click before the start at the start - easy to grab the whole address. */
+.addr { position: relative; display: flex; align-items: center; height: 38px; max-width: 100%; padding: 0 60px; box-sizing: border-box; pointer-events: none; }
+.addr-in { position: absolute; left: 0; right: 0; top: 0; height: 38px; margin: 0; padding: 0 60px; box-sizing: border-box; border: 0; outline: none; background: transparent;
+  font: 400 12.5px var(--ui); letter-spacing: .01em; color: transparent; caret-color: var(--chrome); user-select: text; pointer-events: none; cursor: text; }
+.addr-in::selection { background: rgba(143,180,255,.38); }
+.bar.show .addr.has-url, .bar.show .addr.has-url .addr-in { pointer-events: auto; -webkit-app-region: no-drag; }
+.bar.searching .addr { display: none; }
+.bar.editing .addr .label { visibility: hidden; }
+.bar.editing .addr-in { color: var(--chrome); filter: var(--halo); }
+.sbox { display: none; align-items: center; gap: 8px; width: min(600px, 50vw); height: 28px; filter: var(--halo); pointer-events: auto; }
+.bar.searching .sbox { display: flex; }
+.sbox input { flex: 1; min-width: 0; background: transparent; border: 0; color: var(--chrome); font: 400 14px/1 var(--ui); padding: 3px 2px; caret-color: var(--chrome); user-select: text; }
+.sbox input:focus { outline: none; }
+.sbox input::placeholder { color: var(--dim); }
+.sbox .btn { width: 28px; height: 28px; }
+.sbox .btn svg { width: 16px; height: 16px; }
+
+/* ---------- Tabs ---------- */
+/* Tab strip: grows with the number of tabs and scrolls horizontally (mouse wheel) when out of space */
+.tabs { flex: 0 1 auto; min-width: 0; display: flex; align-items: center; gap: 2px; margin-left: 4px; pointer-events: none;
+  overflow-x: auto; overflow-y: hidden; scrollbar-width: none; height: 38px; }
+.tabs::-webkit-scrollbar { display: none; }
+.tab { position: relative; flex: 0 1 190px; min-width: 36px; height: 26px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 5px 0 10px; border-radius: 8px; font: 500 12px/1 var(--ui); color: var(--dim);
+  filter: var(--halo); opacity: 0; transform: translateX(-10px);
+  transition: opacity .8s ease calc(var(--i, 0) * 45ms), transform 1s cubic-bezier(.22,1,.36,1) calc(var(--i, 0) * 45ms), color .35s ease; }
+.tab:hover, .tab.active { color: var(--chrome); }
+/* The open tab sits on the page color, so its text color is matched to that background */
+.bar.show .tab.active { color: var(--tab-ink, var(--chrome)); }
+.tab .t { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.tab .fav { width: 15px; height: 15px; flex: none; border-radius: 4px; display: grid; place-items: center; overflow: hidden; }
+.tab .fav img { width: 15px; height: 15px; display: block; }
+.tab .fav svg { width: 14px; height: 14px; }
+.tab .x { flex: none; width: 20px; height: 20px; border-radius: 6px; display: grid; place-items: center; opacity: 0; transition: opacity .25s ease, background-color .2s; }
+.tab:hover .x { opacity: .85; }
+.tab .x:hover { background: var(--hov); opacity: 1; }
+.tab .x svg { width: 11px; height: 11px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; }
+.tab.loading .fav { animation: pulse 1s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .35; } }
+.tab.pressed { transform: scale(.96) !important; transition: transform .08s ease; }
+.newtab { opacity: 0; transform: translateX(-10px); margin-left: 2px; transition: opacity .8s ease calc(var(--i, 0) * 45ms), transform 1s cubic-bezier(.22,1,.36,1) calc(var(--i, 0) * 45ms); }
+.newtab.pressed { transform: scale(.8); transition: transform .08s ease; }
+.bar.show:not(.searching) .tabs, .bar.show:not(.searching) .newtab { pointer-events: auto; }
+.bar:not(.show) .newtab, .bar.searching .newtab { pointer-events: none; }
+.bar.show:not(.searching) .tab, .bar.show:not(.searching) .newtab { opacity: 1; transform: none; }
+/* Many tabs: icon only, the close cross replaces it on hover */
+.tabs.dense .tab { padding: 0; justify-content: center; gap: 0; }
+.tabs.dense .tab .t { display: none; }
+.tabs.dense .tab .x { display: none; }
+.tabs.dense .tab:hover .x { display: grid; }
+.tabs.dense .tab:hover .fav { display: none; }
+
+/* ---------- Hover colors and the open tab line ---------- */
+.track { position: absolute; top: 0; left: 0; width: 100%; height: 38px; pointer-events: none; overflow: visible; }
+/* Above the line: browser theme color */
+#band { fill: var(--band); opacity: 0; transition: opacity .55s ease, fill .4s ease; }
+/* Inside of the open tab: the most common color at the top of the page */
+#tabFill { fill: transparent; opacity: 0; transition: opacity .55s ease, fill .45s ease; }
+.bar.show #band, .bar.show #tabFill { opacity: 1; }
+.bar.searching #tabFill { opacity: 0; }
+/* Line: from the left to the right window edge, appears later and slower than the tabs */
+#trackPath { fill: none; stroke: var(--track); stroke-width: 1.2; stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 6000 6000; stroke-dashoffset: 6000; opacity: 0;
+  transition: stroke-dashoffset .6s ease, opacity .5s ease, stroke .35s ease; }
+.bar.show:not(.searching) #trackPath { stroke-dashoffset: 0; opacity: 1;
+  transition: stroke-dashoffset 2s cubic-bezier(.45,0,.2,1) .55s, opacity 1.3s ease .55s, stroke .35s ease; }
+/* The line's parts along the window edges: faint, like the window's own border (not a light stripe) */
+#edgePath { fill: none; stroke: var(--track); stroke-linecap: round; stroke-linejoin: round; opacity: 0; transition: opacity .5s ease, stroke .35s ease; }
+.bar.show:not(.searching) #edgePath { opacity: .3; transition: opacity 1.3s ease .55s, stroke .35s ease; }
+body.style-square #edgePath { stroke-linejoin: miter; stroke-linecap: butt; }
+
+.progress { position: fixed; top: 0; left: 0; height: 2px; width: 0; background: #8FB4FF; opacity: 0; z-index: 11; pointer-events: none; transition: width .4s ease, opacity .4s ease; }
+.progress.run { opacity: .9; width: 70%; transition: width 6s cubic-bezier(.1,.7,.2,1), opacity .2s; }
+.progress.done { opacity: 0; width: 100%; transition: width .25s ease, opacity .5s ease .25s; }
+
+/* ---------- Page that failed to open ---------- */
+.err { position: fixed; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center; background: var(--page, #000); color: #ECECEC; }
+body.theme-light .err { color: #1C1C1C; }
+.err[hidden] { display: none; }
+.err-in { width: min(560px, 90vw); display: flex; flex-direction: column; gap: 12px; }
+.err-t { font: 300 26px/1.3 var(--ui); }
+.err-u { font: 400 14px/1.4 var(--ui); opacity: .75; word-break: break-all; user-select: text; }
+.err-d { font: 400 12px/1.4 var(--ui); opacity: .55; }
+.err-b { align-self: flex-start; margin-top: 8px; font: 500 13px/1 var(--ui); color: inherit; background: transparent; border: 1px solid currentColor; border-radius: 8px; padding: 10px 14px; opacity: .8; transition: opacity .3s, transform .35s cubic-bezier(.34,1.8,.64,1); }
+.err-b:hover { opacity: 1; }
+.err-b:active { transform: scale(.96); }
+
+/* ---------- Settings ---------- */
+.panel { position: fixed; top: 44px; right: 66px; z-index: 12; width: 300px; box-sizing: border-box; padding: 14px; border-radius: 12px;
+  background: var(--panel-bg); -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); color: var(--panel-ink); border: 1px solid var(--panel-line);
+  opacity: 0; transform: translateY(-6px) scale(.97); transform-origin: top right; pointer-events: none; transition: opacity .35s ease, transform .45s cubic-bezier(.22,1,.36,1); }
+.panel.open { opacity: 1; transform: none; pointer-events: auto; }
+.panel .ttl { font: 500 11px/1 var(--ui); letter-spacing: .08em; text-transform: uppercase; opacity: .6; margin: 0 4px 10px; }
+/* Same spacing before every section */
+.panel .ttl:not(:first-child) { margin-top: 18px; }
+.seg { display: flex; gap: 4px; padding: 4px; border-radius: 10px; background: var(--seg-bg); }
+.seg button { flex: 1; height: 32px; border: 0; border-radius: 7px; background: transparent; color: inherit; font: 500 13px/1 var(--ui); display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: background-color .35s ease, transform .4s cubic-bezier(.34,1.8,.64,1); }
+.seg button svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.seg button[aria-pressed="true"] { background: var(--seg-on); }
+.seg.grid2 { display: grid; grid-template-columns: 1fr 1fr; }
+/* 2x2: icons and labels start at the same spot in both rows, so they form neat columns */
+.seg.grid2 button { justify-content: flex-start; padding-left: 36px; }
+.seg button.pressed { transform: scale(.95); transition-duration: .08s; }
+/* Theme picker: two rows of five (grays; pastels + custom color), spread over the full width so the
+   circles line up in columns and their outer edges line up with the buttons below */
+.swatches { display: grid; grid-template-columns: repeat(5, 32px); justify-content: space-between; }
+.swatches + .swatches { margin-top: 8px; }
+.sw-btn { position: relative; width: 32px; height: 32px; border-radius: 50%; border: 0; padding: 0; background: transparent; display: grid; place-items: center;
+  box-shadow: 0 0 0 0 transparent; transition: box-shadow .3s ease, transform .4s cubic-bezier(.34,1.8,.64,1); }
+.sw-btn span { width: 24px; height: 24px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(128,128,128,.5); }
+/* Custom color: a colorful ring around the chosen color; clicking opens the system picker */
+.sw-custom span { box-shadow: 0 0 0 2px var(--panel-bg), 0 0 0 4px transparent; background-clip: padding-box; outline: 2px solid transparent;
+  border: 2px solid transparent; background-origin: border-box; width: 20px; height: 20px;
+  background-image: linear-gradient(var(--cc, #B9D7EA), var(--cc, #B9D7EA)), conic-gradient(#F6B8C8, #F6D9A8, #F3EDC4, #BFE6CF, #B9D7EA, #D4C6F0, #F6B8C8); background-clip: padding-box, border-box; }
+.sw-custom input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: default; border: 0; padding: 0; }
+.sw-btn:hover { transform: scale(1.08); }
+.sw-btn[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--panel-ink); }
+.sw-btn.pressed { transform: scale(.9); transition-duration: .08s; }
+.sw-btn:focus-visible { outline: 2px solid #8FB4FF; outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .tab, .newtab, #trackPath, #band, #tabFill, .label { transition-duration: .01s !important; transition-delay: 0s !important; }
+}
+
+/* ---------- Tab menu (right click) and a short message ---------- */
+.ctx { position: fixed; z-index: 13; min-width: 168px; padding: 5px; box-sizing: border-box; border-radius: 10px;
+  background: var(--panel-bg); -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); color: var(--panel-ink); border: 1px solid var(--panel-line);
+  opacity: 0; transform: translateY(-4px) scale(.98); transform-origin: top left; pointer-events: none; transition: opacity .18s ease, transform .25s cubic-bezier(.22,1,.36,1); }
+.ctx.open { opacity: 1; transform: none; pointer-events: auto; }
+.ctx button { width: 100%; height: 30px; display: flex; align-items: center; gap: 9px; padding: 0 9px; border: 0; border-radius: 6px; background: transparent; color: inherit; font: 400 13px/1 var(--ui); text-align: left; }
+.ctx button:hover:not(:disabled) { background: var(--seg-on); }
+.ctx button:disabled { opacity: .4; }
+.ctx svg { width: 15px; height: 15px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.ctx .k { margin-left: auto; opacity: .5; font-size: 12px; }
+body.style-square .ctx, body.style-square .ctx button { border-radius: 0; }
+.toast { position: fixed; z-index: 13; top: 48px; left: 50%; transform: translate(-50%, -4px); padding: 8px 14px; border-radius: 9px; font: 500 12.5px/1 var(--ui);
+  background: var(--panel-bg); color: var(--panel-ink); border: 1px solid var(--panel-line); -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px);
+  opacity: 0; pointer-events: none; transition: opacity .25s ease, transform .35s cubic-bezier(.22,1,.36,1); }
+.toast.on { opacity: 1; transform: translate(-50%, 0); }
+/* QR dialog: centered card over a dimmed, slightly blurred window */
+.qr-wrap { position: fixed; inset: 0; z-index: 14; display: grid; place-items: center; background: rgba(0,0,0,.35);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); opacity: 0; pointer-events: none; transition: opacity .25s ease; }
+.qr-wrap.open { opacity: 1; pointer-events: auto; }
+body.modal #pages webview { pointer-events: none; }
+.qr-card { width: 300px; box-sizing: border-box; padding: 20px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; gap: 14px;
+  background: var(--panel-bg); color: var(--panel-ink); border: 1px solid var(--panel-line); -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px);
+  transform: translateY(8px) scale(.97); transition: transform .35s cubic-bezier(.22,1,.36,1); }
+.qr-wrap.open .qr-card { transform: none; }
+.qr-t { font: 500 14px/1.2 var(--ui); }
+.qr-img { width: 220px; height: 220px; padding: 12px; box-sizing: border-box; border-radius: 12px; background: #FFFFFF; }
+.qr-img svg { display: block; width: 100%; height: 100%; }
+.qr-u { max-width: 100%; font: 400 12px/1.3 var(--ui); opacity: .65; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; user-select: text; }
+.qr-actions { display: flex; gap: 8px; width: 100%; }
+.qr-actions button { flex: 1; height: 32px; border: 0; border-radius: 8px; background: var(--seg-bg); color: inherit; font: 500 13px/1 var(--ui); transition: background-color .2s; }
+.qr-actions button:hover { background: var(--seg-on); }
+.qr-actions .primary { background: var(--seg-on); }
+body.style-square .qr-card, body.style-square .qr-img, body.style-square .qr-actions button { border-radius: 0; }
+/* Dragging a tab: it follows the cursor, the others move aside */
+.tab.dragging { transition: none !important; z-index: 3; cursor: grabbing; }
+/* While dragged, the tab is a solid layer on top: its own opaque background in the tab color (down to the line),
+   with its outline and a soft shadow, so the tabs it passes over do not show through it. */
+.tab.dragging::before { content: ""; position: absolute; left: 0; right: 0; top: 0; bottom: -6px; z-index: -1; box-sizing: border-box; /* down past the line, so no line shows under it */
+  background: var(--tab-fill, var(--band)); border: 1px solid var(--track); border-bottom: 0; border-radius: 8px 8px 0 0;
+  box-shadow: 0 6px 16px -6px rgba(0,0,0,.45); }
+body.style-square .tab.dragging::before { border-radius: 0; }
+.tab.dropping { transition: transform .18s ease !important; }
+
+/* ---------- Field in place of + (new tab on Enter) ---------- */
+/* Looks like the home page field: no background or border, thin text; the magnifier appears only while typing */
+.newfield { position: relative; display: none; flex: none; align-items: center; gap: 6px; width: 280px; height: 26px; margin-left: 8px; top: 3px; /* text lower: similar gap to the line on the left and below */ padding: 0; box-sizing: border-box;
+  background: transparent; pointer-events: auto; animation: nf-in .35s cubic-bezier(.22,1,.36,1); }
+@keyframes nf-in { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: none; } }
+.bar.adding .newfield { display: flex; }
+.bar.adding .newtab { display: none; }
+.newfield input { flex: 1; min-width: 0; background: transparent; border: 0; padding: 0; color: var(--chrome); caret-color: var(--chrome); font: 300 14px/1.2 var(--ui); user-select: text; }
+.newfield input:focus { outline: none; }
+.newfield input::placeholder { color: var(--dim); }
+.newfield .btn { width: 22px; height: 22px; opacity: 0; transform: translateX(-4px); transition: opacity .3s ease, transform .4s cubic-bezier(.22,1,.36,1); }
+.newfield.typing .btn { opacity: 1; transform: none; }
+.newfield .btn svg { width: 14px; height: 14px; }
+
+/* ---------- Window dragging (native) ----------
+   Empty spots on the shown bar are a Windows caption area: dragging,
+   snapping to edges/corners, double-click = maximize. Buttons, tabs and fields are not. */
+.bar.show, body.bar-fixed .bar { -webkit-app-region: drag; }
+.bar .btn, .bar .tab, .bar .sbox, .bar .newfield, .bar input { -webkit-app-region: no-drag; }
+
+/* ---------- Square style ----------
+   Window buttons: classic — □ ✕ instead of arcs; tab line with sharp corners (TK.r = 0 in renderer.js);
+   less rounding in the panel and fields. */
+.arcs .ic-square { display: none; }
+body.style-square .arcs .ic-round { display: none; }
+body.style-square .arcs .ic-square { display: block; stroke-width: 1.8; stroke-linecap: butt; stroke-linejoin: miter; opacity: 1; }
+body.style-square .arcs .btn { border-radius: 0; }
+body.style-square #trackPath { stroke-linejoin: miter; stroke-linecap: butt; }
+body.style-square .btn { border-radius: 0; }
+body.style-square .tab { border-radius: 0; }
+body.style-square .panel { border-radius: 2px; }
+body.style-square .seg, body.style-square .seg button { border-radius: 0; }
+body.style-square .sw-btn, body.style-square .sw-btn span { border-radius: 0; }
