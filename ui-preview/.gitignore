@@ -5,3 +5,4 @@ dist/
 tests/.profile*/
 tests/shots*/
 tests/*.txt
+tests/userdata-*/
