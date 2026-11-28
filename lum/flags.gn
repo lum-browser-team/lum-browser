@@ -1,8 +1,8 @@
-# Flagi kompilacji Lum (GN). Dopisywane NA KOŃCU args.gn,
-# po ungoogled-chromium/flags.gn i flags.windows.gn, więc nadpisują tamte.
+# Lum build flags (GN). Appended AT THE END of args.gn,
+# after ungoogled-chromium/flags.gn and flags.windows.gn, so they override those.
 #
-# Uwaga: gn uruchamiany jest z --fail-on-unused-args, więc literówka
-# albo flaga, która nie istnieje w tej wersji Chromium, przerwie kompilację.
+# Note: gn runs with --fail-on-unused-args, so a typo or a flag
+# that does not exist in this Chromium version will stop the build.
 #
-# Przykład:
+# Example:
 # enable_nacl=false

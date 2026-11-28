@@ -1,5 +1,5 @@
-Lum: usypianie nieaktywnych kart (Memory Saver) domyslnie wlaczone.
-Uzytkownik moze to wylaczyc w Ustawienia > Wydajnosc.
+Lum: putting inactive tabs to sleep (Memory Saver) enabled by default.
+The user can turn it off in Settings > Performance.
 
 --- a/components/performance_manager/user_tuning/prefs.cc
 +++ b/components/performance_manager/user_tuning/prefs.cc

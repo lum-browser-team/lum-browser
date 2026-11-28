@@ -1,102 +1,102 @@
 # Lum Browser
 
-Prywatna, lekka przeglądarka na Windows z minimalistycznym, własnym interfejsem.
-Zbudowana na [ungoogled-chromium](https://github.com/ungoogled-software/ungoogled-chromium)
-(Chromium bez usług Google) - tak jak inne przeglądarki tego typu, różnimy się interfejsem,
-prywatnością i optymalizacjami, a nie samym silnikiem.
+A private, lightweight browser for Windows with a minimalist UI of its own.
+Built on [ungoogled-chromium](https://github.com/ungoogled-software/ungoogled-chromium)
+(Chromium without Google services) - like other browsers of this kind, we differ in the UI,
+privacy and optimizations, not in the engine itself.
 
-> Status: start projektu. Na razie kompiluje się czyste ungoogled-chromium + pusta warstwa Lum.
+> Status: project start. For now it builds plain ungoogled-chromium + an empty Lum layer.
 
-## Założenia
+## Principles
 
-- **Prywatność:** zero telemetrii, zero usług Google, żadnych połączeń do zewnętrznych serwerów bez zgody użytkownika.
-- **Lekkość:** ma działać dobrze na słabych komputerach - usypianie kart, wbudowane blokowanie reklam, nic zbędnego w tle.
-- **Wygląd:** minimalistyczny, w pełni własny interfejs.
+- **Privacy:** zero telemetry, zero Google services, no connections to external servers without the user's consent.
+- **Lightness:** must run well on weak computers - tab sleeping, built-in ad blocking, nothing unnecessary in the background.
+- **Look:** a minimalist, fully custom UI.
 
-## Jak zbudowane jest repo
+## How the repo is organized
 
-| Folder / plik | Co to | Kto zmienia |
+| Folder / file | What it is | Who changes it |
 |---|---|---|
-| `lum/` | **Nasze zmiany:** łatki, flagi, branding | **my** |
-| `lum/patches/series` | lista naszych łatek w kolejności nakładania | my |
-| `lum/flags.gn` | nasze flagi kompilacji | my |
-| `ungoogled-chromium/` | submoduł - łatki usuwające Google z Chromium | nie ruszamy (aktualizujemy) |
-| `patches/`, `flags.windows.gn`, `downloads.ini`, `.github/` | warstwa Windows z ungoogled-chromium-windows | nie ruszamy (aktualizujemy) |
-| `build.py`, `package.py` | skrypty kompilacji (`build.py` ma dopisane nakładanie `lum/`) | rzadko |
-| `build/` | kod Chromium i wyniki kompilacji - dziesiątki GB, **nigdy nie trafia do repo** | - |
+| `lum/` | **Our changes:** patches, flags, branding | **us** |
+| `lum/patches/series` | list of our patches in apply order | us |
+| `lum/flags.gn` | our build flags | us |
+| `ungoogled-chromium/` | submodule - patches that remove Google from Chromium | we don't touch it (we update it) |
+| `patches/`, `flags.windows.gn`, `downloads.ini`, `.github/` | Windows layer from ungoogled-chromium-windows | we don't touch it (we update it) |
+| `build.py`, `package.py` | build scripts (`build.py` has the `lum/` steps added) | rarely |
+| `build/` | Chromium code and build outputs - tens of GB, **never goes into the repo** | - |
 
-Kolejność przy kompilacji: kod Chromium → łatki ungoogled-chromium → łatki Windows → **łatki Lum**.
+Build order: Chromium code → ungoogled-chromium patches → Windows patches → **Lum patches**.
 
-## Kompilacja (Windows 10/11 x64)
+## Building (Windows 10/11 x64)
 
-### Wymagania
+### Requirements
 
-- **Dysk:** szacunkowo 60-80 GB wolnego miejsca (NTFS, najlepiej SSD) w trybie `--tarball`, plus ok. 15 GB na Visual Studio i SDK. Dokładną liczbę zapiszemy tu po pierwszej kompilacji.
-- **RAM:** 16 GB minimum, 32 GB zalecane.
+- **Disk:** an estimated 60-80 GB of free space (NTFS, preferably SSD) in `--tarball` mode, plus about 15 GB for Visual Studio and the SDK. We will put the exact number here after the first build.
+- **RAM:** 16 GB minimum, 32 GB recommended.
 
-### Instalacja narzędzi - jednym skryptem
+### Installing the tools - one script
 
-W PowerShell **jako administrator**, w folderze repo:
+In PowerShell **as administrator**, in the repo folder:
 
 ```
 powershell -ExecutionPolicy Bypass -File lum\devutils\setup-windows.ps1
 ```
 
-Skrypt instaluje wszystko z listy poniżej (Python 3.12, 7-Zip, Visual Studio Community 2026 z C++ i MFC/ATL,
-Windows SDK 10.0.28000 z debuggerami), ustawia `python3.exe`, pakiety pip i długie ścieżki, a na końcu sprawdza,
-czy wszystko jest. Ręcznie zostaje tylko wyłączenie aliasów Pythona (skrypt otworzy właściwe ustawienia) i restart.
+The script installs everything from the list below (Python 3.12, 7-Zip, Visual Studio Community 2026 with C++ and MFC/ATL,
+Windows SDK 10.0.28000 with debuggers), sets up `python3.exe`, pip packages and long paths, and at the end checks
+that everything is there. Only turning off the Python aliases (the script opens the right settings page) and a restart stay manual.
 
-### Wymagania - szczegóły (gdyby skrypt nie zadziałał)
+### Requirements - details (in case the script does not work)
 
-- **Visual Studio 2026** (Community wystarczy): „Desktop development with C++” + „MFC/ATL support”, oraz
-  **Windows SDK 10.0.28000** z „Debugging Tools for Windows” - wg sekcji „Visual Studio” w
-  [oficjalnej instrukcji Chromium](https://chromium.googlesource.com/chromium/src/+/refs/heads/main/docs/windows_build_instructions.md#visual-studio).
-- **Python 3.11+** z python.org:
-  - zaznacz „Add python.exe to PATH”,
-  - na końcu instalatora kliknij przycisk zdejmujący limit `MAX_PATH`,
-  - wyłącz aliasy `python.exe` / `python3.exe` w *Ustawienia → Aplikacje → Zaawansowane ustawienia aplikacji → Aliasy wykonywania aplikacji*,
-  - upewnij się, że w folderze Pythona jest `python3.exe` (kopia lub link do `python.exe`),
+- **Visual Studio 2026** (Community is enough): "Desktop development with C++" + "MFC/ATL support", and
+  **Windows SDK 10.0.28000** with "Debugging Tools for Windows" - per the "Visual Studio" section of the
+  [official Chromium instructions](https://chromium.googlesource.com/chromium/src/+/refs/heads/main/docs/windows_build_instructions.md#visual-studio).
+- **Python 3.11+** from python.org:
+  - check "Add python.exe to PATH",
+  - at the end of the installer click the button that removes the `MAX_PATH` limit,
+  - turn off the `python.exe` / `python3.exe` aliases in *Settings → Apps → Advanced app settings → App execution aliases*,
+  - make sure there is a `python3.exe` in the Python folder (a copy of or link to `python.exe`),
   - `pip install httplib2==0.22.0 clang==21.1.7`
 - **7-Zip**
-- **Git** (opcja „Git from the command line and also from 3rd-party software”)
-- **NIE instaluj** `depot_tools` od Google.
+- **Git** (the "Git from the command line and also from 3rd-party software" option)
+- **DO NOT install** Google's `depot_tools`.
 
-### Pierwsze pobranie repo
+### First clone
 
 ```
 git clone --recurse-submodules https://github.com/lum-browser-team/lum-browser.git
 cd lum-browser
 ```
 
-Jeśli repo jest już pobrane bez submodułu: `git submodule update --init`.
+If the repo is already cloned without the submodule: `git submodule update --init`.
 
-### Budowanie
+### Building
 
-W **Developer Command Prompt for VS** uruchomionym **jako administrator**, w folderze repo:
+In a **Developer Command Prompt for VS** started **as administrator**, in the repo folder:
 
 ```
 python3 build.py --tarball
 python3 package.py
 ```
 
-- `--tarball` pobiera kod Chromium jako paczkę bez historii Gita - dużo mniej miejsca na dysku.
-- Instalator i archiwum zip pojawią się w `build/`.
-- Pierwsza kompilacja trwa kilka godzin.
+- `--tarball` downloads the Chromium code as an archive without Git history - much less disk space.
+- The installer and a zip archive appear in `build/`.
+- The first build takes several hours.
 
-**Jeśli kompilacja się wywali:**
-- przy pobieraniu kodu → usuń `build\download_cache` i uruchom ponownie,
-- później → usuń wszystko w `build` **oprócz** `build\download_cache` i uruchom ponownie.
+**If the build fails:**
+- while downloading the code → delete `build\download_cache` and run again,
+- later → delete everything in `build` **except** `build\download_cache` and run again.
 
-## Jak pracujemy razem
+## How we work together
 
-1. `git pull` na `main` przed rozpoczęciem pracy.
-2. Nowa gałąź na każdą funkcję: `git checkout -b ui/pionowe-karty`.
-3. Zmiany robimy jako łatki w `lum/patches/` (szczegóły w [CLAUDE.md](CLAUDE.md)).
-4. Commit, `git push`, pull request na GitHubie, drugi z nas przegląda i klika Merge.
+1. `git pull` on `main` before starting work.
+2. A new branch for every feature: `git checkout -b ui/vertical-tabs`.
+3. Changes are made as patches in `lum/patches/` (details in [CLAUDE.md](CLAUDE.md)).
+4. Commit, `git push`, a pull request on GitHub, the other one of us reviews and clicks Merge.
 
-## Aktualizacja do nowej wersji Chromium
+## Updating to a new Chromium version
 
-Robimy z gałęzi, tak jak każdą inną zmianę:
+Done on a branch, like any other change:
 
 ```
 git fetch upstream
@@ -104,10 +104,10 @@ git merge upstream/master
 git submodule update --init
 ```
 
-Potem kompilacja i poprawa łatek Lum, które przestały pasować. Szczegóły w [CLAUDE.md](CLAUDE.md).
-Oryginalna dokumentacja warstwy Windows: [docs/ungoogled-chromium-windows.md](docs/ungoogled-chromium-windows.md).
+Then build and fix the Lum patches that no longer fit. Details in [CLAUDE.md](CLAUDE.md).
+Original documentation of the Windows layer: [docs/ungoogled-chromium-windows.md](docs/ungoogled-chromium-windows.md).
 
-## Licencja
+## License
 
-Kod ungoogled-chromium i ungoogled-chromium-windows: BSD-3-Clause ([LICENSE](LICENSE)).
-Chromium: licencje w kodzie źródłowym Chromium. Licencja własnych zmian Lum - do ustalenia.
+ungoogled-chromium and ungoogled-chromium-windows code: BSD-3-Clause ([LICENSE](LICENSE)).
+Chromium: licenses in the Chromium source code. License of Lum's own changes - to be decided.

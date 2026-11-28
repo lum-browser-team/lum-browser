@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Generuje ikony Lum (PNG + ICO) z plików SVG w lum/branding/logo/
-do lum/branding/overlay/, który build.py kopiuje na build/src.
+Generates the Lum icons (PNG + ICO) from the SVG files in lum/branding/logo/
+into lum/branding/overlay/, which build.py copies over build/src.
 
-Renderuje przez przeglądarkę headless (Edge albo Chrome), bez dodatkowych
-bibliotek Pythona. Uruchom po każdej zmianie logo:
+Renders with a headless browser (Edge or Chrome), with no extra
+Python libraries. Run it after every logo change:
 
     python3 lum/branding/generate_icons.py
 """
@@ -23,11 +23,11 @@ _HERE = Path(__file__).resolve().parent
 _LOGO = _HERE / 'logo'
 _OVERLAY = _HERE / 'overlay'
 
-# Małe rozmiary: płaska wersja bez cieni (czytelna). Większe: pełna okrągła odznaka.
+# Small sizes: flat version without shadows (legible). Larger: the full round badge.
 _SMALL_SVG = _LOGO / 'lum-favicon.svg'
 _LARGE_SVG = _LOGO / 'lum-mark-round.svg'
 
-# Ścieżka w build/src -> rozmiar w px
+# Path in build/src -> size in px
 _PNGS = {
     'chrome/app/theme/chromium/product_logo_16.png': 16,
     'chrome/app/theme/chromium/product_logo_24.png': 24,
@@ -59,11 +59,11 @@ def _find_browser():
     for path in candidates:
         if path and Path(path).is_file():
             return path
-    sys.exit('Nie znaleziono Edge ani Chrome do renderowania SVG.')
+    sys.exit('Neither Edge nor Chrome found for rendering the SVG.')
 
 
 def _render(browser, svg, size, tmp):
-    """Renderuje SVG do PNG size x size z przezroczystym tłem, zwraca bajty PNG."""
+    """Renders the SVG to a size x size PNG with a transparent background, returns the PNG bytes."""
     data = base64.b64encode(svg.read_bytes()).decode('ascii')
     html = tmp / 'icon.html'
     html.write_text(
@@ -82,12 +82,12 @@ def _render(browser, svg, size, tmp):
     png = out.read_bytes()
     width, height = struct.unpack('>II', png[16:24])
     if (width, height) != (size, size):
-        sys.exit(f'Zły rozmiar renderu: {width}x{height}, oczekiwano {size}x{size}')
+        sys.exit(f'Wrong render size: {width}x{height}, expected {size}x{size}')
     return png
 
 
 def _build_ico(images):
-    """Składa plik ICO z gotowych PNG (format Vista+, obsługiwany przez rc.exe i Windows)."""
+    """Builds an ICO file from ready PNGs (Vista+ format, supported by rc.exe and Windows)."""
     header = struct.pack('<HHH', 0, 1, len(images))
     entries = b''
     payload = b''

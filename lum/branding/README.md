@@ -1,23 +1,23 @@
-# Branding Lum
+# Lum branding
 
-- `logo/` - źródła logo (SVG) i `preview.html` z podglądem.
-- `overlay/` - gotowe ikony (PNG/ICO) ułożone tak jak w `build/src`. `build.py` kopiuje je na
-  odpowiednie pliki Chromium po nałożeniu łatek (blok `# LUM:` z `_apply_lum_overlay`).
-  Podmieniane są tylko pliki, które istnieją w źródle; brakująca ścieżka (np. po aktualizacji
-  Chromium) daje ostrzeżenie `LUM overlay: ... skipped` w logu kompilacji.
-- `generate_icons.py` - generuje `overlay/` z SVG (renderuje przez Edge/Chrome headless,
-  bez dodatkowych bibliotek). Po każdej zmianie logo:
+- `logo/` - logo sources (SVG) and `preview.html` with a preview.
+- `overlay/` - ready icons (PNG/ICO) laid out like in `build/src`. `build.py` copies them over
+  the matching Chromium files after the patches are applied (the `# LUM:` block with `_apply_lum_overlay`).
+  Only files that exist in the source are replaced; a missing path (e.g. after a Chromium
+  update) gives a `LUM overlay: ... skipped` warning in the build log.
+- `generate_icons.py` - generates `overlay/` from the SVGs (renders with headless Edge/Chrome,
+  no extra libraries). After every logo change:
 
       python3 lum/branding/generate_icons.py
 
-Ikony binarne nie mogą być w łatkach `.patch`, dlatego idą przez `overlay/`.
-Nazwę przeglądarki i inne zmiany tekstowe nadal robimy łatkami w `lum/patches/branding/`.
+Binary icons cannot be in `.patch` files, so they go through `overlay/`.
+The browser name and other text changes are still done with patches in `lum/patches/branding/`.
 
-## Co jest podmieniane
+## What gets replaced
 
-| Plik w Chromium | Źródło |
+| File in Chromium | Source |
 |---|---|
-| `chrome/app/theme/chromium/win/chromium.ico` (ikona .exe, pasek zadań; 16-256 px) | 16-32 px: `lum-favicon.svg`, 48-256 px: `lum-mark-round.svg` |
-| `chrome/app/theme/chromium/product_logo_*.png` | j.w. |
-| `chrome/app/theme/default_{100,200}_percent/chromium/product_logo_{16,32}.png` | j.w. |
-| `chrome/app/theme/chromium/win/tiles/{Logo,SmallLogo}.png` (kafelki menu Start) | `lum-mark-round.svg` |
+| `chrome/app/theme/chromium/win/chromium.ico` (.exe icon, taskbar; 16-256 px) | 16-32 px: `lum-favicon.svg`, 48-256 px: `lum-mark-round.svg` |
+| `chrome/app/theme/chromium/product_logo_*.png` | same as above |
+| `chrome/app/theme/default_{100,200}_percent/chromium/product_logo_{16,32}.png` | same as above |
+| `chrome/app/theme/chromium/win/tiles/{Logo,SmallLogo}.png` (Start menu tiles) | `lum-mark-round.svg` |
