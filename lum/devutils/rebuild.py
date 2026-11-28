@@ -51,7 +51,11 @@ def _series():
 
 
 def _digest(name):
-    return hashlib.sha256((_LUM_PATCHES / name).read_bytes()).hexdigest()
+    # Tylko sama zmiana (od pierwszego "--- a/"), bez opisu na gorze - poprawka opisu
+    # nie wymusza pelnej kompilacji
+    text = (_LUM_PATCHES / name).read_bytes().replace(b'\r\n', b'\n')
+    start = text.find(b'\n--- a/')
+    return hashlib.sha256(text[start + 1:] if start >= 0 else text).hexdigest()
 
 
 def _read_state():
