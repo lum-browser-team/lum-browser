@@ -1,6 +1,6 @@
-Lum: nazwa produktu i firmy "Lum" zamiast "Chromium" (zasoby wersji, instalator),
-osobny folder profilu (%LOCALAPPDATA%\Lum), wlasne ProgID/AppUserModelID, schemat lum://
-i wlasny GUID Active Setup, zeby Lum nie mieszal sie z zainstalowanym Chromium.
+Lum: product and company name "Lum" instead of "Chromium" (version resources, installer),
+a separate profile folder (%LOCALAPPDATA%\Lum), own ProgID/AppUserModelID, lum:// scheme
+and own Active Setup GUID, so Lum does not mix with an installed Chromium.
 
 --- a/chrome/app/theme/chromium/BRANDING
 +++ b/chrome/app/theme/chromium/BRANDING

@@ -1,7 +1,7 @@
-# Latki musza miec konce linii LF, inaczej moga sie nie nalozyc
+# Patches must have LF line endings, otherwise they may not apply
 *.patch text eol=lf
 series text eol=lf
 *.gn text eol=lf
-# Ikony Lum - zawsze binarnie
+# Lum icons - always binary
 *.png binary
 *.ico binary
