@@ -191,20 +191,26 @@ body.theme-light .err { color: #1C1C1C; }
 .err-b:active { transform: scale(.96); }
 
 /* ---------- Settings ---------- */
-.panel { position: fixed; top: 44px; right: 66px; z-index: 12; width: 300px; box-sizing: border-box; padding: 12px; border-radius: 12px;
+.panel { position: fixed; top: 44px; right: 66px; z-index: 12; width: 300px; box-sizing: border-box; padding: 14px; border-radius: 12px;
   background: var(--panel-bg); -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); color: var(--panel-ink); border: 1px solid var(--panel-line);
   opacity: 0; transform: translateY(-6px) scale(.97); transform-origin: top right; pointer-events: none; transition: opacity .35s ease, transform .45s cubic-bezier(.22,1,.36,1); }
 .panel.open { opacity: 1; transform: none; pointer-events: auto; }
-.panel .ttl { font: 500 11px/1 var(--ui); letter-spacing: .08em; text-transform: uppercase; opacity: .6; margin: 2px 2px 10px; }
+.panel .ttl { font: 500 11px/1 var(--ui); letter-spacing: .08em; text-transform: uppercase; opacity: .6; margin: 0 4px 10px; }
+/* Same spacing before every section */
+.panel .ttl:not(:first-child) { margin-top: 18px; }
 .seg { display: flex; gap: 4px; padding: 4px; border-radius: 10px; background: var(--seg-bg); }
 .seg button { flex: 1; height: 32px; border: 0; border-radius: 7px; background: transparent; color: inherit; font: 500 13px/1 var(--ui); display: flex; align-items: center; justify-content: center; gap: 8px;
   transition: background-color .35s ease, transform .4s cubic-bezier(.34,1.8,.64,1); }
 .seg button svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .seg button[aria-pressed="true"] { background: var(--seg-on); }
 .seg.grid2 { display: grid; grid-template-columns: 1fr 1fr; }
+/* 2x2: icons and labels start at the same spot in both rows, so they form neat columns */
+.seg.grid2 button { justify-content: flex-start; padding-left: 36px; }
 .seg button.pressed { transform: scale(.95); transition-duration: .08s; }
-/* Theme picker: five grays from black to white, pastels and a custom color */
-.swatches { display: flex; justify-content: flex-start; gap: 7px; padding: 2px 2px; }
+/* Theme picker: two rows of five (grays; pastels + custom color), spread over the full width so the
+   circles line up in columns and their outer edges line up with the buttons below */
+.swatches { display: grid; grid-template-columns: repeat(5, 32px); justify-content: space-between; }
+.swatches + .swatches { margin-top: 8px; }
 .sw-btn { position: relative; width: 32px; height: 32px; border-radius: 50%; border: 0; padding: 0; background: transparent; display: grid; place-items: center;
   box-shadow: 0 0 0 0 transparent; transition: box-shadow .3s ease, transform .4s cubic-bezier(.34,1.8,.64,1); }
 .sw-btn span { width: 24px; height: 24px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(128,128,128,.5); }
