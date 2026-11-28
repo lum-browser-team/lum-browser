@@ -522,6 +522,7 @@ function activeEdges() {
   return { L: Math.max(minL, L), R: Math.min(maxR, R) };
 }
 function updateTrack(visible, instant) {
+  if (drag && drag.on) instant = true;  // while dragging, the line sticks to the tab without lag
   const e = activeEdges();
   clearTimeout(track.timer);
   if (!e) { track.ready = false; setShapes(null); return; }
