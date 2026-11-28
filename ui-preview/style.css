@@ -276,6 +276,12 @@ body.modal #pages webview { pointer-events: none; }
 body.style-square .qr-card, body.style-square .qr-img, body.style-square .qr-actions button { border-radius: 0; }
 /* Dragging a tab: it follows the cursor, the others move aside */
 .tab.dragging { transition: none !important; z-index: 3; cursor: grabbing; }
+/* While dragged, the tab is a solid layer on top: its own opaque background in the tab color (down to the line),
+   with its outline and a soft shadow, so the tabs it passes over do not show through it. */
+.tab.dragging::before { content: ""; position: absolute; left: 0; right: 0; top: 0; bottom: -5px; z-index: -1; box-sizing: border-box;
+  background: var(--tab-fill, var(--band)); border: 1px solid var(--track); border-bottom: 0; border-radius: 8px 8px 0 0;
+  box-shadow: 0 6px 16px -6px rgba(0,0,0,.45); }
+body.style-square .tab.dragging::before { border-radius: 0; }
 .tab.dropping { transition: transform .18s ease !important; }
 
 /* ---------- Field in place of + (new tab on Enter) ---------- */

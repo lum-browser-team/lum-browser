@@ -445,6 +445,7 @@ function updateTone() {
   const solid = barSolid() || (on && barMode === 'auto');
   bar.classList.toggle('on-light', barMode === 'clear' ? (plain ? themeLight : false) : solid ? themeLight : topLight);
   tabFillPath.style.fill = pageColor;
+  bar.style.setProperty('--tab-fill', pageColor);  // solid background of a tab while it is dragged
   bar.style.setProperty('--tab-ink', pageLight ? '#16181B' : '#FFFFFF');
 }
 

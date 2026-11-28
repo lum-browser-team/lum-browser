@@ -80,6 +80,8 @@ On a light background the colors are darker: `#16A34A`, `#C98A00`, `#E5483E`. In
 - **Drag a tab sideways to move it**: after 5 px of movement the tab follows the cursor (no transition), the others make room;
   it swaps places with a neighbor once it passes that neighbor's middle. The dragged tab becomes the open one and the line
   follows it. On release it settles into its slot (0.18 s). A press without moving is a normal click.
+  While dragged, the tab is a **solid layer on top**: an opaque background in the tab color down to the line, its outline
+  and a soft shadow – the tabs it passes over never show through it.
 - Very many tabs (less than ~110 px per tab): icons only, the cross replaces the icon on hover.
   When out of space, the tab strip scrolls horizontally with the mouse wheel; the plus is always visible;
   at least 120 px of free space stays on the right for grabbing the window.
@@ -218,7 +220,7 @@ Kept so Claude on the other machine can see what changed since it last read this
 - **2026-11-28**
   - Built-in ad and tracker blocking with uBlock Origin's filter lists (see Other).
   - Downloads go straight to the Downloads folder, no dialog, nothing shown.
-  - Tabs can be dragged to reorder them.
+  - Tabs can be dragged to reorder them; the dragged tab is a solid layer on top (nothing shows through it).
   - Tab menu: *Show QR code* (dialog with the QR of the tab's link, to open the page on a phone).
   - The line's parts along the window edges are faint (no light stripe at the window edges).
   - The address field is 60 px longer than the text on both sides (easy to select the whole address).
