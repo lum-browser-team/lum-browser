@@ -6,7 +6,7 @@ const START = new URL('start.html', location.href).href; // new tab page
 
 const $ = (id) => document.getElementById(id);
 const bar = $('bar'), leftEl = $('left'), tabsEl = $('tabs'), plusBtn = $('newtab'), labelEl = $('label'), input = $('q');
-const newField = $('newfield'), newInput = $('nq');
+const newField = $('newfield'), newInput = $('nq'), addrEl = $('addr'), addrIn = $('addrIn');
 const panel = $('panel'), progressEl = $('progress'), pages = $('pages'), trackPath = $('trackPath');
 const bandPath = $('band'), tabFillPath = $('tabFill'), scrimEl = $('scrim');
 
@@ -59,7 +59,7 @@ const S = { tabs: [], active: null, nextId: 1, near: false, search: false, setti
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const startUrl = () => START + '?bg=' + encodeURIComponent(TH().page) + '&bar=' + barMode;
 const isStart = (url) => !url || url.split('?')[0].split('#')[0] === START;
-const shown = () => S.near || S.search || S.settings || S.debugHover;
+const shown = () => S.near || S.search || S.settings || S.editing || S.debugHover;
 // Tabs are visible when the bar is shown - also while typing in the field in place of +, but not on Ctrl+L
 const tabsVisible = () => shown() && !(S.search && S.searchTarget === 'current');
 const tab = (id) => S.tabs.find((t) => t.id === (id == null ? S.active : id));
@@ -198,6 +198,36 @@ function openSearch(target = 'new') {
   setTimeout(() => { const el = activeInput(); el.focus(); el.select(); }, 30);
 }
 
+// Address on the bar: click it to place the caret, drag to select, type to change it; Enter opens, Esc cancels.
+// Ctrl+L selects the whole address. On the new tab page (no address) Ctrl+L opens the search field instead.
+function editAddress() {
+  const t = tab();
+  if (!t || isStart(t.url)) { openSearch('current'); return; }
+  S.editing = true; S.settings = false; S.search = false;
+  render();
+  setTimeout(() => { addrIn.focus(); addrIn.select(); }, 30);
+}
+function submitAddress() {
+  const t = tab(), v = addrIn.value.trim();
+  const url = v === addrIn.dataset.orig ? t.url : toUrl(v);
+  addrIn.blur();
+  if (url && t) t.wv.loadURL(url).catch(() => {});
+}
+addrIn.addEventListener('focus', () => { if (!S.editing) { S.editing = true; S.settings = false; render(); } });
+addrIn.addEventListener('blur', () => {
+  S.editing = false;
+  addrIn.value = addrIn.dataset.orig || '';
+  addrIn.scrollLeft = 0;
+  render(); focusHomeField();
+});
+addrIn.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); submitAddress(); }
+  else if (e.key === 'Escape') { e.preventDefault(); addrIn.blur(); }
+});
+// The address stays visible while the cursor is near it (instead of fading out when the tabs appear)
+addrEl.addEventListener('mouseenter', () => bar.classList.add('near-label'));
+addrEl.addEventListener('mouseleave', () => bar.classList.remove('near-label'));
+
 function closeSearch() { S.search = false; input.blur(); newInput.blur(); render(); focusHomeField(); }
 
 function submit(text) {
@@ -277,20 +307,22 @@ const ICON_X = '<svg viewBox="0 0 12 12"><path d="M3 3l6 6M9 3 3 9"/></svg>';
 
 function render() { renderBar(); renderTabs(); updateTone(); renderError(); }
 
-function labelFor(url) {
+// Address shown on the bar: host + decoded path, without the scheme. Returns [host, path].
+// The same text is in the edit field on top of it, so the text does not move when you click it.
+function addrParts(url) {
   try {
     const u = new URL(url);
     if (u.protocol === 'http:' || u.protocol === 'https:') {
-      let path = (u.pathname === '/' ? '' : u.pathname) + u.search;
+      let path = (u.pathname === '/' ? '' : u.pathname) + u.search + u.hash;
       try { path = decodeURIComponent(path); } catch { /* stays encoded */ }
-      if (path.length > 70) path = path.slice(0, 68) + '…';
-      return esc(u.host) + '<span class="path">' + esc(path) + '</span>';
+      return [u.host, path];
     }
-    return esc(u.protocol.replace(/:$/, ''));
+    return [u.protocol.replace(/:$/, ''), ''];
   } catch {
-    return esc(url);
+    return [url, ''];
   }
 }
+function labelFor(url) { const [h, p] = addrParts(url); return esc(h) + '<span class="path">' + esc(p) + '</span>'; }
 
 function renderBar() {
   const t = tab();
@@ -298,8 +330,14 @@ function renderBar() {
   bar.classList.toggle('searching', S.search && S.searchTarget === 'current');
   bar.classList.toggle('adding', S.search && S.searchTarget === 'new');
   // On the new tab page the search field is in the middle of the page, so the bar shows no address
-  if (!t || isStart(t.url)) { labelEl.className = 'label'; labelEl.textContent = ''; }
-  else { labelEl.className = 'label'; labelEl.innerHTML = labelFor(t.url); }
+  const hasUrl = !!t && !isStart(t.url);
+  if (!S.editing) {
+    if (!hasUrl) { labelEl.textContent = ''; addrIn.value = ''; }
+    else { labelEl.innerHTML = labelFor(t.url); addrIn.value = addrParts(t.url).join(''); }
+    addrIn.dataset.orig = addrIn.value;
+  }
+  addrEl.classList.toggle('has-url', hasUrl);
+  bar.classList.toggle('editing', !!S.editing);
   panel.classList.toggle('open', S.settings);
   panel.querySelectorAll('[data-theme]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.theme === theme ? 'true' : 'false'));
   panel.querySelectorAll('[data-barmode]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.barmode === barMode ? 'true' : 'false'));
@@ -606,7 +644,7 @@ window.lum.on('cmd', (c) => {
   const t = tab();
   if (c === 'newtab') openSearch('new');
   else if (c === 'close') closeTab(S.active);
-  else if (c === 'search') openSearch('current');
+  else if (c === 'search') editAddress();
   else if (c === 'next') step(1);
   else if (c === 'prev') step(-1);
   else if (c === 'reload') reload();

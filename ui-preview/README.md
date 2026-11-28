@@ -31,6 +31,7 @@ Double-click `Lum.cmd` (the first run installs dependencies, about 100 MB) or:
 - Closing a tab: the cross on hover, middle mouse button, Ctrl+W. Many tabs: tabs shrink,
   icons only, scrolling with the wheel.
 - A thin, rounded scrollbar on pages.
+- The address in the middle of the bar: move the cursor near it to click, select or edit it (Enter opens, Esc cancels).
 - Shortcuts: Ctrl+T, Ctrl+W, Ctrl+L, Ctrl+Tab, Ctrl+Shift+Tab, F5, Alt+←/→, F12 (dev tools).
 
 Search engine in the mockup: Google (`SEARCH` in `renderer.js` and `start.js`).

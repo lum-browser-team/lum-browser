@@ -39,7 +39,11 @@
     </div>
 
     <div class="center">
-      <div class="label" id="label"></div>
+      <!-- Page address: looks like plain text; an invisible field on top of it lets you click, select and edit it -->
+      <div class="addr" id="addr">
+        <div class="label" id="label"></div>
+        <input id="addrIn" class="addr-in" type="text" autocomplete="off" spellcheck="false" aria-label="Page address">
+      </div>
       <div class="sbox" id="sbox">
         <input id="q" type="text" placeholder="Search or enter an address" autocomplete="off" spellcheck="false" aria-label="Search or enter an address">
         <button class="btn" data-act="submit" aria-label="Search"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 4.5 4.5"/></svg></button>

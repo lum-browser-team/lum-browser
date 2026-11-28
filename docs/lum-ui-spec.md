@@ -23,7 +23,7 @@
 | Mode | Behavior |
 |---|---|
 | **Hidden** | The page fills the whole window. The bar is invisible (opacity 0, does not catch clicks). When the cursor enters the bar area (top 38 px of the window, also a few px above the window), the bar appears; it stays while the cursor is within 80 px of the top; further down it disappears. |
-| **Clear** | The bar never hides and **stays transparent** (no theme color, also on hover). **Page scrolled to the very top:** the page starts **below the bar** (like Always visible), so the page's own top buttons do not collide with ours; the bar sits on the theme color. **Scrolled down:** the page moves up and runs **under the bar**, with a **dark shade** behind it (84 px, fading into the page) and light icons. Switching between the two: the page's top/height animate over 0.22 s, the shade fades. A page that is barely scrollable (≤ 40 px) stays below the bar, so it does not flip back and forth. Lum's own pages (new tab, error screen) stay full-window without a shade. On hover the tabs and the line appear; over the shade it gets a 12 px backdrop blur (masked so it fades out downwards). |
+| **Clear** | The bar never hides and **stays transparent** (no theme color, also on hover). **Page scrolled to the very top:** the page starts **below the bar** (like Always visible), so the page's own top buttons do not collide with ours; the bar sits on the theme color. **Scrolled down:** the page moves up and runs **under the bar**, with a **dark shade** behind it (84 px, fading into the page) and light icons. Switching between the two: the page's top/height animate over 0.22 s, the shade fades. A page that is barely scrollable (≤ 40 px) stays below the bar, so it does not flip back and forth. Lum's own pages (new tab, error screen) stay full-window without a shade. On hover **nothing about the shade changes** (no blur, no extra darkening, icons keep their halo) – only the tabs and the line are drawn in. |
 | **Always visible** | The bar is always visible in the theme color, the page starts **below it** (it does not overlap page buttons, e.g. on YouTube). Tabs and the line appear on bar hover. |
 
 Shade gradient (top → bottom): `rgba(0,0,0,.7)` → `.6` at 30% → `.34` at 55% → `.12` at 78% → transparent.
@@ -41,7 +41,12 @@ While the bar is shown, the page under it ignores clicks (so they reach the butt
 4. **Plus** after the last tab.
 
 In the middle: the **page address** (13 px; host in full color, path at 60% opacity, path decoded, e.g. `en.wikipedia.org/wiki/Café`).
-On a new tab the middle is empty. When the tabs appear, the address fades out in 0.2 s (and comes back in 0.7 s).
+On a new tab the middle is empty. When the tabs appear, the address fades out in 0.2 s (and comes back in 0.7 s) –
+**unless the cursor is near it** (within 40 px): then it stays and works like an address bar that looks like plain text:
+click places the caret where you click, drag selects, typing edits it; **Enter** opens it in this tab, **Esc** or a click
+outside restores it. While editing, the text has one color (no dimmed path) and the bar stays shown.
+The text does not move when you click it (the edit field sits exactly on top of the label, same font and position).
+Tabs and buttons always lie above the address, so it never blocks clicks on them.
 
 On the right: **settings** (two-sliders icon, 1.4 stroke) and the **window buttons** (each 28×28 px, packed, no gap):
 
@@ -85,7 +90,7 @@ In Hidden mode nothing is drawn while the bar is invisible. Icon/text color on t
 - **Plus** (and Ctrl+T): does not create a tab right away. A "Type something or paste a link…" field appears in its place,
   looking like the new tab field (no background or border, thin 14 px/300 text). Tabs stay visible.
   The magnifier appears in the field only while typing. **Enter** opens a new tab, **Esc** or a click outside closes the field without a tab.
-- **Ctrl+L**: a field in the middle of the bar with the current tab's address; Enter opens in this tab.
+- **Ctrl+L**: selects the whole address on the bar (see above); on the new tab page it opens a search field in the middle of the bar. Enter opens in this tab.
 - Detection: `http(s)://…`, `localhost[:port]`, valid IPv4 and domains with a letter TLD → page;
   file names (`node.js`, `index.html`) and the rest → search engine; other schemes (`file:`, `javascript:`) → nothing.
 

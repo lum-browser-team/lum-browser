@@ -39,7 +39,8 @@ body.bar-shown #pages webview, #pages webview.errored { pointer-events: none; }
   --glow-icon: rgba(22,24,27,.25); --flash: rgba(22,24,27,.4);
   --halo: drop-shadow(0 0 1px rgba(255,255,255,.8)) drop-shadow(0 0 5px rgba(255,255,255,.4)); }
 /* On hover the bar has the theme color, so the halo is not needed */
-.bar.show { pointer-events: auto; --halo: drop-shadow(0 0 0 transparent); }
+.bar.show { pointer-events: auto; }
+body:not(.bar-clear) .bar.show { --halo: drop-shadow(0 0 0 transparent); }
 .bar, .bar * { transition: color .35s ease; }
 .bar { transition: color .35s ease, opacity .45s ease; }
 
@@ -56,10 +57,8 @@ body.bar-fixed #band { opacity: 1; }
 #pages webview { transition: top .22s ease, height .22s ease; }
 body.bar-clear #pages webview.docked { top: 38px; height: calc(100% - 38px); }
 .scrim { position: fixed; top: 0; left: 0; right: 0; height: 84px; z-index: 9; pointer-events: none; opacity: 0; transition: opacity .5s ease;
-  /* on hover: a blur under the bar that fades out downwards, so tabs do not mix with the page text */
-  -webkit-backdrop-filter: blur(var(--scrim-blur, 0px)); backdrop-filter: blur(var(--scrim-blur, 0px));
-  -webkit-mask-image: linear-gradient(#000 45%, transparent); mask-image: linear-gradient(#000 45%, transparent); }
-body.bar-clear.bar-shown .scrim { --scrim-blur: 12px; }
+  }
+/* On hover the shade stays exactly the same; only the tabs and the line are drawn in. */
 .scrim::before { content: ""; position: absolute; inset: 0; background: linear-gradient(rgba(0,0,0,.7), rgba(0,0,0,.6) 30%, rgba(0,0,0,.34) 55%, rgba(0,0,0,.12) 78%, transparent); }
 body.bar-clear .scrim { opacity: 1; }
 body.bar-clear .scrim.off { opacity: 0; }
@@ -70,6 +69,10 @@ body.bar-clear .bar.show .tab.active { color: var(--chrome); }
 /* The window moves by dragging an empty spot on the bar (see "Window dragging" below) */
 .side { display: flex; align-items: center; gap: 1px; }
 #left { flex: 1; min-width: 0; margin-right: 20px; }
+/* Buttons and tabs lie above the address in the middle, so the address never blocks them;
+   the empty parts of both sides let clicks through (to the address or the drag area) */
+#left, #right { position: relative; z-index: 2; pointer-events: none; }
+.center { z-index: 1; }
 /* There is always free space to grab and move the window, even with many tabs */
 #left::after { content: ""; flex: 0 0 120px; }
 #right { flex: none; }
@@ -101,8 +104,19 @@ body.bar-clear .bar.show .tab.active { color: var(--chrome); }
 .center { position: absolute; left: 50%; top: 0; height: 38px; transform: translateX(-50%); display: flex; align-items: center; justify-content: center; pointer-events: none; max-width: 52%; }
 .label { font-size: 12.5px; letter-spacing: .01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; filter: var(--halo); transition: opacity .7s ease, transform .8s cubic-bezier(.22,1,.36,1); }
 .label .path { opacity: .6; }
-/* The label fades out fast (before the tabs appear) and comes back slowly */
-.bar.show .label, .bar.searching .label { opacity: 0; transform: translateY(-4px); transition: opacity .2s ease, transform .3s ease; }
+/* The label fades out fast (before the tabs appear) and comes back slowly;
+   it stays when the cursor is near it or while you edit it */
+.bar.show:not(.near-label):not(.editing) .label, .bar.searching .label { opacity: 0; transform: translateY(-4px); transition: opacity .2s ease, transform .3s ease; }
+/* Address: plain text with an invisible field exactly on top of it (same font and position).
+   Hovering near it (40 px around) makes it clickable; clicking turns the field's text visible. */
+.addr { position: relative; display: flex; align-items: center; height: 38px; max-width: 100%; padding: 0 40px; box-sizing: border-box; pointer-events: none; }
+.addr-in { position: absolute; left: 40px; right: 40px; top: 0; height: 38px; margin: 0; padding: 0; border: 0; outline: none; background: transparent;
+  font: 400 12.5px var(--ui); letter-spacing: .01em; color: transparent; caret-color: var(--chrome); user-select: text; pointer-events: none; cursor: text; }
+.addr-in::selection { background: rgba(143,180,255,.38); }
+.bar.show .addr.has-url, .bar.show .addr.has-url .addr-in { pointer-events: auto; -webkit-app-region: no-drag; }
+.bar.searching .addr { display: none; }
+.bar.editing .addr .label { visibility: hidden; }
+.bar.editing .addr-in { color: var(--chrome); filter: var(--halo); }
 .sbox { display: none; align-items: center; gap: 8px; width: min(600px, 50vw); height: 28px; filter: var(--halo); pointer-events: auto; }
 .bar.searching .sbox { display: flex; }
 .sbox input { flex: 1; min-width: 0; background: transparent; border: 0; color: var(--chrome); font: 400 14px/1 var(--ui); padding: 3px 2px; caret-color: var(--chrome); user-select: text; }
