@@ -31,7 +31,6 @@ _LARGE_SVG = _LOGO / 'lum-mark-round.svg'
 _PNGS = {
     'chrome/app/theme/chromium/product_logo_16.png': 16,
     'chrome/app/theme/chromium/product_logo_24.png': 24,
-    'chrome/app/theme/chromium/product_logo_32.png': 32,
     'chrome/app/theme/chromium/product_logo_48.png': 48,
     'chrome/app/theme/chromium/product_logo_64.png': 64,
     'chrome/app/theme/chromium/product_logo_128.png': 128,
