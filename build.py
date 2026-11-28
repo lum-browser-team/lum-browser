@@ -337,7 +337,10 @@ def main():
         windows_flags += f'v8_metagen_libclang_bindings_dir="{libclang_bindings_dir.resolve().as_posix()}"\n'
         gn_flags += windows_flags
         # LUM: Lum's own GN flags (lum/flags.gn) go last so they override the ones above
-        gn_flags += '\n' + (_ROOT_DIR / 'lum' / 'flags.gn').read_text(encoding=ENCODING) + '\n'
+        # (without comments: package.py reads args.gn in the system encoding, not UTF-8)
+        lum_flags = (_ROOT_DIR / 'lum' / 'flags.gn').read_text(encoding=ENCODING).splitlines()
+        gn_flags += '\n' + '\n'.join(
+            line for line in lum_flags if line.strip() and not line.lstrip().startswith('#')) + '\n'
         (source_tree / 'out/Default/args.gn').write_text(gn_flags, encoding=ENCODING)
 
     # Enter source tree to run build commands
