@@ -109,15 +109,23 @@ Pasek nad linią i tło nowej karty mają ten sam kolor:
 | Różowy / Brzoskwiniowy / Cytrynowy | `#F3D3DE` / `#F6D9C7` / `#F3EDC4` | ciemne |
 | Własny | dowolny z wybieraka koloru | według jasności (próg 0,55) |
 
-Ustawienia otwierają się z ikony suwaków jako mały półprzezroczysty panel (rozmycie tła): kółka motywów w dwóch rzędach
-(ostatnie, z tęczową obwódką, to własny kolor), przełączniki **Styl** (Zaokrąglony / Kanciasty) i **Pasek** (Chowany / Zawsze).
-Wszystko zapamiętywane.
+### Ustawienia – wygląd będzie inny niż w makiecie
+
+**Panel ustawień z makiety jest tymczasowy.** W prawdziwej przeglądarce ustawienia będą wyglądać inaczej –
+ich projekt przygotuje olehnykorovych osobno. Nie odtwarzaj wyglądu panelu z `ui-preview/`.
+
+Wiążące są tylko **opcje** i ich działanie (wszystkie zapamiętywane):
+- **Motyw** – lista kolorów z tabeli wyżej + własny kolor.
+- **Styl** – Zaokrąglony / Kanciasty.
+- **Pasek** – Chowany / Zawsze widoczny.
+
+Ikona otwierająca ustawienia (dwa suwaki) zostaje na pasku, po lewej od przycisków okna.
 
 ## Przyciski – reakcja
 
 - Najechanie: brak obwódek i teł; ikona rozjaśnia się do 100% i lekko świeci (`drop-shadow(0 0 3px)` w jej kolorze), przejście 0,45 s.
 - Kliknięcie: wciśnięcie do 80% (0,08 s), sprężysty powrót, krótki błysk ikony.
-- Styl Kanciasty: brak zaokrągleń (panel, przełączniki, kółka motywów kwadratowe).
+- Styl Kanciasty: brak zaokrągleń w elementach paska (przyciski, karty, linia).
 
 ## Pozostałe
 

@@ -26,6 +26,7 @@ Dwuklik na `Lum.cmd` (za pierwszym razem zainstaluje zależności, ok. 100 MB) a
 - Przyciski: wstecz, dalej (zakrzywione strzałki), odśwież, ustawienia, przyciski okna
   (łuki w stylu zaokrąglonym, — □ ✕ w stylu kanciastym, te same kolory).
 - Ustawienia: 5 szarości, 6 pasteli, własny kolor; styl Zaokrąglony/Kanciasty; tryb paska.
+  Wygląd panelu ustawień jest tymczasowy – w prawdziwej przeglądarce będzie inny (osobny projekt).
 - Zamykanie karty: krzyżyk po najechaniu, środkowy przycisk myszy, Ctrl+W. Dużo kart: zwężanie,
   same ikonki, przewijanie kółkiem.
 - Cienki, zaokrąglony pasek przewijania na stronach.
