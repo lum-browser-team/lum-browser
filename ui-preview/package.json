@@ -1,11 +1,13 @@
 {
   "name": "lum-ui-preview",
+  "productName": "Lum Preview",
   "version": "0.1.0",
   "private": true,
-  "description": "Mini browser for testing the Lum UI before patching Chromium",
+  "description": "Lum Preview - a mini browser that shows the Lum UI before it is patched into Chromium",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "pack": "node pack.mjs"
   },
   "devDependencies": {
     "@electron/packager": "^20.3.1",

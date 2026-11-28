@@ -30,9 +30,7 @@ const THEMES = {
   mint:     { name: 'Mint',       band: '#CFEBDD', page: '#CFEBDD', light: true },
   sky:      { name: 'Sky',        band: '#CFE3F3', page: '#CFE3F3', light: true },
   lavender: { name: 'Lavender',   band: '#DCD3F2', page: '#DCD3F2', light: true },
-  rose:     { name: 'Rose',       band: '#F3D3DE', page: '#F3D3DE', light: true },
-  peach:    { name: 'Peach',      band: '#F6D9C7', page: '#F6D9C7', light: true },
-  lemon:    { name: 'Lemon',      band: '#F3EDC4', page: '#F3EDC4', light: true }
+  rose:     { name: 'Rose',       band: '#F3D3DE', page: '#F3D3DE', light: true }
 };
 const hexLum = (h) => { const n = parseInt(h.slice(1), 16); return (0.2126 * (n >> 16) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255; };
 let customColor = '#B9D7EA';

@@ -1,5 +1,5 @@
 @echo off
-rem Starts the Lum mini browser (UI preview).
+rem Starts Lum Preview, the Lum UI mockup (mini browser).
 cd /d "%~dp0"
 if not exist node_modules\.bin\electron.cmd (
   echo First run: installing Electron...

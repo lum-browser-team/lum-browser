@@ -1,7 +1,7 @@
 # Lum UI visuals
 
 Design: **olehnykorovych** (entirely). Successive design stages, from mockups to a clickable prototype.
-The current reference is the working mockup in [`../../ui-preview/`](../../ui-preview/) and the spec in
+The current reference is the working mockup Lum Preview in [`../../ui-preview/`](../../ui-preview/) and the spec in
 [`../lum-ui-spec.md`](../lum-ui-spec.md); these files show the road to it.
 
 - `u2-u3-fullhd.html` + `lum-start-*.png` – start page, dark and light (states: empty, typing, link).

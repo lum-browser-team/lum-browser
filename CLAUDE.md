@@ -32,7 +32,7 @@ Patches from ungoogled-chromium/Bromite/Debian etc. are OK if the license allows
 - `build/` - Chromium code (`build/src`) and outputs. Ignored by Git. **Changes in `build/src` are lost** on
   a clean build - every Chromium change must be saved as a patch in `lum/patches/`.
 - `docs/ungoogled-chromium-windows.md` - the original upstream documentation (dependencies, rust updates etc.).
-- **Lum's look**: `docs/lum-ui-spec.md` (spec) + `ui-preview/` (working mockup, the reference). Read them before any UI change.
+- **Lum's look**: `docs/lum-ui-spec.md` (spec) + `ui-preview/` (Lum Preview, the working mockup, the reference). Read them before any UI change.
   UI design: olehnykorovych. Authors in `AUTHORS.md` - update it whenever something new has an author.
 
 ## Patches

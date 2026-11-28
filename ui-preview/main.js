@@ -1,8 +1,14 @@
-// Lum - mini browser for testing the UI (Electron).
+// Lum Preview - mini browser for testing the Lum UI (Electron).
 // Frameless window; the whole UI (bar, tabs) is in index.html, pages in <webview>.
 const { app, BrowserWindow, ipcMain, screen, Menu, webContents, session, clipboard } = require('electron');
 const fs = require('fs');
 const path = require('path');
+
+// Running from the source (npm start, test snapshots) uses its own profile, so it never changes
+// the settings of the installed Lum Preview.exe. Tests pass --user-data-dir and keep theirs.
+if (!app.isPackaged && !app.commandLine.hasSwitch('user-data-dir')) {
+  app.setPath('userData', path.join(app.getPath('appData'), 'Lum Preview (dev)'));
+}
 
 let win = null;
 let poll = null;
@@ -159,7 +165,7 @@ ipcMain.handle('sample', async (_e, id, width, fx0 = 0, fx1 = 1) => {
 // Keyboard shortcuts work even when the text caret is inside the page.
 function sendCmd(cmd) { return () => { if (win) win.webContents.send('cmd', cmd); }; }
 Menu.setApplicationMenu(Menu.buildFromTemplate([{
-  label: 'Lum',
+  label: 'Lum Preview',
   submenu: [
     { label: 'New tab', accelerator: 'CmdOrCtrl+T', click: sendCmd('newtab') },
     { label: 'Close tab', accelerator: 'CmdOrCtrl+W', click: sendCmd('close') },

@@ -1,8 +1,8 @@
-# Lum – browser mockup
+# Lum Preview – browser mockup
 
 **UI design: entirely by olehnykorovych.** The name "Lum": Savio. Details in [`../AUTHORS.md`](../AUTHORS.md).
 
-A working mockup (a mini browser on Electron) that shows how Lum should look and behave
+**Lum Preview** is a working mockup (a mini browser on Electron) that shows how Lum should look and behave
 on real websites. It is the **reference for the real browser** (the Chromium fork in this repo),
 not the target browser itself. The look and behavior to port to Chromium are described in
 [`../docs/lum-ui-spec.md`](../docs/lum-ui-spec.md).
@@ -26,7 +26,7 @@ Double-click `Lum.cmd` (the first run installs dependencies, about 100 MB) or:
 - New tab: a search field in the middle of the window, always ready for typing and pasting.
 - Buttons: back, forward (curved arrows), reload, settings, window buttons
   (arcs in the round style, — □ ✕ in the square style, same colors).
-- Settings: 5 grays, 6 pastels, custom color; Round/Square style; bar mode.
+- Settings: 5 grays, 4 pastels, custom color (two rows of 5); Round/Square style; bar mode.
   The settings panel look is temporary – the real browser will have a different one (separate design).
 - Right click on a tab: Copy link, Close tab.
 - Closing a tab: the cross on hover, middle mouse button, Ctrl+W. Many tabs: tabs shrink,
@@ -51,8 +51,9 @@ Pages get no access to the camera, microphone, location or notifications.
 `LUM_OPEN=url1,url2` opens tabs, `LUM_SNAPSHOT_HOVER=1` shows the bar as if hovered,
 `LUM_EVAL="code"` runs code in the UI (e.g. `setTheme('mint')`).
 
-## Packaged app (Lum.exe)
+## Packaged app (Lum Preview.exe)
 
-    npx electron-packager . Lum --platform=win32 --arch=x64 --out=dist --overwrite --prune=true --icon=../lum/branding/overlay/chrome/app/theme/chromium/win/chromium.ico --ignore="^/tests" --ignore="^/dist" --ignore="^/Lum\.cmd"
+    npm run pack
 
-Output: `dist/Lum-win32-x64/Lum.exe` (the whole folder is needed, about 360 MB, since it contains Electron/Chromium).
+Output: `dist/Lum Preview-win32-x64/Lum Preview.exe` (the whole folder is needed, about 360 MB, since it contains Electron/Chromium).
+`npm run pack -- <folder>` writes it to another folder.

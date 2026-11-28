@@ -3,7 +3,7 @@
 > For Claude working on Lum (e.g. on Bartek's machine). Describes **how the browser should look and behave**.
 > UI design: **olehnykorovych** (entirely). The name "Lum": Savio. See [`../AUTHORS.md`](../AUTHORS.md).
 >
-> **The source of truth is the working mockup [`../ui-preview/`](../ui-preview/)** (Electron): run `ui-preview/Lum.cmd`
+> **The source of truth is the working mockup Lum Preview, [`../ui-preview/`](../ui-preview/)** (Electron): run `ui-preview/Lum.cmd`
 > and compare. The values below come from its code (`style.css`, `renderer.js`, `start.html`). If this document
 > and the mockup differ, the mockup is right; fix this file then.
 > Task: recreate this UI in Chromium with patches in `lum/patches/ui/` (rules in `CLAUDE.md`).
@@ -28,7 +28,7 @@
 | **Full** | Like Always visible (bar in the theme color, page below it), but **the tabs and the line are always visible**, not only on hover. The address in the middle fades out as usual (it comes back near the cursor); to copy a page's link, right-click its tab → *Copy link*. |
 
 Shade gradient (top → bottom): `rgba(0,0,0,.7)` → `.6` at 30% → `.34` at 55% → `.12` at 78% → transparent.
-"At the top" comes from a scroll hook in an isolated JS world (the page cannot see it), sent only when it changes. The new tab field stays in the same window position in all three modes.
+"At the top" comes from a scroll hook in an isolated JS world (the page cannot see it), sent only when it changes. The new tab field stays in the same window position in all bar modes.
 
 While the bar is shown, the page under it ignores clicks (so they reach the buttons).
 
@@ -72,10 +72,13 @@ On a light background the colors are darker: `#16A34A`, `#C98A00`, `#E5483E`. In
 
 ### Open tab line (the key element)
 
-A thin line (1.2 px, ~40% of the icon color) starts **at the top of the left window edge**, goes down, runs
+A thin line (~40% of the icon color) starts **at the top of the left window edge**, goes down, runs
 horizontally at 37 px, **wraps around the open tab** (goes up to 6 px around it), continues and
 **goes back up at the right edge** – it becomes the window border. On tab switch the line slides smoothly (0.42 s).
 It appears later and slower than the tabs: 0.55 s delay, drawn from the left over 2 s.
+**Crisp on any screen scaling:** the line is a whole number of screen pixels thick (1.2 CSS px rounded to device pixels:
+1 px at 100%, 2 px at 125–150%) and its straight parts lie on the device pixel grid, so it never smears across two pixels.
+Its position follows the tab element exactly (a regression once moved it 10 px off the tab – keep a test for it).
 
 Geometry (px): tab top `t=6`, line level `b=37`, corner radius `r=8` (Round style) or `r=0` (Square).
 The open tab's color fills everything the line wraps, **including the outward curves at its bottom corners** (where the
@@ -121,19 +124,24 @@ The bar above the line and the new tab background share one color:
 | Gray | `#3A3B40` | light |
 | Light gray | `#DFE0E3` | dark |
 | White | `#FAFAFA` | dark |
-| Mint / Sky / Lavender | `#CFEBDD` / `#CFE3F3` / `#DCD3F2` | dark |
-| Rose / Peach / Lemon | `#F3D3DE` / `#F6D9C7` / `#F3EDC4` | dark |
+| Mint / Sky | `#CFEBDD` / `#CFE3F3` | dark |
+| Lavender / Rose | `#DCD3F2` / `#F3D3DE` | dark |
 | Custom | any, from the color picker | by lightness (threshold 0.55) |
+
+10 choices in two rows of 5: the five grays on top; four pastels + the custom color picker below.
 
 ### Settings – the look will differ from the mockup
 
 **The settings panel in the mockup is temporary.** In the real browser the settings will look different –
 olehnykorovych will design them separately. Do not recreate the panel look from `ui-preview/`.
 
-Only the **options** and their behavior are binding (all remembered):
+The mockup's options are what exists today; the final settings may be different overall, and some of these may stay
+or change – ask olehnykorovych before building the settings page. What the mockup offers (all remembered):
 - **Theme** – the colors from the table above + a custom color.
 - **Style** – Round / Square.
 - **Bar** – Hidden / Clear / Always visible / Full.
+
+Whatever the settings end up looking like, the **behavior** of these modes (described above) is the design to follow.
 
 The icon that opens settings (two sliders) stays on the bar, left of the window buttons.
 
@@ -164,3 +172,26 @@ The icon that opens settings (two sliders) stays on the bar, left of the window 
 - New tab: our own local page (WebUI) instead of the default one, with no network requests.
 - Scrollbar: overlay style or our own `NativeTheme`.
 - Theme colors via Chromium's theme mechanism (frame/toolbar colors), not via an extension.
+- Clear mode "docking": change the web contents' top inset (like toggling the toolbar in fullscreen) based on the page's
+  scroll position at the top; animate it, and keep the hysteresis for barely scrollable pages.
+- Editable address: the omnibox, styled as plain centered text (host bright, path dimmed) until it gets focus.
+- Tab context menu: Chromium's tab context menu, reduced to *Copy link* and *Close tab* (plus our look).
+
+## Changelog (newest first)
+
+Kept so Claude on the other machine can see what changed since it last read this file.
+
+- **2026-11-28**
+  - The mockup is now called **Lum Preview** (window title, menu, `Lum Preview.exe`). The real browser stays **Lum**.
+  - Build it with `npm run pack` in `ui-preview/`. Running from the source uses its own profile (`Lum Preview (dev)`).
+  - Theme colors cut to 10 (two rows of 5): Peach and Lemon removed; a saved Peach/Lemon theme falls back to Black.
+  - The line around the open tab follows the tab exactly again and is crisp on any screen scaling.
+  - Everything below the line inside the bar has the page color (tab curves, window corner pockets, the strip under the line);
+    the theme color is only above the line.
+  - New bar mode **Full** (tabs and line always visible). Right click on a tab: *Copy link* / *Close tab*.
+  - The address in the middle of the bar is editable when the cursor is near it (click, select, type, Enter, Esc; Ctrl+L selects all).
+  - New bar mode **Clear** (transparent bar; page below the bar at the very top, under it with a dark shade when scrolled).
+  - The settings panel layout is temporary; the bar options grew to four modes.
+  - Everything in the mockup and the repo is in English (UI strings, comments, docs).
+  - Tab color is sampled only after the page has really loaded (load + fonts + a painted frame), never while loading.
+
