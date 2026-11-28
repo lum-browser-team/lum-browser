@@ -45,8 +45,10 @@ const TH = () => (theme === 'custom'
   ? { name: 'Custom', band: customColor, page: customColor, light: hexLum(customColor) > 0.55 }
   : THEMES[theme]);
 // Bar: 'auto' - hidden (comes back at the top edge), 'clear' - always there but transparent, over the page,
-// with a soft shade behind it, 'fixed' - always visible in the theme color, page below it
-const BAR_MODES = ['auto', 'clear', 'fixed'];
+// with a soft shade behind it, 'fixed' - always visible in the theme color, page below it,
+// 'full' - like 'fixed', but the tabs and the line are always visible too
+const BAR_MODES = ['auto', 'clear', 'fixed', 'full'];
+const barSolid = () => barMode === 'fixed' || barMode === 'full';
 const normBar = (v) => (BAR_MODES.includes(v) ? v : 'auto');
 let barMode = 'auto';
 try { barMode = normBar(localStorage.getItem('lum-bar')); } catch { /* hidden by default */ }
@@ -59,9 +61,11 @@ const S = { tabs: [], active: null, nextId: 1, near: false, search: false, setti
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const startUrl = () => START + '?bg=' + encodeURIComponent(TH().page) + '&bar=' + barMode;
 const isStart = (url) => !url || url.split('?')[0].split('#')[0] === START;
-const shown = () => S.near || S.search || S.settings || S.editing || S.debugHover;
+const shown = () => S.near || S.search || S.settings || S.editing || S.menu || S.debugHover;
+// Tabs and the line are drawn: on hover etc., or always in the 'full' bar mode
+const barOpen = () => shown() || barMode === 'full';
 // Tabs are visible when the bar is shown - also while typing in the field in place of +, but not on Ctrl+L
-const tabsVisible = () => shown() && !(S.search && S.searchTarget === 'current');
+const tabsVisible = () => barOpen() && !(S.search && S.searchTarget === 'current');
 const tab = (id) => S.tabs.find((t) => t.id === (id == null ? S.active : id));
 
 // Address or search phrase? The same logic lives in start.js.
@@ -326,7 +330,7 @@ function labelFor(url) { const [h, p] = addrParts(url); return esc(h) + '<span c
 
 function renderBar() {
   const t = tab();
-  bar.classList.toggle('show', shown());
+  bar.classList.toggle('show', barOpen());
   bar.classList.toggle('searching', S.search && S.searchTarget === 'current');
   bar.classList.toggle('adding', S.search && S.searchTarget === 'new');
   // On the new tab page the search field is in the middle of the page, so the bar shows no address
@@ -346,7 +350,8 @@ function renderBar() {
   TK.r = uiStyle === 'square' ? 0 : 8;
   applyThemeChrome();
   document.body.classList.toggle('bar-auto', barMode === 'auto');
-  document.body.classList.toggle('bar-fixed', barMode === 'fixed');
+  document.body.classList.toggle('bar-fixed', barSolid());
+  document.body.classList.toggle('bar-full', barMode === 'full');
   document.body.classList.toggle('bar-clear', barMode === 'clear');
   document.body.classList.toggle('bar-shown', shown());
   updateNav();
@@ -428,7 +433,7 @@ function updateTone() {
   // Lum's own pages (new tab, error screen) already have the theme color: no shade needed there
   const plain = !t || isStart(t.url) || !!t.error || docked;
   scrimEl.classList.toggle('off', plain);
-  const solid = barMode === 'fixed' || (on && barMode === 'auto');
+  const solid = barSolid() || (on && barMode === 'auto');
   bar.classList.toggle('on-light', barMode === 'clear' ? (plain ? themeLight : false) : solid ? themeLight : topLight);
   tabFillPath.style.fill = pageColor;
   bar.style.setProperty('--tab-ink', pageLight ? '#16181B' : '#FFFFFF');
@@ -460,9 +465,12 @@ function trackD(L, R) {
     'H' + (R - r) + 'Q' + R + ' ' + t + ' ' + R + ' ' + (t + r) + 'V' + (b - r) + 'Q' + R + ' ' + b + ' ' + (R + r) + ' ' + b + edgeEnd();
 }
 // Shape of the open tab's inside (down to the line) and the strip above the line with the tab cut out
+// Includes the outward curves at the bottom corners (where the line bends into the baseline),
+// so they have the tab color too and the tab flows into the page.
 function tabShape(L, R) {
-  const { t, r } = TK, b = TK.b + 1;
-  return 'M' + L + ' ' + b + 'V' + (t + r) + 'Q' + L + ' ' + t + ' ' + (L + r) + ' ' + t + 'H' + (R - r) + 'Q' + R + ' ' + t + ' ' + R + ' ' + (t + r) + 'V' + b + 'Z';
+  const { t, b, r } = TK, f = b + 1;
+  return 'M' + (L - r) + ' ' + f + 'V' + b + 'Q' + L + ' ' + b + ' ' + L + ' ' + (b - r) + 'V' + (t + r) + 'Q' + L + ' ' + t + ' ' + (L + r) + ' ' + t +
+    'H' + (R - r) + 'Q' + R + ' ' + t + ' ' + R + ' ' + (t + r) + 'V' + (b - r) + 'Q' + R + ' ' + b + ' ' + (R + r) + ' ' + b + 'V' + f + 'Z';
 }
 function setShapes(e) {
   const w = bar.clientWidth, rect = 'M0 0H' + w + 'V' + (TK.b + 1) + 'H0Z';
@@ -589,6 +597,47 @@ document.addEventListener('click', (e) => {
   render();
 });
 
+// Right click on a tab: a small menu - copy the tab's link, close the tab
+const ctxEl = $('ctx');
+function openTabMenu(id, x, y) {
+  const t = tab(id);
+  if (!t) return;
+  S.menu = id;
+  ctxEl.querySelector('[data-ctx=copy]').disabled = isStart(t.url);
+  ctxEl.classList.add('open');
+  render();
+  const w = ctxEl.offsetWidth;
+  ctxEl.style.left = Math.max(6, Math.min(x, window.innerWidth - w - 6)) + 'px';
+  ctxEl.style.top = Math.max(y, 40) + 'px';
+}
+function closeTabMenu() { if (S.menu == null) return; S.menu = null; ctxEl.classList.remove('open'); render(); }
+function toast(text) {
+  const el = $('toast');
+  el.textContent = text;
+  el.classList.add('on');
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => el.classList.remove('on'), 1300);
+}
+tabsEl.addEventListener('contextmenu', (e) => {
+  const tb = e.target.closest('[data-tab]');
+  if (!tb) return;
+  e.preventDefault();
+  openTabMenu(Number(tb.dataset.tab), e.clientX, e.clientY + 6);
+});
+ctxEl.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-ctx]');
+  if (!b || b.disabled) return;
+  e.stopPropagation();
+  const t = tab(S.menu);
+  closeTabMenu();
+  if (!t) return;
+  if (b.dataset.ctx === 'copy') { window.lum.copy(t.url); toast('Link copied'); }
+  else if (b.dataset.ctx === 'close') closeTab(t.id);
+});
+document.addEventListener('pointerdown', (e) => { if (S.menu != null && !e.target.closest('#ctx')) closeTabMenu(); }, true);
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeTabMenu(); });
+window.addEventListener('blur', closeTabMenu);
+
 // Middle mouse button (wheel click) closes a tab
 tabsEl.addEventListener('mousedown', (e) => { if (e.button === 1) e.preventDefault(); });
 tabsEl.addEventListener('auxclick', (e) => {
@@ -633,7 +682,7 @@ window.lum.on('zone', (zone) => {
   // Hidden: the bar appears when the cursor enters its (invisible) area, and stays just below it.
   // Always visible: tabs show up when the cursor is on the bar.
   const onBar = zone === 'edge' || zone === 'bar';
-  const near = barMode === 'fixed' ? onBar : (onBar || (S.near && zone === 'near'));
+  const near = barSolid() ? onBar : (onBar || (S.near && zone === 'near'));
   if (near !== S.near) {
     S.near = near;
     render();

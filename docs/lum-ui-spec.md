@@ -25,6 +25,7 @@
 | **Hidden** | The page fills the whole window. The bar is invisible (opacity 0, does not catch clicks). When the cursor enters the bar area (top 38 px of the window, also a few px above the window), the bar appears; it stays while the cursor is within 80 px of the top; further down it disappears. |
 | **Clear** | The bar never hides and **stays transparent** (no theme color, also on hover). **Page scrolled to the very top:** the page starts **below the bar** (like Always visible), so the page's own top buttons do not collide with ours; the bar sits on the theme color. **Scrolled down:** the page moves up and runs **under the bar**, with a **dark shade** behind it (84 px, fading into the page) and light icons. Switching between the two: the page's top/height animate over 0.22 s, the shade fades. A page that is barely scrollable (≤ 40 px) stays below the bar, so it does not flip back and forth. Lum's own pages (new tab, error screen) stay full-window without a shade. On hover **nothing about the shade changes** (no blur, no extra darkening, icons keep their halo) – only the tabs and the line are drawn in. |
 | **Always visible** | The bar is always visible in the theme color, the page starts **below it** (it does not overlap page buttons, e.g. on YouTube). Tabs and the line appear on bar hover. |
+| **Full** | Like Always visible (bar in the theme color, page below it), but **the tabs and the line are always visible**, not only on hover. The address in the middle fades out as usual (it comes back near the cursor); to copy a page's link, right-click its tab → *Copy link*. |
 
 Shade gradient (top → bottom): `rgba(0,0,0,.7)` → `.6` at 30% → `.34` at 55% → `.12` at 78% → transparent.
 "At the top" comes from a scroll hook in an isolated JS world (the page cannot see it), sent only when it changes. The new tab field stays in the same window position in all three modes.
@@ -62,6 +63,8 @@ On a light background the colors are darker: `#16A34A`, `#C98A00`, `#E5483E`. In
 - Height 26 px, width up to 190 px (they shrink with many tabs, min. 36 px). No background and no border.
 - Content: 15 px favicon + 12 px title (500). Inactive tabs dimmed (68%), full on hover.
 - The close cross appears on tab hover. Closing also with the middle mouse button and Ctrl+W.
+- **Right click on a tab**: a small menu (same look as the settings panel) – *Copy link* (copies the tab's full URL, a short
+  "Link copied" message appears under the bar; disabled on the new tab page) and *Close tab*. Esc or a click outside closes it.
 - Very many tabs (less than ~110 px per tab): icons only, the cross replaces the icon on hover.
   When out of space, the tab strip scrolls horizontally with the mouse wheel; the plus is always visible;
   at least 120 px of free space stays on the right for grabbing the window.
@@ -75,6 +78,8 @@ horizontally at 37 px, **wraps around the open tab** (goes up to 6 px around it)
 It appears later and slower than the tabs: 0.55 s delay, drawn from the left over 2 s.
 
 Geometry (px): tab top `t=6`, line level `b=37`, corner radius `r=8` (Round style) or `r=0` (Square).
+The open tab's color fills everything the line wraps, **including the outward curves at its bottom corners** (where the
+line bends from the tab's side into the baseline), so the tab flows into the page without theme-colored notches.
 
 ### Bar colors when shown
 
@@ -126,7 +131,7 @@ olehnykorovych will design them separately. Do not recreate the panel look from 
 Only the **options** and their behavior are binding (all remembered):
 - **Theme** – the colors from the table above + a custom color.
 - **Style** – Round / Square.
-- **Bar** – Hidden / Clear / Always visible.
+- **Bar** – Hidden / Clear / Always visible / Full.
 
 The icon that opens settings (two sliders) stays on the bar, left of the window buttons.
 

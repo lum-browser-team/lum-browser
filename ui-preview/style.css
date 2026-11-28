@@ -201,6 +201,7 @@ body.theme-light .err { color: #1C1C1C; }
   transition: background-color .35s ease, transform .4s cubic-bezier(.34,1.8,.64,1); }
 .seg button svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .seg button[aria-pressed="true"] { background: var(--seg-on); }
+.seg.grid2 { display: grid; grid-template-columns: 1fr 1fr; }
 .seg button.pressed { transform: scale(.95); transition-duration: .08s; }
 /* Theme picker: five grays from black to white, pastels and a custom color */
 .swatches { display: flex; justify-content: flex-start; gap: 7px; padding: 2px 2px; }
@@ -220,6 +221,22 @@ body.theme-light .err { color: #1C1C1C; }
 @media (prefers-reduced-motion: reduce) {
   .tab, .newtab, #trackPath, #band, #tabFill, .label { transition-duration: .01s !important; transition-delay: 0s !important; }
 }
+
+/* ---------- Tab menu (right click) and a short message ---------- */
+.ctx { position: fixed; z-index: 13; min-width: 168px; padding: 5px; box-sizing: border-box; border-radius: 10px;
+  background: var(--panel-bg); -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); color: var(--panel-ink); border: 1px solid var(--panel-line);
+  opacity: 0; transform: translateY(-4px) scale(.98); transform-origin: top left; pointer-events: none; transition: opacity .18s ease, transform .25s cubic-bezier(.22,1,.36,1); }
+.ctx.open { opacity: 1; transform: none; pointer-events: auto; }
+.ctx button { width: 100%; height: 30px; display: flex; align-items: center; gap: 9px; padding: 0 9px; border: 0; border-radius: 6px; background: transparent; color: inherit; font: 400 13px/1 var(--ui); text-align: left; }
+.ctx button:hover:not(:disabled) { background: var(--seg-on); }
+.ctx button:disabled { opacity: .4; }
+.ctx svg { width: 15px; height: 15px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.ctx .k { margin-left: auto; opacity: .5; font-size: 12px; }
+body.style-square .ctx, body.style-square .ctx button { border-radius: 0; }
+.toast { position: fixed; z-index: 13; top: 48px; left: 50%; transform: translate(-50%, -4px); padding: 8px 14px; border-radius: 9px; font: 500 12.5px/1 var(--ui);
+  background: var(--panel-bg); color: var(--panel-ink); border: 1px solid var(--panel-line); -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px);
+  opacity: 0; pointer-events: none; transition: opacity .25s ease, transform .35s cubic-bezier(.22,1,.36,1); }
+.toast.on { opacity: 1; transform: translate(-50%, 0); }
 
 /* ---------- Field in place of + (new tab on Enter) ---------- */
 /* Looks like the home page field: no background or border, thin text; the magnifier appears only while typing */

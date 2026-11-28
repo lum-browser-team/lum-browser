@@ -71,5 +71,5 @@ focusField();
 
 // Bar mode from the browser (?bar=fixed or live via lumBar()): with the bar always visible
 // the page is 38 px shorter, so the field moves up 19 px - it stays in the same spot in the window.
-function lumBar(mode) { document.documentElement.style.setProperty('--lift', mode === 'fixed' ? '19px' : '0px'); }
+function lumBar(mode) { document.documentElement.style.setProperty('--lift', mode === 'fixed' || mode === 'full' ? '19px' : '0px'); }
 lumBar(new URLSearchParams(location.search).get('bar'));

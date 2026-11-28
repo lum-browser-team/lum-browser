@@ -4,6 +4,7 @@ const CHANNELS = ['zone', 'cmd', 'open-tab', 'maximized', 'debug-hover'];
 
 contextBridge.exposeInMainWorld('lum', {
   win: (action) => ipcRenderer.send('win', action),
+  copy: (text) => ipcRenderer.send('copy', String(text)),
   dragStart: () => ipcRenderer.send('drag-start'),
   dragEnd: () => ipcRenderer.send('drag-end'),
   sample: (id, width, fx0, fx1) => ipcRenderer.invoke('sample', id, width, fx0, fx1),

@@ -1,6 +1,6 @@
 // Lum - mini browser for testing the UI (Electron).
 // Frameless window; the whole UI (bar, tabs) is in index.html, pages in <webview>.
-const { app, BrowserWindow, ipcMain, screen, Menu, webContents, session } = require('electron');
+const { app, BrowserWindow, ipcMain, screen, Menu, webContents, session, clipboard } = require('electron');
 const fs = require('fs');
 const path = require('path');
 
@@ -107,6 +107,9 @@ ipcMain.on('drag-start', (_e, sx, sy) => {
 });
 function endDrag() { if (drag) { clearInterval(drag.timer); drag = null; } }
 ipcMain.on('drag-end', endDrag);
+
+// Copy text (a tab's link) to the clipboard
+ipcMain.on('copy', (_e, text) => { if (typeof text === 'string' && text.length < 8192) clipboard.writeText(text); });
 
 // Window buttons (arcs): minimize, maximize, close
 ipcMain.on('win', (_e, action) => {
