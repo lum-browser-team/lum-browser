@@ -6,8 +6,10 @@ Lum: one 38 px bar instead of Chromium's tab strip + toolbar (docs/lum-ui-spec.m
 - The bar shows only back, forward, reload and the address. Chromium's other toolbar
   controls stay alive (so features anchored to them keep working) but take no space and
   are fully transparent. No overflow menu.
-- The address is plain centered text (host bright, the rest dimmed), no icons around it,
-  no placeholder.
+- Empty parts of the bar drag the window (Aero Snap, double-click to maximize).
+- The address is plain centered text (host bright, the rest dimmed, no "https://"), no icons
+  around it, no placeholder. While not edited it reacts only over the text +60 px on both
+  sides. A click places the caret; editing happens in place, with no suggestions popup.
 - 38 x 38 buttons touching each other, no side padding.
 - Window buttons in Lum's "Round" style: arc down (green), arc up (yellow), circle (red),
   no hover background.
@@ -27,7 +29,7 @@ Lum: one 38 px bar instead of Chromium's tab strip + toolbar (docs/lum-ui-spec.m
  
  namespace {
  
-@@ -67,6 +72,38 @@ bool ChromeColorProviderUtilsCallbacks::ColorIdToCSSColorId(
+@@ -67,6 +72,42 @@ bool ChromeColorProviderUtilsCallbacks::ColorIdToCSSColorId(
  
  }  // namespace
  
@@ -58,6 +60,10 @@ Lum: one 38 px bar instead of Chromium's tab strip + toolbar (docs/lum-ui-spec.m
 +  mixer[kColorToolbarButtonIconInactive] = ui::ColorTransform(SkColorSetA(text, 0x4D));
 +  mixer[kColorToolbarButtonIconDisabled] = ui::ColorTransform(SkColorSetA(text, 0x4D));
 +  mixer[kColorOmniboxTextDimmed] = ui::ColorTransform(SkColorSetA(text, 0x99));
++  mixer[kColorOmniboxResultsBackground] = ui::ColorTransform(theme);
++  mixer[kColorOmniboxResultsBackgroundHovered] = ui::ColorTransform(theme);
++  mixer[kColorLocationBarBorderOnMismatch] =
++      ui::ColorTransform(SK_ColorTRANSPARENT);
 +  mixer[kColorToolbarInkDrop] = ui::ColorTransform(SK_ColorTRANSPARENT);
 +  mixer[kColorToolbarInkDropHover] = ui::ColorTransform(SK_ColorTRANSPARENT);
 +  mixer[kColorToolbarInkDropRipple] = ui::ColorTransform(SK_ColorTRANSPARENT);
@@ -66,7 +72,7 @@ Lum: one 38 px bar instead of Chromium's tab strip + toolbar (docs/lum-ui-spec.m
  void AddChromeColorMixers(ui::ColorProvider* provider,
                            const ui::ColorProviderKey& key) {
    static base::NoDestructor<ChromeColorProviderUtilsCallbacks>
-@@ -87,6 +124,7 @@ void AddChromeColorMixers(ui::ColorProvider* provider,
+@@ -87,6 +128,7 @@ void AddChromeColorMixers(ui::ColorProvider* provider,
  
    // Must be the last one in order to override other mixer colors.
    AddNativeChromeColorMixer(provider, key);
@@ -126,6 +132,39 @@ Lum: one 38 px bar instead of Chromium's tab strip + toolbar (docs/lum-ui-spec.m
  
      case WEBUI_TAB_STRIP_TOOLBAR_INTERIOR_MARGIN:
        return gfx::Insets::VH(4, 0);
+--- a/chrome/browser/ui/toolbar/chrome_location_bar_model_delegate.cc
++++ b/chrome/browser/ui/toolbar/chrome_location_bar_model_delegate.cc
+@@ -316,5 +316,6 @@ TemplateURLService* ChromeLocationBarModelDelegate::GetTemplateURLService() {
+ // static
+ void ChromeLocationBarModelDelegate::RegisterProfilePrefs(
+     user_prefs::PrefRegistrySyncable* registry) {
+-  registry->RegisterBooleanPref(omnibox::kPreventUrlElisionsInOmnibox, true);
++  // Lum: show "en.wikipedia.org/wiki/..." like the mockup, not the full URL.
++  registry->RegisterBooleanPref(omnibox::kPreventUrlElisionsInOmnibox, false);
+ }
+--- a/chrome/browser/ui/views/frame/browser_view.cc
++++ b/chrome/browser/ui/views/frame/browser_view.cc
+@@ -4753,6 +4753,20 @@ int BrowserView::NonClientHitTest(const gfx::Point& point) {
+     }
+   }
+ 
++  // Lum: with no tab strip, the empty parts of Lum's bar drag the window
++  // (HTNOWHERE: the frame then checks the window buttons and falls back to
++  // HTCAPTION, which keeps Aero Snap and double-click to maximize).
++  if (!(horizontal_tab_strip_region_view_ &&
++        horizontal_tab_strip_region_view_->GetVisible()) &&
++      !(vertical_tab_strip_region_view_ &&
++        vertical_tab_strip_region_view_->GetVisible())) {
++    gfx::Point test_point(point);
++    if (ConvertedHitTest(parent(), top_container_, &test_point) &&
++        top_container_->IsPositionInWindowCaption(test_point)) {
++      return HTNOWHERE;
++    }
++  }
++
+   if (vertical_tab_strip_region_view_ &&
+       vertical_tab_strip_region_view_->GetVisible()) {
+     // See if the mouse pointer is within the bounds of the
 --- a/chrome/browser/ui/views/frame/layout/browser_view_layout_delegate_impl.cc
 +++ b/chrome/browser/ui/views/frame/layout/browser_view_layout_delegate_impl.cc
 @@ -77,6 +77,13 @@ BrowserViewLayoutDelegateImpl::GetTabStripType() const {
@@ -268,6 +307,45 @@ Lum: one 38 px bar instead of Chromium's tab strip + toolbar (docs/lum-ui-spec.m
    LayoutSuperclass<View>(this);
  }
  
+--- a/chrome/browser/ui/views/omnibox/omnibox_popup_view_browser_view.cc
++++ b/chrome/browser/ui/views/omnibox/omnibox_popup_view_browser_view.cc
+@@ -107,8 +107,9 @@ void OmniboxPopupViewBrowserView::UpdatePopupAppearance() {
+   const bool has_results =
+       !controller()->autocomplete_controller()->result().empty();
+ 
++  // Lum: no suggestions popup.
+   const bool should_be_visible =
+-      controller()->popup_state_manager()->popup_state() !=
++      false && controller()->popup_state_manager()->popup_state() !=
+           OmniboxPopupState::kAim &&
+       (has_results || (location_bar_view_->is_full_webui_omnibox() &&
+                        controller()->edit_model()->has_focus())) &&
+--- a/chrome/browser/ui/views/omnibox/omnibox_popup_view_views.cc
++++ b/chrome/browser/ui/views/omnibox/omnibox_popup_view_views.cc
+@@ -331,8 +331,9 @@ void OmniboxPopupViewViews::InvalidateLine(size_t line) {
+ 
+ void OmniboxPopupViewViews::UpdatePopupAppearance() {
+   const auto* autocomplete_controller = controller()->autocomplete_controller();
++  // Lum: no suggestions popup.
+   const bool should_be_open =
+-      controller()->popup_state_manager()->popup_state() !=
++      false && controller()->popup_state_manager()->popup_state() !=
+           OmniboxPopupState::kAim &&
+       !autocomplete_controller->result().empty() &&
+       !omnibox_view_->IsImeShowingPopup();
+--- a/chrome/browser/ui/views/omnibox/omnibox_popup_view_webui.cc
++++ b/chrome/browser/ui/views/omnibox/omnibox_popup_view_webui.cc
+@@ -85,8 +85,9 @@ void OmniboxPopupViewWebUI::UpdatePopupAppearance() {
+       omnibox::kAskGShowChip.Get();
+   const bool has_results_or_chips =
+       has_results || (contextual_chips_feature_enabled && has_contextual_chips);
++  // Lum: no suggestions popup.
+   const bool should_be_visible =
+-      controller()->popup_state_manager()->popup_state() !=
++      false && controller()->popup_state_manager()->popup_state() !=
+           OmniboxPopupState::kAim &&
+       (has_results_or_chips ||
+        (presenter_->delegate().is_full_webui_omnibox() &&
 --- a/chrome/browser/ui/views/omnibox/omnibox_view_views.cc
 +++ b/chrome/browser/ui/views/omnibox/omnibox_view_views.cc
 @@ -397,7 +397,8 @@ void OmniboxViewViews::InstallPlaceholderText() {
@@ -280,9 +358,55 @@ Lum: one 38 px bar instead of Chromium's tab strip + toolbar (docs/lum-ui-spec.m
    const std::u16string a11y_text =
        maybe_a11y_placeholder_text.value_or(placeholder_text);
    const bool is_focused =
+@@ -1500,7 +1501,9 @@ bool OmniboxViewViews::OnMousePressed(const ui::MouseEvent& event) {
+   const bool is_click_valid =
+       !IsFullWebUIOmniboxReady() || event.GetClickCount() == 1;
+ 
++  // Lum: a click places the caret, it does not select the whole address.
+   select_all_on_mouse_release_ =
++      false &&
+       (event.IsOnlyLeftMouseButton() || event.IsOnlyRightMouseButton()) &&
+       is_click_valid && !is_popup_open &&
+       (!HasFocus() ||
 --- a/chrome/browser/ui/views/toolbar/toolbar_view.cc
 +++ b/chrome/browser/ui/views/toolbar/toolbar_view.cc
-@@ -1478,6 +1478,36 @@ gfx::Size ToolbarView::GetMinimumSize() const {
+@@ -88,7 +88,10 @@
+ #include "chrome/browser/ui/views/global_media_controls/media_toolbar_button_contextual_menu.h"
+ #include "chrome/browser/ui/views/global_media_controls/media_toolbar_button_view.h"
+ #include "chrome/browser/ui/views/intent_picker_bubble_view.h"
++#include "chrome/browser/ui/views/location_bar/location_bar_view.h"
+ #include "chrome/browser/ui/views/location_bar/webui_location_bar.h"
++#include "chrome/browser/ui/views/omnibox/omnibox_view_views.h"
++#include "ui/gfx/text_utils.h"
+ #include "chrome/browser/ui/views/page_action/page_action_container_view.h"
+ #include "chrome/browser/ui/views/page_action/page_action_view.h"
+ #include "chrome/browser/ui/views/page_action/page_action_view_interface.h"
+@@ -241,6 +244,24 @@ bool IsPositionInWindowCaptionForView(const views::View* view,
+           views::View::ConvertPointToTarget(view, child, point);
+       return IsPositionInWindowCaptionForView(child, point_in_child);
+     }
++    // Lum: while not being edited, the address is interactive only over its
++    // text and 60 px on both sides of it; the rest drags the window.
++    if (views::IsViewClass<LocationBarView>(child)) {
++      auto* omnibox =
++          const_cast<LocationBarView*>(static_cast<const LocationBarView*>(child))
++              ->omnibox_view();
++      if (!omnibox || omnibox->HasFocus()) {
++        return false;
++      }
++      const int text_width =
++          gfx::GetStringWidth(omnibox->GetText(), omnibox->GetFontList());
++      if (text_width == 0) {
++        return true;
++      }
++      const int center = child->bounds().CenterPoint().x();
++      const int half = text_width / 2 + 60;
++      return point.x() < center - half || point.x() > center + half;
++    }
+     // Separators and dividers are non-interactive and should be treated
+     // as caption area.
+     if (views::IsViewClass<views::Separator>(child) ||
+@@ -1478,6 +1499,36 @@ gfx::Size ToolbarView::GetMinimumSize() const {
    return size;
  }
  
@@ -319,7 +443,7 @@ Lum: one 38 px bar instead of Chromium's tab strip + toolbar (docs/lum-ui-spec.m
  void ToolbarView::Layout(PassKey) {
    // If we have not been initialized yet just do nothing.
    if (!initialized_) {
-@@ -1495,28 +1525,19 @@ void ToolbarView::Layout(PassKey) {
+@@ -1495,28 +1546,19 @@ void ToolbarView::Layout(PassKey) {
  
    if (display_mode_ == DisplayMode::kNormal) {
      LayoutCommon();
