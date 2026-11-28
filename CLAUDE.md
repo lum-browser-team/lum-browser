@@ -23,6 +23,13 @@ Nie kopiujemy kodu, nazw, grafik ani wyglądu innych przeglądarek (np. Helium) 
 - `lum/branding/` - źródła logo/ikon. Ikony binarne (PNG/ICO) leżą w `lum/branding/overlay/` w układzie `build/src`
   i `build.py` kopiuje je po łatkach (łatki tekstowe nie podmienią plików binarnych). Generuje je
   `lum/branding/generate_icons.py` - uruchom po każdej zmianie logo.
+- `lum/branding/rebrand_strings.py` - zmienia "Chromium" na "Lum" we wszystkich napisach (pliki .grd + 81 tłumaczeń .xtb,
+  z przeliczeniem identyfikatorów tłumaczeń) i wpisuje twórców (Bartłomiej Kulesz, Oleh Nykorovych). Uruchamiany przez
+  `build.py` po łatkach. Wyjątek od zasady "wszystko jako łatki" - łatka miałaby dziesiątki tysięcy linii.
+  Nowe pliki z napisami dopisuj do `GRD_FILES`, frazy o projekcie Chromium (nie o naszej przeglądarce) chroni `_NAME_RE`.
+- `lum/devutils/rebuild.py` - szybka przebudowa na istniejącym `build/src` (nowe łatki + ikony + napisy + ninja).
+  Pamięta nałożone łatki w `build/src/.lum-applied`, więc **już nałożonej łatki nie zmieniaj** - poprawkę zrób nową łatką,
+  inaczej potrzebna pełna kompilacja.
 - `ungoogled-chromium/` (submoduł), `patches/`, `flags.windows.gn`, `downloads.ini`, `pruning.list`,
   `domain_substitution.list`, `package.py`, `.github/`, `devutils/` - **warstwa upstream. Nie edytuj**,
   chyba że to aktualizacja bazy albo użytkownik wprost o to prosi. Zmiany upstream = konflikty przy każdej aktualizacji.
