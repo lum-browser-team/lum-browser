@@ -11,3 +11,4 @@ branding/lum-authors.patch
 perf/enable-memory-saver-by-default.patch
 features/search-with-google.patch
 ui/start-page.patch
+ui/lum-bar.patch

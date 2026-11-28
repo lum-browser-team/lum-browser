@@ -1,0 +1,357 @@
+Lum: one 38 px bar instead of Chromium's tab strip + toolbar (docs/lum-ui-spec.md, "Bar").
+
+- No horizontal tab strip in normal windows: the toolbar moves up next to the window
+  buttons (Chromium's own no-tab-strip layout). Tabs: Ctrl+T / Ctrl+W / Ctrl+Tab for now,
+  Lum's tabs in the bar come in a later patch.
+- The bar shows only back, forward, reload and the address. Chromium's other toolbar
+  controls stay alive (so features anchored to them keep working) but take no space and
+  are fully transparent. No overflow menu.
+- The address is plain centered text (host bright, the rest dimmed), no icons around it,
+  no placeholder.
+- 38 x 38 buttons touching each other, no side padding.
+- Window buttons in Lum's "Round" style: arc down (green), arc up (yellow), circle (red),
+  no hover background.
+- Colors of the default "Black" theme: black bar, light icons and text, no hover fills.
+
+--- a/chrome/browser/ui/color/chrome_color_mixers.cc
++++ b/chrome/browser/ui/color/chrome_color_mixers.cc
+@@ -24,6 +24,11 @@
+ #include "chrome/browser/ui/color/product_specifications_color_mixer.h"
+ #include "chrome/browser/ui/color/tab_strip_color_mixer.h"
+ #include "ui/color/color_provider_utils.h"
++#include "ui/color/color_id.h"
++#include "ui/color/color_mixer.h"
++#include "ui/color/color_provider.h"
++#include "ui/color/color_recipe.h"
++#include "ui/color/color_transform.h"
+ 
+ namespace {
+ 
+@@ -67,6 +72,38 @@ bool ChromeColorProviderUtilsCallbacks::ColorIdToCSSColorId(
+ 
+ }  // namespace
+ 
++// Lum: the bar in the theme color (Black by default, see docs/lum-ui-spec.md)
++// with light icons and text, no hover backgrounds, no separators.
++static void AddLumColorMixer(ui::ColorProvider* provider) {
++  ui::ColorMixer& mixer = provider->AddMixer();
++  const SkColor theme = SK_ColorBLACK;
++  const SkColor text = SkColorSetRGB(0xEC, 0xEC, 0xEC);
++  for (ui::ColorId id :
++       {kColorToolbar, kColorLocationBarBackground,
++        kColorLocationBarBackgroundHovered,
++        kColorToolbarBackgroundSubtleEmphasis,
++        kColorToolbarBackgroundSubtleEmphasisHovered,
++        kColorToolbarContentAreaSeparator,
++        kColorToolbarTopSeparatorFrameActive,
++        kColorToolbarTopSeparatorFrameInactive}) {
++    mixer[id] = ui::ColorTransform(theme);
++  }
++  mixer[ui::kColorFrameActive] = ui::ColorTransform(theme);
++  mixer[ui::kColorFrameInactive] = ui::ColorTransform(theme);
++  for (ui::ColorId id :
++       {kColorToolbarButtonIcon, kColorToolbarButtonIconDefault,
++        kColorToolbarButtonIconHovered, kColorToolbarButtonIconPressed,
++        kColorOmniboxText}) {
++    mixer[id] = ui::ColorTransform(text);
++  }
++  mixer[kColorToolbarButtonIconInactive] = ui::ColorTransform(SkColorSetA(text, 0x4D));
++  mixer[kColorToolbarButtonIconDisabled] = ui::ColorTransform(SkColorSetA(text, 0x4D));
++  mixer[kColorOmniboxTextDimmed] = ui::ColorTransform(SkColorSetA(text, 0x99));
++  mixer[kColorToolbarInkDrop] = ui::ColorTransform(SK_ColorTRANSPARENT);
++  mixer[kColorToolbarInkDropHover] = ui::ColorTransform(SK_ColorTRANSPARENT);
++  mixer[kColorToolbarInkDropRipple] = ui::ColorTransform(SK_ColorTRANSPARENT);
++}
++
+ void AddChromeColorMixers(ui::ColorProvider* provider,
+                           const ui::ColorProviderKey& key) {
+   static base::NoDestructor<ChromeColorProviderUtilsCallbacks>
+@@ -87,6 +124,7 @@ void AddChromeColorMixers(ui::ColorProvider* provider,
+ 
+   // Must be the last one in order to override other mixer colors.
+   AddNativeChromeColorMixer(provider, key);
++  AddLumColorMixer(provider);
+ 
+   if (key.custom_theme) {
+     key.custom_theme->AddColorMixers(provider, key);
+--- a/chrome/browser/ui/layout_constants.cc
++++ b/chrome/browser/ui/layout_constants.cc
+@@ -84,7 +84,7 @@ int GetLayoutConstant(LayoutConstant constant) {
+     case LayoutConstant::kLocationBarTrailingDecorationInnerPadding:
+       return touch_ui ? 3 : 8;
+     case LayoutConstant::kLocationBarHeight:
+-      return touch_ui ? 36 : 34;
++      return 28;  // Lum
+     // LINT.IfChange(LocationBarIconSize)
+     case LayoutConstant::kLocationBarIconSize:
+       return touch_ui ? 20 : 16;
+@@ -129,7 +129,7 @@ int GetLayoutConstant(LayoutConstant constant) {
+     case LayoutConstant::kTabstripToolbarOverlap:
+       return 1;
+     case LayoutConstant::kToolbarButtonHeight:
+-      return touch_ui ? 48 : 34;
++      return 38;  // Lum
+     case LayoutConstant::kToolbarButtonIconSize:
+       return touch_ui ? kDefaultTouchableIconSize
+                       : kDefaultIconSizeChromeRefresh;
+@@ -144,11 +144,11 @@ int GetLayoutConstant(LayoutConstant constant) {
+     case LayoutConstant::kToolbarElementPadding:
+       return touch_ui ? 0 : 4;
+     case LayoutConstant::kToolbarIconDefaultMargin:
+-      return touch_ui ? 0 : 2;
++      return 0;  // Lum: bar buttons touch each other
+     case LayoutConstant::kToolbarButtonRefreshExpandedMargin:
+       return 5;
+     case LayoutConstant::kLocationBarMargin:
+-      return touch_ui ? 12 : 9;
++      return 0;  // Lum
+     case LayoutConstant::kSidePanelInset:
+       return 8;
+     case LayoutConstant::kPageInfoIconSize:
+@@ -223,7 +223,7 @@ gfx::Insets GetLayoutInsets(LayoutInset inset) {
+     }
+ 
+     case TOOLBAR_BUTTON:
+-      return gfx::Insets(touch_ui ? 12 : 7);
++      return gfx::Insets(9);  // Lum: 20 px icon in a 38 x 38 square
+ 
+     case BROWSER_APP_MENU_CHIP_PADDING:
+       if (touch_ui) {
+@@ -246,7 +246,7 @@ gfx::Insets GetLayoutInsets(LayoutInset inset) {
+       }
+ 
+     case TOOLBAR_INTERIOR_MARGIN:
+-      return touch_ui ? gfx::Insets::VH(4, 0) : gfx::Insets::VH(6, 6);
++      return gfx::Insets();  // Lum: buttons reach the window edges
+ 
+     case WEBUI_TAB_STRIP_TOOLBAR_INTERIOR_MARGIN:
+       return gfx::Insets::VH(4, 0);
+--- a/chrome/browser/ui/views/frame/layout/browser_view_layout_delegate_impl.cc
++++ b/chrome/browser/ui/views/frame/layout/browser_view_layout_delegate_impl.cc
+@@ -77,6 +77,13 @@ BrowserViewLayoutDelegateImpl::GetTabStripType() const {
+     }
+   }
+ 
++  // Lum: normal windows have no Chromium tab strip; the tabs live in Lum's
++  // single bar (the toolbar), next to the window buttons.
++  if (browser_view_->browser()->GetType() ==
++      BrowserWindowInterface::Type::TYPE_NORMAL) {
++    return TabStripType::kNone;
++  }
++
+   // Default is horizontal tab strip.
+   return TabStripType::kHorizontal;
+ }
+--- a/chrome/browser/ui/views/frame/windows_caption_button.cc
++++ b/chrome/browser/ui/views/frame/windows_caption_button.cc
+@@ -25,6 +25,7 @@
+ #include "ui/gfx/geometry/rect_conversions.h"
+ #include "ui/gfx/geometry/skia_conversions.h"
+ #include "ui/gfx/scoped_canvas.h"
++#include "third_party/skia/include/core/SkPathBuilder.h"
+ 
+ WindowsCaptionButton::WindowsCaptionButton(
+     PressedCallback callback,
+@@ -54,6 +55,10 @@ WindowsCaptionButton::CreateIconPainter() {
+ 
+ gfx::Size WindowsCaptionButton::CalculatePreferredSize(
+     const views::SizeBounds& available_size) const {
++  // Lum: window buttons are 38 x 38 squares like the rest of the bar.
++  if (true) {
++    return gfx::Size(38, 38);
++  }
+   const int width =
+       WindowFrameUtil::kWindowsCaptionButtonWidth + GetBetweenButtonSpacing();
+ 
+@@ -88,6 +93,10 @@ SkColor WindowsCaptionButton::GetBaseForegroundColor() const {
+ }
+ 
+ void WindowsCaptionButton::OnPaintBackground(gfx::Canvas* canvas) {
++  // Lum: no background, also on hover.
++  if (true) {
++    return;
++  }
+   // Paint the background of the button (the semi-transparent rectangle that
+   // appears when you hover or press the button).
+   const ui::ThemeProvider* theme_provider = GetThemeProvider();
+@@ -157,6 +166,10 @@ void WindowsCaptionButton::PaintButtonContents(gfx::Canvas* canvas) {
+ }
+ 
+ int WindowsCaptionButton::GetBetweenButtonSpacing() const {
++  // Lum: the buttons touch each other.
++  if (true) {
++    return 0;
++  }
+   const int display_order_index = GetButtonDisplayOrderIndex();
+   return display_order_index == 0
+              ? 0
+@@ -190,6 +203,56 @@ int WindowsCaptionButton::GetButtonDisplayOrderIndex() const {
+ }
+ 
+ void WindowsCaptionButton::PaintSymbol(gfx::Canvas* canvas) {
++  // Lum, "Round" style: minimize = arc down (green), maximize/restore = arc up
++  // (yellow), close = circle (red). Dimmer when idle or the window is inactive,
++  // full color on hover.
++  if (true) {
++    SkColor color;
++    switch (button_type_) {
++      case VIEW_ID_MINIMIZE_BUTTON:
++        color = SkColorSetRGB(0x3D, 0xDC, 0x84);
++        break;
++      case VIEW_ID_MAXIMIZE_BUTTON:
++      case VIEW_ID_RESTORE_BUTTON:
++        color = SkColorSetRGB(0xF5, 0xC5, 0x42);
++        break;
++      default:
++        color = SkColorSetRGB(0xFF, 0x5F, 0x57);
++        break;
++    }
++    const double hover = GetState() == STATE_PRESSED
++                             ? 1.0
++                             : hover_animation().GetCurrentValue();
++    const int idle_alpha = GetWidget()->ShouldPaintAsActive() ? 0xD0 : 0x80;
++    color = SkColorSetA(color, static_cast<SkAlpha>(gfx::Tween::IntValueBetween(
++                                   hover, idle_alpha, 0xFF)));
++
++    const gfx::PointF c = gfx::RectF(GetContentsBounds()).CenterPoint();
++    constexpr float kHalfWidth = 6.0f;
++    SkPathBuilder path;
++    switch (button_type_) {
++      case VIEW_ID_MINIMIZE_BUTTON:
++        path.moveTo(c.x() - kHalfWidth, c.y() - 2.5f);
++        path.quadTo(c.x(), c.y() + 4.5f, c.x() + kHalfWidth, c.y() - 2.5f);
++        break;
++      case VIEW_ID_MAXIMIZE_BUTTON:
++      case VIEW_ID_RESTORE_BUTTON:
++        path.moveTo(c.x() - kHalfWidth, c.y() + 2.5f);
++        path.quadTo(c.x(), c.y() - 4.5f, c.x() + kHalfWidth, c.y() + 2.5f);
++        break;
++      default:
++        path.addCircle(c.x(), c.y(), 5.5f);
++        break;
++    }
++    cc::PaintFlags flags;
++    flags.setAntiAlias(true);
++    flags.setColor(color);
++    flags.setStyle(cc::PaintFlags::kStroke_Style);
++    flags.setStrokeWidth(1.6f);
++    flags.setStrokeCap(cc::PaintFlags::kRound_Cap);
++    canvas->DrawPath(path.detach(), flags);
++    return;
++  }
+   SkColor symbol_color = GetBaseForegroundColor();
+   const SkColor hovered_color =
+       GetColorProvider()->GetColor(kColorCaptionCloseButtonForegroundHovered);
+--- a/chrome/browser/ui/views/location_bar/location_bar_view.cc
++++ b/chrome/browser/ui/views/location_bar/location_bar_view.cc
+@@ -1027,6 +1027,23 @@ void LocationBarView::Layout(PassKey) {
+     position_view(omnibox_additional_text_view_, omnibox_additional_text_width);
+   }
+ 
++  // Lum: only the text, centered, over the whole width.
++  if (!is_popup_mode_) {
++    for (views::View* child : children()) {
++      if (child != omnibox_view_) {
++        // See LumHideNonLumControls() in toolbar_view.cc.
++        child->SetBoundsRect(gfx::Rect());
++        if (!child->layer()) {
++          child->SetPaintToLayer();
++        }
++        child->layer()->SetOpacity(0.0f);
++        child->SetCanProcessEventsWithinSubtree(false);
++      }
++    }
++    omnibox_view_->SetBoundsRect(GetLocalBounds());
++    omnibox_view_->SetHorizontalAlignment(gfx::ALIGN_CENTER);
++  }
++
+   LayoutSuperclass<View>(this);
+ }
+ 
+--- a/chrome/browser/ui/views/omnibox/omnibox_view_views.cc
++++ b/chrome/browser/ui/views/omnibox/omnibox_view_views.cc
+@@ -397,7 +397,8 @@ void OmniboxViewViews::InstallPlaceholderText() {
+   std::optional<std::u16string> maybe_a11y_placeholder_text;
+   omnibox::ComputePlaceholderText(location_bar_view_, placeholder_text,
+                                   maybe_a11y_placeholder_text);
+-  SetPlaceholderText(placeholder_text);
++  // Lum: the bar has no placeholder; the start page has its own field.
++  SetPlaceholderText(std::u16string());
+   const std::u16string a11y_text =
+       maybe_a11y_placeholder_text.value_or(placeholder_text);
+   const bool is_focused =
+--- a/chrome/browser/ui/views/toolbar/toolbar_view.cc
++++ b/chrome/browser/ui/views/toolbar/toolbar_view.cc
+@@ -1478,6 +1478,36 @@ gfx::Size ToolbarView::GetMinimumSize() const {
+   return size;
+ }
+ 
++namespace {
++
++// Lum: the bar shows only Lum's controls. Everything else Chromium puts in the
++// toolbar (app menu, extensions, profile, side panel buttons...) is kept alive,
++// so features anchored to it keep working, but takes no space and draws nothing.
++void LumHideNonLumControls(ToolbarView* toolbar,
++                           const views::View* back,
++                           const views::View* forward) {
++  for (views::View* child : toolbar->children()) {
++    const bool lum_control = child == back || child == forward ||
++                             child == toolbar->reload_button() ||
++                             child == toolbar->location_bar_view();
++    if (!lum_control) {
++      // Zero-sized and fully transparent: some of these paint to their own
++      // layers, which a zero-sized parent does not clip. Not SetVisible(false):
++      // Chromium toggles their visibility itself, which would fight with us
++      // and re-layout forever.
++      child->SetProperty(views::kViewIgnoredByLayoutKey, true);
++      child->SetBoundsRect(gfx::Rect());
++      if (!child->layer()) {
++        child->SetPaintToLayer();
++      }
++      child->layer()->SetOpacity(0.0f);
++      child->SetCanProcessEventsWithinSubtree(false);
++    }
++  }
++}
++
++}  // namespace
++
+ void ToolbarView::Layout(PassKey) {
+   // If we have not been initialized yet just do nothing.
+   if (!initialized_) {
+@@ -1495,28 +1525,19 @@ void ToolbarView::Layout(PassKey) {
+ 
+   if (display_mode_ == DisplayMode::kNormal) {
+     LayoutCommon();
++    LumHideNonLumControls(this, back_, forward_);
+   }
+ 
+-  if (toolbar_controller_) {
+-    // Need to determine whether the overflow button should be visible, and only
+-    // update it if the visibility changes.
+-    const bool was_overflow_button_visible =
+-        toolbar_controller_->overflow_button()->GetVisible();
+-    const bool show_overflow_button =
+-        toolbar_controller_->ShouldShowOverflowButton(size());
+-    if (was_overflow_button_visible != show_overflow_button) {
+-      views::ManualLayoutUtil(layout_manager_)
+-          .SetViewHidden(toolbar_controller_->overflow_button(),
+-                         !show_overflow_button);
+-      base::RecordAction(base::UserMetricsAction(
+-          show_overflow_button ? "ResponsiveToolbar.OverflowButtonShown"
+-                               : "ResponsiveToolbar.OverflowButtonHidden"));
+-    }
+-  }
++  // Lum: no overflow menu - the bar only has Lum's controls (see
++  // LumHideNonLumControls), so Chromium's responsive overflow logic is skipped.
+ 
+   // Call super implementation to ensure layout manager and child layouts
+   // happen.
+   LayoutSuperclass<AccessiblePaneView>(this);
++
++  if (display_mode_ == DisplayMode::kNormal) {
++    LumHideNonLumControls(this, back_, forward_);
++  }
+ }
+ 
+ void ToolbarView::OnThemeChanged() {
