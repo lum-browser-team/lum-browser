@@ -79,7 +79,9 @@ It appears later and slower than the tabs: 0.55 s delay, drawn from the left ove
 
 Geometry (px): tab top `t=6`, line level `b=37`, corner radius `r=8` (Round style) or `r=0` (Square).
 The open tab's color fills everything the line wraps, **including the outward curves at its bottom corners** (where the
-line bends from the tab's side into the baseline), so the tab flows into the page without theme-colored notches.
+line bends from the tab's side into the baseline), so the tab flows into the page without theme-colored notches. The same goes for **everything below the line** inside
+the bar: the curved pockets at the window corners and the strip right under the line left and right of the tab have the
+page color. The theme color is strictly above the line (it must not show as a light sliver under it).
 
 ### Bar colors when shown
 

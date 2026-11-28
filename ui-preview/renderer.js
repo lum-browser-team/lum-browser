@@ -464,26 +464,20 @@ function trackD(L, R) {
   return edgeStart() + 'H' + (L - r) + 'Q' + L + ' ' + b + ' ' + L + ' ' + (b - r) + 'V' + (t + r) + 'Q' + L + ' ' + t + ' ' + (L + r) + ' ' + t +
     'H' + (R - r) + 'Q' + R + ' ' + t + ' ' + R + ' ' + (t + r) + 'V' + (b - r) + 'Q' + R + ' ' + b + ' ' + (R + r) + ' ' + b + edgeEnd();
 }
-// Shape of the open tab's inside (down to the line) and the strip above the line with the tab cut out
-// Includes the outward curves at the bottom corners (where the line bends into the baseline),
-// so they have the tab color too and the tab flows into the page.
-function tabShape(L, R) {
-  const { t, b, r } = TK, f = b + 1;
-  return 'M' + (L - r) + ' ' + f + 'V' + b + 'Q' + L + ' ' + b + ' ' + L + ' ' + (b - r) + 'V' + (t + r) + 'Q' + L + ' ' + t + ' ' + (L + r) + ' ' + t +
-    'H' + (R - r) + 'Q' + R + ' ' + t + ' ' + R + ' ' + (t + r) + 'V' + (b - r) + 'Q' + R + ' ' + b + ' ' + (R + r) + ' ' + b + 'V' + f + 'Z';
+// Everything below the line inside the bar box gets the page color: the open tab's inside (with the outward
+// curves at its bottom corners), the curved pockets at the window corners and the thin strip under the line.
+// The theme color (band) is only above the line, so no theme-colored sliver shows under it.
+function underShape(e) {
+  const w = bar.clientWidth, line = e ? trackD(e.L, e.R) : edgeStart() + edgeEnd();
+  return line + 'L' + w + ' 0V' + (TK.b + 1) + 'H0V0Z';
 }
 function setShapes(e) {
   const w = bar.clientWidth, rect = 'M0 0H' + w + 'V' + (TK.b + 1) + 'H0Z';
-  if (!e) {
-    trackPath.setAttribute('d', edgeStart() + edgeEnd());
-    bandPath.setAttribute('d', rect);
-    tabFillPath.setAttribute('d', 'M0 0Z');
-    return;
-  }
-  trackPath.setAttribute('d', trackD(e.L, e.R));
-  // Cut-out for the open tab only when tabs are shown; otherwise the strip is solid
-  bandPath.setAttribute('d', tabsVisible() ? rect + tabShape(e.L, e.R) : rect);
-  tabFillPath.setAttribute('d', tabShape(e.L, e.R));
+  trackPath.setAttribute('d', e ? trackD(e.L, e.R) : edgeStart() + edgeEnd());
+  // The tab bump only while the tabs are shown; otherwise the line under the bar is straight
+  const under = underShape(e && tabsVisible() ? e : null);
+  bandPath.setAttribute('d', rect + under);
+  tabFillPath.setAttribute('d', under);
 }
 // Open tab edges in the window, clipped to the visible part of the tab strip. When the tab is not visible: null (a straight line).
 function activeEdges() {

@@ -50,7 +50,7 @@ body.bar-auto .bar:not(.show) * { pointer-events: none !important; }
 /* "Always visible" mode: the bar has the theme color and the page starts below it (nothing overlaps it) */
 body.bar-fixed #pages, body.bar-fixed .err { top: 38px; }
 body.bar-fixed .bar { pointer-events: auto; --halo: drop-shadow(0 0 0 transparent); }
-body.bar-fixed #band { opacity: 1; }
+body.bar-fixed #band, body.bar-fixed #tabFill { opacity: 1; }
 /* "Clear" mode: the bar never hides and stays transparent (no theme color, also on hover).
    A web page scrolled to the very top starts below the bar (docked), so its own buttons do not collide
    with ours; scrolled down, it runs under the bar with a dark shade behind it that fades into the page. */
