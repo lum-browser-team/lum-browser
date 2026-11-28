@@ -8,7 +8,7 @@ const $ = (id) => document.getElementById(id);
 const bar = $('bar'), leftEl = $('left'), tabsEl = $('tabs'), plusBtn = $('newtab'), labelEl = $('label'), input = $('q');
 const newField = $('newfield'), newInput = $('nq'), addrEl = $('addr'), addrIn = $('addrIn');
 const panel = $('panel'), progressEl = $('progress'), pages = $('pages'), trackPath = $('trackPath');
-const bandPath = $('band'), tabFillPath = $('tabFill'), scrimEl = $('scrim');
+const bandPath = $('band'), tabFillPath = $('tabFill'), scrimEl = $('scrim'), edgePath = $('edgePath');
 
 // Thin, rounded scrollbar on every page (in Chromium this will be a patch)
 const SCROLLBAR_CSS = '::-webkit-scrollbar{width:10px;height:10px;background:transparent}' +
@@ -62,7 +62,7 @@ const S = { tabs: [], active: null, nextId: 1, near: false, search: false, setti
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const startUrl = () => START + '?bg=' + encodeURIComponent(TH().page) + '&bar=' + barMode;
 const isStart = (url) => !url || url.split('?')[0].split('#')[0] === START;
-const shown = () => S.near || S.search || S.settings || S.editing || S.menu || S.debugHover;
+const shown = () => S.near || S.search || S.settings || S.editing || S.menu != null || S.dragging || S.qr || S.debugHover;
 // Tabs and the line are drawn: on hover etc., or always in the 'full' bar mode
 const barOpen = () => shown() || barMode === 'full';
 // Tabs are visible when the bar is shown - also while typing in the field in place of +, but not on Ctrl+L
@@ -474,11 +474,23 @@ function pixelGrid() {
 }
 function edgeStart() { const { r } = TK, { snap } = pixelGrid(), b = snap(TK.b), x = snap(0.6); return 'M' + x + ' 0V' + (b - r) + 'Q' + x + ' ' + b + ' ' + (x + r) + ' ' + b; }
 function edgeEnd() { const { r } = TK, { snap } = pixelGrid(), b = snap(TK.b), x = snap(bar.clientWidth - 0.6); return 'H' + (x - r) + 'Q' + x + ' ' + b + ' ' + x + ' ' + (b - r) + 'V0'; }
-function trackD(L, R) {
+// The part of the line around the open tab (from the baseline up around the tab and back down)
+function tabBump(L, R) {
   const { r } = TK, { snap } = pixelGrid(), t = snap(TK.t), b = snap(TK.b);
   L = snap(L); R = snap(R);
-  return edgeStart() + 'H' + (L - r) + 'Q' + L + ' ' + b + ' ' + L + ' ' + (b - r) + 'V' + (t + r) + 'Q' + L + ' ' + t + ' ' + (L + r) + ' ' + t +
-    'H' + (R - r) + 'Q' + R + ' ' + t + ' ' + R + ' ' + (t + r) + 'V' + (b - r) + 'Q' + R + ' ' + b + ' ' + (R + r) + ' ' + b + edgeEnd();
+  return 'H' + (L - r) + 'Q' + L + ' ' + b + ' ' + L + ' ' + (b - r) + 'V' + (t + r) + 'Q' + L + ' ' + t + ' ' + (L + r) + ' ' + t +
+    'H' + (R - r) + 'Q' + R + ' ' + t + ' ' + R + ' ' + (t + r) + 'V' + (b - r) + 'Q' + R + ' ' + b + ' ' + (R + r) + ' ' + b;
+}
+function trackD(L, R) { return edgeStart() + tabBump(L, R) + edgeEnd(); }
+// Drawn lines: the main line (baseline + tab) and, separately, the parts that run up the window edges.
+// The edge parts are much fainter, so they read as the window's own border, not as a light stripe.
+function strokeMain(e) {
+  const { r } = TK, { snap } = pixelGrid(), b = snap(TK.b), xl = snap(0.6), xr = snap(bar.clientWidth - 0.6);
+  return 'M' + (xl + r) + ' ' + b + (e ? tabBump(e.L, e.R) : '') + 'H' + (xr - r);
+}
+function strokeEdges() {
+  const { r } = TK, { snap } = pixelGrid(), b = snap(TK.b), xr = snap(bar.clientWidth - 0.6);
+  return edgeStart() + 'M' + (xr - r) + ' ' + b + 'Q' + xr + ' ' + b + ' ' + xr + ' ' + (b - r) + 'V0';
 }
 // Everything below the line inside the bar box gets the page color: the open tab's inside (with the outward
 // curves at its bottom corners), the curved pockets at the window corners and the thin strip under the line.
@@ -489,8 +501,9 @@ function underShape(e) {
 }
 function setShapes(e) {
   const w = bar.clientWidth, rect = 'M0 0H' + w + 'V' + (TK.b + 1) + 'H0Z';
-  trackPath.style.strokeWidth = pixelGrid().width + 'px';
-  trackPath.setAttribute('d', e ? trackD(e.L, e.R) : edgeStart() + edgeEnd());
+  trackPath.style.strokeWidth = edgePath.style.strokeWidth = pixelGrid().width + 'px';
+  trackPath.setAttribute('d', strokeMain(e));
+  edgePath.setAttribute('d', strokeEdges());
   // The tab bump only while the tabs are shown; otherwise the line under the bar is straight
   const under = underShape(e && tabsVisible() ? e : null);
   bandPath.setAttribute('d', rect + under);
@@ -503,7 +516,7 @@ function activeEdges() {
   // Offsets of the tabs are relative to #left (positioned); add #left's own offset to get bar/window coordinates
   const base = leftEl.offsetLeft;
   const minL = base + tabsEl.offsetLeft, maxR = minL + tabsEl.clientWidth;
-  let L = base + a.offsetLeft - tabsEl.scrollLeft, R = L + a.offsetWidth;
+  let L = base + a.offsetLeft - tabsEl.scrollLeft + (drag && drag.on && drag.el === a ? drag.tx || 0 : 0), R = L + a.offsetWidth;
   if (R <= minL + 12 || L >= maxR - 12) return null;
   return { L: Math.max(minL, L), R: Math.min(maxR, R) };
 }
@@ -588,6 +601,7 @@ function pressFx(el) {
 document.addEventListener('pointerdown', (e) => { if (e.button === 0) pressFx(e.target); });
 
 document.addEventListener('click', (e) => {
+  if (suppressClick) { suppressClick = false; return; }
   const el = e.target;
   const close = el.closest('[data-close]'); if (close) { e.stopPropagation(); closeTab(Number(close.dataset.close)); return; }
   const tb = el.closest('[data-tab]'); if (tb) { S.search = false; activateTab(Number(tb.dataset.tab)); return; }
@@ -618,6 +632,7 @@ function openTabMenu(id, x, y) {
   if (!t) return;
   S.menu = id;
   ctxEl.querySelector('[data-ctx=copy]').disabled = isStart(t.url);
+  ctxEl.querySelector('[data-ctx=qr]').disabled = isStart(t.url) || !/^https?:/i.test(t.url);
   ctxEl.classList.add('open');
   render();
   const w = ctxEl.offsetWidth;
@@ -646,11 +661,90 @@ ctxEl.addEventListener('click', (e) => {
   closeTabMenu();
   if (!t) return;
   if (b.dataset.ctx === 'copy') { window.lum.copy(t.url); toast('Link copied'); }
+  else if (b.dataset.ctx === 'qr') showQr(t);
   else if (b.dataset.ctx === 'close') closeTab(t.id);
 });
 document.addEventListener('pointerdown', (e) => { if (S.menu != null && !e.target.closest('#ctx')) closeTabMenu(); }, true);
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeTabMenu(); });
 window.addEventListener('blur', closeTabMenu);
+
+// QR code of a tab's link in a dialog, to open the same page on a phone
+const qrWrap = $('qrWrap');
+async function showQr(t) {
+  const svg = await window.lum.qr(t.url);
+  if (!svg) return;
+  $('qrImg').innerHTML = svg;       // SVG made by the qrcode library in the main process
+  $('qrUrl').textContent = t.url;
+  qrWrap.dataset.url = t.url;
+  S.qr = true;
+  qrWrap.classList.add('open');
+  qrWrap.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('modal');
+  render();
+  qrWrap.querySelector('[data-qr=close]').focus();
+}
+function closeQr() {
+  if (!S.qr) return;
+  S.qr = false;
+  qrWrap.classList.remove('open');
+  qrWrap.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('modal');
+  render(); focusHomeField();
+}
+qrWrap.addEventListener('click', (e) => {
+  e.stopPropagation();
+  const b = e.target.closest('[data-qr]');
+  if (b && b.dataset.qr === 'copy') { window.lum.copy(qrWrap.dataset.url || ''); toast('Link copied'); return; }
+  if (b || e.target === qrWrap) closeQr();  // Done, or a click outside the card
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeQr(); });
+
+// Drag a tab sideways to move it: it follows the cursor and swaps places with a neighbor
+// once it passes that neighbor's middle. A press without moving is a normal click.
+let drag = null, suppressClick = false;
+tabsEl.addEventListener('pointerdown', (e) => {
+  if (e.button !== 0 || e.target.closest('[data-close]')) return;
+  const tb = e.target.closest('[data-tab]');
+  if (!tb) return;
+  drag = { id: Number(tb.dataset.tab), el: tb, x0: e.clientX, grab: e.clientX - tb.getBoundingClientRect().left, pid: e.pointerId, on: false };
+});
+function tabX(el) { return el.offsetLeft - tabsEl.offsetLeft; }  // position inside the tab strip content
+document.addEventListener('pointermove', (e) => {
+  if (!drag) return;
+  if (!drag.on) {
+    if (Math.abs(e.clientX - drag.x0) < 5) return;
+    drag.on = true; S.dragging = true;
+    try { drag.el.setPointerCapture(drag.pid); } catch { /* */ }
+    drag.el.classList.add('dragging');
+    if (S.active !== drag.id) activateTab(drag.id); else render();
+  }
+  const strip = tabsEl.getBoundingClientRect();
+  const want = e.clientX - strip.left + tabsEl.scrollLeft - drag.grab;  // where the tab's left edge should be
+  let i = S.tabs.findIndex((t) => t.id === drag.id);
+  const mid = want + drag.el.offsetWidth / 2;
+  while (i > 0 && mid < tabX(S.tabs[i - 1].el) + S.tabs[i - 1].el.offsetWidth / 2) { S.tabs.splice(i - 1, 0, S.tabs.splice(i, 1)[0]); i--; renderTabs(); }
+  while (i < S.tabs.length - 1 && mid > tabX(S.tabs[i + 1].el) + S.tabs[i + 1].el.offsetWidth / 2) { S.tabs.splice(i + 1, 0, S.tabs.splice(i, 1)[0]); i++; renderTabs(); }
+  const max = tabsEl.scrollWidth - drag.el.offsetWidth;
+  drag.tx = Math.max(0, Math.min(max, want)) - tabX(drag.el);
+  drag.el.style.transform = 'translateX(' + drag.tx + 'px)';
+  updateTrack(tabsVisible(), true);
+});
+function endDrag() {
+  if (!drag) return;
+  const d = drag; drag = null;
+  if (!d.on) return;
+  suppressClick = true; setTimeout(() => { suppressClick = false; }, 0);
+  d.el.classList.remove('dragging');
+  d.el.classList.add('dropping');
+  d.el.style.transform = '';
+  d.tx = 0;
+  S.dragging = false;
+  setTimeout(() => d.el.classList.remove('dropping'), 200);
+  render();
+  setTimeout(() => updateTrack(tabsVisible(), true), 200);
+}
+document.addEventListener('pointerup', endDrag);
+document.addEventListener('pointercancel', endDrag);
 
 // Middle mouse button (wheel click) closes a tab
 tabsEl.addEventListener('mousedown', (e) => { if (e.button === 1) e.preventDefault(); });

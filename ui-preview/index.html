@@ -23,7 +23,7 @@
 
   <div class="bar" id="bar">
     <!-- On hover: theme color above the line (band), the inside of the open tab in the page color (tabFill), the line itself (trackPath) -->
-    <svg class="track" id="track" aria-hidden="true"><path id="band" fill-rule="evenodd" d="M0 0H1"/><path id="tabFill" d="M0 0H1"/><path id="trackPath" d="M0 34H1"/></svg>
+    <svg class="track" id="track" aria-hidden="true"><path id="band" fill-rule="evenodd" d="M0 0H1"/><path id="tabFill" d="M0 0H1"/><path id="trackPath" d="M0 34H1"/><path id="edgePath" d="M0 0H1"/></svg>
 
     <div class="side" id="left">
       <button class="btn nav" data-act="back" title="Back (Alt+←)" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M15.5 5.5C13.2 8.4 10.6 10.2 7.5 12C10.6 13.8 13.2 15.6 15.5 18.5"/></svg></button>
@@ -103,9 +103,22 @@
   <!-- Right click on a tab -->
   <div class="ctx" id="ctx" role="menu">
     <button type="button" data-ctx="copy" role="menuitem"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="11" height="11" rx="2.5"/><path d="M16 8V6.5A2.5 2.5 0 0 0 13.5 4h-7A2.5 2.5 0 0 0 4 6.5v7A2.5 2.5 0 0 0 6.5 16H8"/></svg>Copy link</button>
+    <button type="button" data-ctx="qr" role="menuitem"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h2v2h-2zM18 18h2v2h-2zM14 18h2M18 14h2"/></svg>Show QR code</button>
     <button type="button" data-ctx="close" role="menuitem"><svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7 7 17"/></svg>Close tab<span class="k">Ctrl+W</span></button>
   </div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <!-- QR code of a tab's link: scan it with a phone to open the same page there -->
+  <div class="qr-wrap" id="qrWrap" aria-hidden="true">
+    <div class="qr-card" role="dialog" aria-label="QR code">
+      <div class="qr-t">Scan to open on your phone</div>
+      <div class="qr-img" id="qrImg"></div>
+      <div class="qr-u" id="qrUrl"></div>
+      <div class="qr-actions">
+        <button type="button" data-qr="copy">Copy link</button>
+        <button type="button" data-qr="close" class="primary">Done</button>
+      </div>
+    </div>
+  </div>
 
   <script src="renderer.js"></script>
 </body>

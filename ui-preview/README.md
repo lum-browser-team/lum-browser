@@ -29,7 +29,11 @@ Double-click `Lum.cmd` (the first run installs dependencies, about 100 MB) or:
 - Settings: 5 grays, 4 pastels, custom color (two rows of 5); Round/Square style; window buttons Colored/Plain; bar mode.
 - All bar buttons are equal 38 × 38 squares over the full bar height (big click areas, up to the window edges).
   The settings panel look is temporary – the real browser will have a different one (separate design).
-- Right click on a tab: Copy link, Close tab.
+- Right click on a tab: Copy link, Show QR code (scan it to open the page on a phone), Close tab.
+- Drag a tab sideways to move it.
+- Ads and trackers blocked with uBlock Origin's filter lists (engine: `@ghostery/adblocker-electron`, lists refreshed weekly
+  in the background, cached in the profile).
+- Downloads go straight to the Downloads folder, without a dialog.
 - Closing a tab: the cross on hover, middle mouse button, Ctrl+W. Many tabs: tabs shrink,
   icons only, scrolling with the wheel.
 - A thin, rounded scrollbar on pages.
@@ -39,9 +43,17 @@ Double-click `Lum.cmd` (the first run installs dependencies, about 100 MB) or:
 Search engine in the mockup: Google (`SEARCH` in `renderer.js` and `start.js`).
 Pages get no access to the camera, microphone, location or notifications.
 
+## Third-party code and data
+
+- `@ghostery/adblocker-electron` – ad blocking engine, MPL-2.0.
+- Filter lists (downloaded at run time, not stored in the repo): uBlock Origin's uAssets (GPL-3.0), EasyList and EasyPrivacy
+  (GPL-3.0 / CC BY-SA 3.0), Peter Lowe's list.
+- `qrcode` – QR code generator, MIT.
+
 ## Files
 
-- `main.js` – window, shortcuts, reading the cursor near the top edge, sampling the page color.
+- `main.js` – window, shortcuts, reading the cursor near the top edge, sampling the page color, downloads, QR codes.
+- `adblock.js` – ad and tracker blocking.
 - `renderer.js`, `index.html`, `style.css` – bar, tabs, settings.
 - `start.html`, `start.js` – new tab page.
 - `tests/` – test scripts (Playwright + Electron).

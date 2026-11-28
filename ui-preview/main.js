@@ -3,6 +3,8 @@
 const { app, BrowserWindow, ipcMain, screen, Menu, webContents, session, clipboard } = require('electron');
 const fs = require('fs');
 const path = require('path');
+const QRCode = require('qrcode');
+const { startAdblock, adblockState } = require('./adblock');
 
 // Running from the source (npm start, test snapshots) uses its own profile, so it never changes
 // the settings of the installed Lum Preview.exe. Tests pass --user-data-dir and keep theirs.
@@ -117,6 +119,25 @@ ipcMain.on('drag-end', endDrag);
 // Copy text (a tab's link) to the clipboard
 ipcMain.on('copy', (_e, text) => { if (typeof text === 'string' && text.length < 8192) clipboard.writeText(text); });
 
+// QR code of a link (tab menu -> Show QR code), as SVG markup made by the qrcode library
+ipcMain.handle('qr', async (_e, text) => {
+  if (typeof text !== 'string' || !text || text.length > 2000) return null;
+  return QRCode.toString(text, { type: 'svg', margin: 1, errorCorrectionLevel: 'M', color: { dark: '#111111', light: '#FFFFFF' } });
+});
+
+// Downloads go straight to the system Downloads folder: no "Save as" dialog and nothing shown.
+// An existing name gets " (1)", " (2)"... like other browsers do.
+function uniquePath(dir, name) {
+  const safe = (name || 'download').replace(/[<>:"/\\|?*\x00-\x1F]/g, '_').slice(0, 200) || 'download';
+  const ext = path.extname(safe), base = safe.slice(0, safe.length - ext.length);
+  let p = path.join(dir, safe);
+  for (let i = 1; fs.existsSync(p); i++) p = path.join(dir, base + ' (' + i + ')' + ext);
+  return p;
+}
+function autoDownloads(ses) {
+  ses.on('will-download', (_e, item) => { item.setSavePath(uniquePath(app.getPath('downloads'), item.getFilename())); });
+}
+
 // Window buttons (arcs): minimize, maximize, close
 ipcMain.on('win', (_e, action) => {
   if (!win) return;
@@ -215,8 +236,17 @@ ipcMain.handle('hook', async (_e, id) => {
 });
 
 app.whenReady().then(() => {
+  const ses = session.fromPartition('persist:lum');
   // Privacy: pages get no camera, microphone, location or notifications.
-  session.fromPartition('persist:lum').setPermissionRequestHandler((_wc, _perm, cb) => cb(false));
+  ses.setPermissionRequestHandler((_wc, _perm, cb) => cb(false));
+  // Ads and trackers blocked (uBlock Origin's filter lists); with a cached engine it is on before the first page loads
+  startAdblock(ses, path.join(app.getPath('userData'), 'adblock')).catch(() => {});
+  autoDownloads(ses);
   createWindow();
 });
+// A failure in a background job (e.g. downloading filter lists) must not pop up an error dialog;
+// it is logged and the browser keeps working.
+process.on('uncaughtException', (e) => { console.error('[lum] background error:', e && e.stack || e); });
+// For tests: global state of the blocker
+global.lumAdblock = adblockState;
 app.on('window-all-closed', () => app.quit());

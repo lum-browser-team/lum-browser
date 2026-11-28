@@ -72,7 +72,14 @@ On a light background the colors are darker: `#16A34A`, `#C98A00`, `#E5483E`. In
 - Content: 15 px favicon + 12 px title (500). Inactive tabs dimmed (68%), full on hover.
 - The close cross appears on tab hover. Closing also with the middle mouse button and Ctrl+W.
 - **Right click on a tab**: a small menu (same look as the settings panel) – *Copy link* (copies the tab's full URL, a short
-  "Link copied" message appears under the bar; disabled on the new tab page) and *Close tab*. Esc or a click outside closes it.
+  "Link copied" message appears under the bar; disabled on the new tab page), *Show QR code* and *Close tab*.
+  Esc or a click outside closes it.
+- **Show QR code**: a centered dialog over a dimmed, slightly blurred window – title "Scan to open on your phone", the QR code of the
+  tab's link on a white rounded square (220 px), the link below it, buttons *Copy link* and *Done*. Esc, *Done* or a click outside closes it.
+  Only for http(s) pages.
+- **Drag a tab sideways to move it**: after 5 px of movement the tab follows the cursor (no transition), the others make room;
+  it swaps places with a neighbor once it passes that neighbor's middle. The dragged tab becomes the open one and the line
+  follows it. On release it settles into its slot (0.18 s). A press without moving is a normal click.
 - Very many tabs (less than ~110 px per tab): icons only, the cross replaces the icon on hover.
   When out of space, the tab strip scrolls horizontally with the mouse wheel; the plus is always visible;
   at least 120 px of free space stays on the right for grabbing the window.
@@ -84,6 +91,8 @@ A thin line (~40% of the icon color) starts **at the top of the left window edge
 horizontally at 37 px, **wraps around the open tab** (goes up to 6 px around it), continues and
 **goes back up at the right edge** – it becomes the window border. On tab switch the line slides smoothly (0.42 s).
 It appears later and slower than the tabs: 0.55 s delay, drawn from the left over 2 s.
+The parts that run **up the window edges** (from the corner curves to the top) are drawn separately and much fainter
+(30 % of the line's opacity), so they read as the window's own border, not as a light stripe.
 **Crisp on any screen scaling:** the line is a whole number of screen pixels thick (1.2 CSS px rounded to device pixels:
 1 px at 100%, 2 px at 125–150%) and its straight parts lie on the device pixel grid, so it never smears across two pixels.
 Its position follows the tab element exactly (a regression once moved it 10 px off the tab – keep a test for it).
@@ -165,6 +174,14 @@ The icon that opens settings (two sliders) stays on the bar, left of the window 
 - **Scrollbar** on pages: thin (10 px), rounded thumb, semi-transparent gray, no arrows.
 - **Page failed to open**: instead of a black page, the message "Couldn't open the page" + the address + a "Try again" button, in the theme color.
 - **"New window" links** open a new tab, but only right after a user click (a page cannot open tabs on its own).
+- **Downloads** go straight to the system Downloads folder: no "Save as" dialog and nothing shown (no download bar or bubble).
+  An existing name gets " (1)", " (2)"…
+- **Built-in ad and tracker blocking** with **uBlock Origin's filter lists** (uBO filters, privacy, badware, quick fixes, unbreak)
+  plus EasyList, EasyPrivacy and Peter Lowe's list – network blocking and cosmetic filtering (hidden ad boxes).
+  In the mockup the engine is `@ghostery/adblocker-electron` (the real uBlock Origin extension cannot run fully in Electron).
+  The compiled engine is cached in the profile and the lists are refreshed in the background every 7 days.
+  **To agree:** refreshing the lists means requests to `ublockorigin.github.io`, `easylist.to` and `pgl.yoyo.org`, which touches
+  rule no. 1 in `CLAUDE.md` (no network requests without consent) – e.g. ship the lists with each release, or ask once.
 - **Shortcuts**: Ctrl+T, Ctrl+W, Ctrl+L, Ctrl+Tab, Ctrl+Shift+Tab, F5/Ctrl+R, Alt+←/→.
 - **Search engine**: Google in the mockup (the designer's wish), but rule no. 1 in `CLAUDE.md` says "zero Google services".
   **To be agreed between the co-founders** before release.
@@ -184,13 +201,26 @@ The icon that opens settings (two sliders) stays on the bar, left of the window 
 - Clear mode "docking": change the web contents' top inset (like toggling the toolbar in fullscreen) based on the page's
   scroll position at the top; animate it, and keep the hysteresis for barely scrollable pages.
 - Editable address: the omnibox, styled as plain centered text (host bright, path dimmed) until it gets focus.
-- Tab context menu: Chromium's tab context menu, reduced to *Copy link* and *Close tab* (plus our look).
+- Tab context menu: Chromium's tab context menu, reduced to *Copy link*, *Show QR code* and *Close tab* (plus our look).
+- QR code: Chromium already has a QR code generator for the current page (the "Create QR code" bubble) – reuse it in our dialog.
+- Tab dragging: Chromium's tab strip already supports drag to reorder; keep it in our simplified strip (no tearing a tab out
+  into a new window unless we decide so).
+- Downloads: prefs `download.prompt_for_download = false` and the default directory = the user's Downloads folder; hide the
+  download bubble / bar (patch or flag).
+- Ad blocking: preferably bundle **uBlock Origin** itself (check whether our Chromium base still runs MV2 extensions –
+  ungoogled-chromium has flags for it); otherwise uBlock Origin Lite (MV3) or a built-in engine with the same lists.
+  Pre-install it so it works on first start, with the lists shipped in the build.
 
 ## Changelog (newest first)
 
 Kept so Claude on the other machine can see what changed since it last read this file.
 
 - **2026-11-28**
+  - Built-in ad and tracker blocking with uBlock Origin's filter lists (see Other).
+  - Downloads go straight to the Downloads folder, no dialog, nothing shown.
+  - Tabs can be dragged to reorder them.
+  - Tab menu: *Show QR code* (dialog with the QR of the tab's link, to open the page on a phone).
+  - The line's parts along the window edges are faint (no light stripe at the window edges).
   - The address field is 60 px longer than the text on both sides (easy to select the whole address).
   - All bar buttons are equal 38 × 38 squares over the full bar height (bigger click areas, reaching the window edges).
   - New setting **Window buttons: Colored / Plain**.
