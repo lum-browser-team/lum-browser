@@ -1,0 +1,7 @@
+node_modules/
+snapshot*.png
+snap-*.png
+dist/
+tests/.profile*/
+tests/shots*/
+tests/*.txt

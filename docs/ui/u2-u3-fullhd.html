@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>Lum — interfejs U2 + U3 (1920×1080)</title>
+<!-- Stany: #pusta, #pisanie, #link; jasny motyw: dopisz -jasna, np. #pusta-jasna -->
+<style>
+  :root {
+    --bg: #000; --bar: var(--bg); --bar-line: var(--bg);
+    --icon: #dddddd; --icon-off: #4a4a4a; --icon-soft: #9a9a9a;
+    --host: #8f8f8f; --path: #505050;
+    --dot: #3a3a3a; --dot-on: #eeeeee;
+    --moon: #ECECEC; --star: #8C8C8C;
+    --text: #ECECEC; --placeholder: #4d4d4d; --caret: #ECECEC;
+    --hint: #4a4a4a; --hint-b: #6a6a6a; --hints: #3f3f3f; --hints-b: #5a5a5a;
+    --min: #3DDC84; --max: #F5C542; --close: #FF5F57;
+  }
+  body.jasna {
+    --bg: #FAFAFA; --bar: var(--bg); --bar-line: var(--bg);
+    --icon: #2a2a2a; --icon-off: #c4c4c4; --icon-soft: #6f6f6f;
+    --host: #5f5f5f; --path: #a8a8a8;
+    --dot: #d0d0d0; --dot-on: #1f1f1f;
+    --moon: #1C1C1C; --star: #8C8C8C;
+    --text: #1C1C1C; --placeholder: #b3b3b3; --caret: #1C1C1C;
+    --hint: #a6a6a6; --hint-b: #7a7a7a; --hints: #bdbdbd; --hints-b: #8f8f8f;
+    --min: #1FAE5B; --max: #E0A100; --close: #EF4438;
+  }
+  html, body { margin: 0; }
+  body { width: 1920px; height: 1080px; overflow: hidden; background: var(--bg); font-family: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif; color: var(--text); }
+  .bar { position: relative; height: 40px; background: var(--bar); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; border-bottom: 1px solid var(--bar-line); }
+  .nav { display: flex; gap: 22px; align-items: center; }
+  svg.ic { width: 18px; height: 18px; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .url { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 14px; letter-spacing: .01em; }
+  .url .host { color: var(--host); }
+  .url .path { color: var(--path); }
+  .right { display: flex; align-items: center; gap: 30px; }
+  .tabs { display: flex; align-items: center; gap: 9px; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--dot); }
+  .dot.active { width: 22px; border-radius: 4px; background: var(--dot-on); }
+
+  main { height: 1039px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 40px; position: relative; }
+  .note { width: 640px; display: flex; flex-direction: column; gap: 14px; }
+  .line { display: flex; align-items: center; gap: 16px; min-height: 34px; }
+  .text { flex: 1; font-size: 24px; font-weight: 300; color: var(--text); letter-spacing: .005em; white-space: nowrap; overflow: hidden; }
+  .placeholder { color: var(--placeholder); }
+  .caret { display: inline-block; width: 1.5px; height: 28px; background: var(--caret); vertical-align: -6px; margin: 0 2px; }
+  .action { display: none; align-items: center; }
+  .hint { font-size: 12px; color: var(--hint); height: 16px; }
+  .hint b { color: var(--hint-b); font-weight: 500; }
+  .hints { position: absolute; bottom: 26px; font-size: 12px; color: var(--hints); letter-spacing: .02em; }
+  .hints b { color: var(--hints-b); font-weight: 500; }
+
+  .s-pisanie, .s-link { display: none; }
+  body.pisanie .s-pusta, body.link .s-pusta { display: none; }
+  body.pisanie .s-pisanie { display: inline; }
+  body.link .s-link { display: inline; }
+  body.pisanie .action.s-pisanie, body.link .action.s-link { display: flex; }
+</style>
+</head>
+<body class="pusta">
+  <div class="bar">
+    <div class="nav">
+      <svg class="ic" viewBox="0 0 24 24" style="stroke: var(--icon)" aria-label="Wstecz"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+      <svg class="ic" viewBox="0 0 24 24" style="stroke: var(--icon-off)" aria-label="Dalej"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      <svg class="ic" viewBox="0 0 24 24" style="stroke: var(--icon)" aria-label="Odśwież"><path d="M20 11a8.1 8.1 0 0 0-15.5-2M4 5v4h4M4 13a8.1 8.1 0 0 0 15.5 2M20 19v-4h-4"/></svg>
+    </div>
+
+    <div class="url"><span class="host">lum</span><span class="path">://start</span></div>
+
+    <div class="right">
+      <div class="tabs" aria-label="Karty">
+        <span class="dot active"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+      </div>
+      <svg class="ic" viewBox="0 0 24 24" style="stroke: var(--icon-soft)" aria-label="Ustawienia"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 0 0-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 0 0-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 0 0-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 0 0-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 0 0 1.066-2.573c-.94-1.543.826-3.31 2.37-2.37 1 .608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+      <svg width="74" height="22" viewBox="0 0 74 22" fill="none" stroke-width="2" stroke-linecap="round" aria-label="Minimalizuj, maksymalizuj, zamknij">
+        <path d="M4 9 Q11 17 18 9" style="stroke: var(--min)"/>
+        <path d="M30 14 Q37 4 44 14" style="stroke: var(--max)"/>
+        <circle cx="62" cy="11" r="7" style="stroke: var(--close)"/>
+      </svg>
+    </div>
+  </div>
+
+  <main>
+    <svg width="72" height="72" viewBox="0 0 120 120" aria-label="Lum">
+      <path d="M52.34 0.5 A60 60 0 1 0 119.5 67.67 A48 48 0 1 1 52.34 0.5 Z" style="fill: var(--moon)"/>
+      <path d="M96 12 Q98.4 27.6 114 30 Q98.4 32.4 96 48 Q93.6 32.4 78 30 Q93.6 27.6 96 12 Z" style="fill: var(--star)"/>
+    </svg>
+
+    <div class="note">
+      <div class="line">
+        <div class="text">
+          <span class="s-pusta"><span class="caret"></span><span class="placeholder">Napisz coś albo wklej link…</span></span>
+          <span class="s-pisanie">przepis na pierogi ruskie<span class="caret"></span></span>
+          <span class="s-link">https://example.com/artykul/jak-dziala-przegladarka<span class="caret"></span></span>
+        </div>
+        <span class="action s-pisanie" aria-label="Szukaj">
+          <svg class="ic" viewBox="0 0 24 24" style="stroke: var(--icon-soft); width: 22px; height: 22px"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 20 20"/></svg>
+        </span>
+        <span class="action s-link" aria-label="Otwórz">
+          <svg class="ic" viewBox="0 0 24 24" style="stroke: var(--icon-soft); width: 22px; height: 22px"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </span>
+      </div>
+      <div class="hint">
+        <span class="s-pisanie"><b>Enter</b> szukaj</span>
+        <span class="s-link"><b>Enter</b> otwórz stronę</span>
+      </div>
+    </div>
+
+    <div class="hints"><b>Ctrl+L</b> adres &nbsp;·&nbsp; <b>Ctrl+T</b> nowa karta &nbsp;·&nbsp; <b>Ctrl+Tab</b> następna karta</div>
+  </main>
+  <script>
+    var parts = (location.hash || '#pusta').slice(1).split('-');
+    var state = ['pusta', 'pisanie', 'link'].indexOf(parts[0]) >= 0 ? parts[0] : 'pusta';
+    document.body.className = state + (parts[1] === 'jasna' ? ' jasna' : '');
+  </script>
+</body>
+</html>

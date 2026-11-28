@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'unsafe-inline';">
+<title>Nowa karta</title>
+<style>
+  /* Kolory: przeglądarka ustawia --bg i --text (dowolny motyw, także pastelowy lub własny),
+     reszta wynika z nich. Domyślnie czarny. */
+  :root { --bg: #000000; --text: #ECECEC; color-scheme: dark;
+    --ph: color-mix(in srgb, var(--text) 50%, var(--bg));
+    --icon: color-mix(in srgb, var(--text) 68%, var(--bg));
+    --hint: color-mix(in srgb, var(--text) 52%, var(--bg));
+    --hint-b: color-mix(in srgb, var(--text) 68%, var(--bg));
+    --foot: color-mix(in srgb, var(--text) 46%, var(--bg)); }
+  html, body, main { transition: background-color .4s ease; }
+  html, body { margin: 0; height: 100%; background: var(--bg); font-family: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif; }
+  /* Pole na środku strony */
+  /* Pole na środku całego okna: w trybie "Zawsze widoczny" strona zaczyna się pod paskiem,
+     więc przesuwamy treść o połowę wysokości paska w górę (--lift), żeby pole nie zmieniało miejsca. */
+  main { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 24px; box-sizing: border-box; transform: translateY(calc(-1 * var(--lift, 0px))); }
+  /* Napis Lum: cienki jak Lato 100, ale bez ostrych wypustek - kreski z zaokrąglonymi końcami.
+     Nie da się go zaznaczyć ani skopiować. */
+  .mark { width: 168px; height: auto; color: var(--text); fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round;
+    user-select: none; -webkit-user-select: none; -webkit-user-drag: none; pointer-events: none; overflow: visible; transition: color .4s ease; }
+  .note { width: min(640px, 100%); display: flex; flex-direction: column; gap: 14px; }
+  .line { display: flex; align-items: center; gap: 16px; min-height: 40px; }
+  input { flex: 1; min-width: 0; background: transparent; border: 0; padding: 0; font: 300 26px/1.3 "Segoe UI Variable", "Segoe UI", system-ui, sans-serif; color: var(--text); caret-color: var(--text); }
+  input::placeholder { color: var(--ph); }
+  input:focus { outline: none; }
+  .act { width: 34px; height: 34px; flex: none; display: grid; place-items: center; border: 0; padding: 0; background: transparent; color: var(--icon); opacity: 0; transform: translateX(-6px); transition: opacity .35s ease, transform .45s cubic-bezier(.22,1,.36,1); }
+  .act svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .act .i-link, .hint .h-link { display: none; }
+  .hint { font-size: 13px; color: var(--hint); height: 16px; opacity: 0; transition: opacity .35s ease; }
+  .hint b { font-weight: 500; color: var(--hint-b); }
+  .note.typing .act { opacity: 1; transform: none; }
+  .note.typing .hint { opacity: 1; }
+  .note.is-link .i-search, .note.is-link .h-search { display: none; }
+  .note.is-link .i-link { display: block; }
+  .note.is-link .h-link { display: inline; }
+  .foot { position: fixed; bottom: 26px; left: 0; right: 0; text-align: center; font-size: 12px; color: var(--foot); letter-spacing: .02em; }
+  .foot b { font-weight: 500; }
+</style>
+</head>
+<body>
+<main>
+  <div class="note" id="note">
+    <div class="line">
+      <input id="nin" type="text" placeholder="Napisz coś albo wklej link…" autocomplete="off" spellcheck="false" aria-label="Napisz coś albo wklej link">
+      <button class="act" id="act" aria-label="Szukaj albo otwórz">
+        <svg class="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 20 20"/></svg>
+        <svg class="i-link" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+    </div>
+    <div class="hint"><span class="h-search"><b>Enter</b> szukaj</span><span class="h-link"><b>Enter</b> otwórz stronę</span></div>
+  </div>
+</main>
+<div class="foot"><b>Ctrl+T</b> nowa karta &nbsp;·&nbsp; <b>Ctrl+L</b> szukaj &nbsp;·&nbsp; <b>Ctrl+W</b> zamknij kartę</div>
+<script src="start.js"></script>
+</body>
+</html>

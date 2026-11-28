@@ -1,0 +1,833 @@
+<title>Lum prototyp</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@300;400;500;600&family=Sacramento&display=swap">
+<style>
+  /* Layout: scena 16:9 z ekranem 1920x1080 skalowanym do szerokości, pod nią sterowanie pokazem. */
+  :root {
+    --ground: #0B0C0E; --panel: #15171B; --line: #262A30; --ink: #E8E9EB; --ink-soft: #9EA3AB;
+    --display: "Fraunces", Georgia, serif;
+    --body: "Inter", "Segoe UI", system-ui, sans-serif;
+    --ui: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+    --mark: "Sacramento", "Segoe Script", cursive;
+    color-scheme: dark;
+  }
+  body { background: var(--ground); color: var(--ink); font-family: var(--body); }
+  .wrap { max-width: 1600px; margin: 0 auto; padding-block: 24px 32px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 14px; }
+  .stage { position: relative; width: 100%; max-width: 100%; aspect-ratio: 16 / 9; border-radius: 10px; overflow: hidden; background: #000; }
+  .screen { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; transform-origin: 0 0; transform: scale(var(--s, .5)); overflow: hidden; font-family: var(--ui); }
+
+  /* ---------- Strona ---------- */
+  .vp { position: absolute; inset: 0; overflow: hidden; }
+  .doc { position: absolute; top: 0; left: 0; width: 1920px; will-change: transform; animation: fade .28s ease; }
+  @keyframes fade { from { opacity: .35; } to { opacity: 1; } }
+  .clickable { cursor: pointer; }
+
+  /* Pole jak notatka na nowej karcie */
+  .note-field { width: 640px; display: flex; flex-direction: column; gap: 14px; }
+  .note-line { display: flex; align-items: center; gap: 16px; min-height: 40px; }
+  .nin { flex: 1; min-width: 0; background: transparent; border: 0; padding: 0; font: 300 26px/1.3 var(--body); color: var(--n-text); caret-color: var(--n-text); }
+  .nin::placeholder { color: var(--n-ph); }
+  .nin:focus, .nin:focus-visible { outline: none; }
+  .nact { width: 34px; height: 34px; flex: none; display: grid; place-items: center; color: var(--n-icon); opacity: 0; transform: translateX(-6px); transition: opacity .35s ease, transform .45s cubic-bezier(.22,1,.36,1); cursor: pointer; }
+  .nact svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .nact .i-link { display: none; }
+  .note-field.typing .nact { opacity: 1; transform: none; }
+  .note-field.is-link .nact .i-search { display: none; }
+  .note-field.is-link .nact .i-link { display: block; }
+  .nhint { font: 400 13px/1 var(--body); color: var(--n-hint); height: 16px; opacity: 0; transition: opacity .35s ease; }
+  .nhint b { font-weight: 500; color: var(--n-hint-b); }
+  .note-field.typing .nhint { opacity: 1; }
+  .nhint .h-link { display: none; }
+  .note-field.is-link .nhint .h-search { display: none; }
+  .note-field.is-link .nhint .h-link { display: inline; }
+
+  /* Pasek po najechaniu przestaje być przezroczysty; dół łagodnie się rozmywa w stronę */
+  .veil { position: absolute; top: 0; left: 0; right: 0; height: 84px; z-index: 9; pointer-events: none;
+    background: linear-gradient(to bottom, var(--veil) 0, var(--veil) 48px, transparent 84px);
+    -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+    -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 46px, transparent 84px); mask-image: linear-gradient(to bottom, #000 0, #000 46px, transparent 84px);
+    opacity: 0; transition: opacity .8s ease; }
+  .veil.on { opacity: 1; }
+  .screen { --veil: #0B0B0D; }
+  .screen.theme-light { --veil: #F7F7F7; }
+
+  /* ---------- Pasek Lum ---------- */
+  .bar { position: absolute; top: 0; left: 0; right: 0; height: 48px; z-index: 10; display: flex; align-items: center; justify-content: space-between; padding: 0 16px;
+    --chrome: #FFFFFF; --dim: rgba(255,255,255,.7); --tab-bg: rgba(18,18,20,.42); --tab-line: rgba(255,255,255,.22); --hov: rgba(255,255,255,.12);
+    --track: rgba(255,255,255,.42);
+    --glow-icon: rgba(255,255,255,.9); --flash: rgba(255,255,255,.95); --spot: rgba(255,255,255,.17); --lift: rgba(0,0,0,.7);
+    --halo: drop-shadow(0 0 1px rgba(0,0,0,.6)) drop-shadow(0 0 6px rgba(0,0,0,.3));
+    color: var(--chrome); }
+  .bar.on-light { --chrome: #16181B; --dim: rgba(22,24,27,.68); --tab-bg: rgba(255,255,255,.55); --tab-line: rgba(0,0,0,.14); --hov: rgba(0,0,0,.07);
+    --track: rgba(22,24,27,.32);
+    --glow-icon: rgba(22,24,27,.4); --flash: rgba(22,24,27,.55); --spot: rgba(22,24,27,.08); --lift: rgba(0,0,0,.28);
+    --halo: drop-shadow(0 0 1px rgba(255,255,255,.8)) drop-shadow(0 0 6px rgba(255,255,255,.45)); }
+  .bar, .bar * { transition: color .35s ease; }
+  .side { display: flex; align-items: center; gap: 4px; }
+  #left { flex: 1; min-width: 0; margin-right: 28px; }
+  #right { flex: none; }
+  .btn { position: relative; flex: none; width: 36px; height: 36px; border-radius: 50%; border: 0; padding: 0; background: transparent; color: inherit; display: grid; place-items: center; cursor: pointer;
+    transition: transform .45s cubic-bezier(.34,1.9,.64,1); }
+  .btn svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; position: relative;
+    filter: var(--halo); opacity: .8; transition: opacity .45s ease, filter .45s ease, transform .5s cubic-bezier(.22,1,.36,1); }
+  .btn.off svg { opacity: .32; }
+  .btn:focus-visible, .tab:focus-visible { outline: 2px solid #8FB4FF; outline-offset: 1px; }
+  /* ----- Efekty najechania, do wyboru pod oknem (bez żadnej obwódki) ----- */
+  /* A: ikona rozjaśnia się i lekko rośnie */
+  .fx-a .btn:hover svg, .fx-a .btn.hot svg { opacity: 1; transform: scale(1.15); }
+  /* B: sama ikona zaczyna świecić */
+  .fx-b .btn:hover svg, .fx-b .btn.hot svg { opacity: 1; filter: var(--halo) drop-shadow(0 0 3px var(--glow-icon)) drop-shadow(0 0 9px var(--glow-icon)); }
+  /* C: pod ikoną pojawia się kropka */
+  .btn::after { content: ""; position: absolute; left: 50%; bottom: 0; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: currentColor; opacity: 0; transform: translateY(3px) scale(.3); transition: opacity .35s ease, transform .5s cubic-bezier(.22,1,.36,1); pointer-events: none; }
+  .fx-c .btn:hover::after, .fx-c .btn.hot::after { opacity: .9; transform: none; }
+  .fx-c .btn:hover svg, .fx-c .btn.hot svg { opacity: 1; }
+  /* D: ikona unosi się z cieniem pod spodem */
+  .fx-d .btn:hover svg, .fx-d .btn.hot svg { opacity: 1; transform: translateY(-2px); filter: var(--halo) drop-shadow(0 4px 3px var(--lift)); }
+  /* E: miękka plama światła za ikoną, bez krawędzi */
+  .btn::before { content: ""; position: absolute; inset: -12px; border-radius: 50%; background: radial-gradient(closest-side, var(--spot), transparent); opacity: 0; transform: scale(.5); transition: opacity .55s ease, transform .7s cubic-bezier(.22,1,.36,1); pointer-events: none; }
+  .fx-e .btn:hover::before, .fx-e .btn.hot::before { opacity: 1; transform: none; }
+  .fx-e .btn:hover svg, .fx-e .btn.hot svg { opacity: 1; }
+  /* Kliknięcie: wciśnięcie i krótki błysk samej ikony */
+  .btn.pressed { transform: scale(.8); transition: transform .08s ease; }
+  .btn.pressed svg { opacity: 1; filter: var(--halo) drop-shadow(0 0 5px var(--flash)) drop-shadow(0 0 13px var(--flash)); transition: filter .05s ease, opacity .05s ease; }
+  .arcs { display: flex; align-items: center; gap: 2px; margin-left: 10px; }
+  .arcs .btn { width: 30px; }
+  .arcs svg { width: 20px; height: 20px; stroke-width: 2; opacity: 1; }
+
+  .center { position: absolute; left: 50%; top: 0; height: 48px; transform: translateX(-50%); display: flex; align-items: center; justify-content: center; pointer-events: none; }
+  .center > * { pointer-events: auto; }
+  .label { font-size: 14px; letter-spacing: .01em; white-space: nowrap; filter: var(--halo); transition: opacity .7s ease, transform .8s cubic-bezier(.22,1,.36,1); }
+  .label .path { opacity: .6; }
+  .label.brand { font-family: var(--mark); font-size: 34px; font-weight: 400; letter-spacing: .02em; line-height: 1; padding-top: 4px; }
+  /* Karty: po lewej, zaraz obok odświeżania, bez obwódek; pojawiają się znikąd, jedna po drugiej */
+  .tabs { flex: 1; min-width: 0; display: flex; align-items: center; gap: 2px; margin-left: 14px; pointer-events: none; }
+  .tab { position: relative; flex: 0 1 200px; min-width: 40px; height: 32px; box-sizing: border-box; display: flex; align-items: center; gap: 9px; padding: 0 6px 0 12px; border-radius: 10px; font: 500 13px/1 var(--ui); color: var(--dim); cursor: pointer;
+    filter: var(--halo); opacity: 0; transform: translateX(-10px);
+    transition: opacity .8s ease calc(var(--i, 0) * 55ms), transform 1s cubic-bezier(.22,1,.36,1) calc(var(--i, 0) * 55ms), color .35s ease; }
+  .tab:hover, .tab.hot, .tab.active { color: var(--chrome); }
+  .newtab { opacity: 0; transform: translateX(-10px); margin-left: 2px; transition: opacity .8s ease calc(var(--i, 0) * 55ms), transform 1s cubic-bezier(.22,1,.36,1) calc(var(--i, 0) * 55ms); }
+  .newtab.pressed { transition: transform .08s ease; }
+  /* Linia karty: od lewej krawędzi, obejmuje otwartą kartę i biegnie do prawej krawędzi.
+     Pojawia się wolniej i później niż karty. */
+  .track { position: absolute; top: 0; left: 0; width: 1920px; height: 48px; pointer-events: none; overflow: visible; }
+  .track path { fill: none; stroke: var(--track); stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; filter: var(--halo);
+    stroke-dasharray: 2600 2600; stroke-dashoffset: 2600; opacity: 0;
+    transition: stroke-dashoffset .7s ease, opacity .6s ease, stroke .35s ease; }
+  .bar.show:not(.mode-search) .track path { stroke-dashoffset: 0; opacity: 1;
+    transition: stroke-dashoffset 2s cubic-bezier(.45,0,.2,1) .6s, opacity 1.4s ease .6s, stroke .35s ease; }
+  .bar.show:not(.mode-search) .tabs { pointer-events: auto; }
+  .bar.show:not(.mode-search) .tab, .bar.show:not(.mode-search) .newtab { opacity: 1; transform: none; }
+  .bar.show .label, .bar.mode-search .label { opacity: 0; transform: translateY(-4px); }
+  .bar.show:not(.mode-search) .tab.pressed { transform: scale(.96); transition: transform .08s ease; }
+  .tab .t { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; text-align: left; }
+  .tab .x { flex: none; width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; opacity: 0; transition: opacity .25s ease, background-color .2s; }
+  .tab:hover .x, .tab.hot .x { opacity: .8; }
+  .tab .x:hover, .tab .x.hot { background: var(--hov); opacity: 1; }
+  .tab .x svg { width: 12px; height: 12px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; }
+  /* Dużo kart: zostaje sama ikonka, a po najechaniu w jej miejscu krzyżyk */
+  .tabs.dense .tab { padding: 0; justify-content: center; gap: 0; }
+  .tabs.dense .tab .t { display: none; }
+  .tabs.dense .tab .x { display: none; }
+  .tabs.dense .tab:hover .x, .tabs.dense .tab.hot .x { display: grid; }
+  .tabs.dense .tab:hover .fav, .tabs.dense .tab.hot .fav { display: none; }
+
+  /* Ustawienia: jedno ustawienie, motyw */
+  .screen { --panel-bg: rgba(22,23,26,.8); --panel-ink: #EDEEF0; --panel-line: rgba(255,255,255,.1); --seg-bg: rgba(255,255,255,.07); --seg-on: rgba(255,255,255,.16); }
+  .screen.theme-light { --panel-bg: rgba(252,252,252,.86); --panel-ink: #16181B; --panel-line: rgba(0,0,0,.1); --seg-bg: rgba(0,0,0,.05); --seg-on: #FFFFFF; }
+  .panel { position: absolute; top: 54px; right: 112px; z-index: 12; width: 270px; box-sizing: border-box; padding: 14px; border-radius: 14px; font-family: var(--ui);
+    background: var(--panel-bg); -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); color: var(--panel-ink); border: 1px solid var(--panel-line);
+    opacity: 0; transform: translateY(-6px) scale(.97); transform-origin: top right; pointer-events: none; transition: opacity .35s ease, transform .45s cubic-bezier(.22,1,.36,1); }
+  .panel.open { opacity: 1; transform: none; pointer-events: auto; }
+  .panel .ttl { font: 500 12px/1 var(--ui); letter-spacing: .08em; text-transform: uppercase; opacity: .6; margin: 2px 2px 12px; }
+  .seg { display: flex; gap: 4px; padding: 4px; border-radius: 11px; background: var(--seg-bg); }
+  .seg button { flex: 1; height: 36px; border: 0; border-radius: 8px; background: transparent; color: inherit; font: 500 14px/1 var(--ui); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: background-color .35s ease, transform .4s cubic-bezier(.34,1.8,.64,1); }
+  .seg button svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .seg button[aria-pressed="true"] { background: var(--seg-on); }
+  .seg button.pressed { transform: scale(.95); transition-duration: .08s; }
+  .seg button:focus-visible { outline: 2px solid #8FB4FF; outline-offset: 1px; }
+  .fav { width: 16px; height: 16px; flex: none; border-radius: 4px; display: grid; place-items: center; font: 600 10px/1 var(--display); }
+  .sbox { display: none; align-items: center; gap: 10px; width: 620px; height: 34px; filter: var(--halo); }
+  .sbox .btn { width: 32px; height: 32px; flex: none; }
+  .sbox .btn svg { width: 17px; height: 17px; }
+  .sbox input { flex: 1; min-width: 0; background: transparent; border: 0; color: var(--chrome); font: 400 16px/1 var(--ui); padding: 4px 2px; caret-color: var(--chrome); }
+  .sbox input:focus, .sbox input:focus-visible { outline: none; box-shadow: none; }
+  .sbox input::placeholder { color: var(--dim); }
+  .bar.mode-search .sbox { display: flex; }
+  .progress { position: absolute; top: 0; left: 0; height: 2px; width: 0; background: var(--chrome); opacity: 0; z-index: 11; }
+  .progress.run { animation: prog .7s ease-out forwards; }
+  @keyframes prog { 0% { width: 0; opacity: .9; } 80% { width: 100%; opacity: .9; } 100% { width: 100%; opacity: 0; } }
+
+  /* ---------- Kursor pokazu ---------- */
+  .cursor { position: absolute; top: 0; left: 0; z-index: 40; width: 28px; height: 28px; pointer-events: none; will-change: transform; }
+  .cursor svg { width: 28px; height: 28px; filter: drop-shadow(0 2px 3px rgba(0,0,0,.35)); }
+  .ring { position: absolute; z-index: 39; width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%; border: 2px solid rgba(255,255,255,.9); box-shadow: 0 0 0 1px rgba(0,0,0,.25); pointer-events: none; animation: ring .45s ease-out forwards; }
+  @keyframes ring { from { transform: scale(.3); opacity: 1; } to { transform: scale(1.15); opacity: 0; } }
+  .caption { position: absolute; left: 50%; bottom: 34px; transform: translateX(-50%); z-index: 30; padding: 10px 18px; border-radius: 999px; background: rgba(12,13,15,.72); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); color: #F1F2F4; font: 500 18px/1 var(--body); border: 1px solid rgba(255,255,255,.1); transition: opacity .3s ease; white-space: nowrap; }
+  .caption:empty { opacity: 0; }
+
+  /* ---------- Sterowanie pod sceną ---------- */
+  .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+  .controls button { font: 500 14px/1 var(--body); color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; min-height: 40px; cursor: pointer; transition: transform .35s cubic-bezier(.34,1.8,.64,1); }
+  .controls button:active { transform: scale(.95); transition-duration: .06s; }
+  .controls button:focus-visible { outline: 2px solid #8FB4FF; outline-offset: 2px; }
+  .controls button[aria-pressed="true"] { background: #E8E9EB; color: #111; border-color: #E8E9EB; }
+  .fxpick { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .fxpick span { color: var(--ink-soft); font-size: 14px; margin-right: 2px; }
+  .status { color: var(--ink-soft); font-size: 14px; min-width: 0; }
+  .note { margin: 0; color: var(--ink-soft); font-size: 14px; line-height: 1.55; max-width: 78ch; }
+  @media (prefers-reduced-motion: reduce) { .doc { animation: none; } }
+</style>
+
+<div class="wrap">
+  <div class="stage" id="stage" aria-label="Interaktywny prototyp przeglądarki Lum">
+    <div class="screen" id="screen">
+      <div class="vp" id="vp"></div>
+
+      <div class="veil" id="veil"></div>
+      <div class="progress" id="progress"></div>
+      <div class="bar mode-label fx-b" id="bar">
+        <svg class="track" viewBox="0 0 1920 48" aria-hidden="true"><path id="trackPath" d="M0 44H1"/></svg>
+        <div class="side" id="left">
+          <button class="btn" data-act="back" aria-label="Wstecz"><svg viewBox="0 0 24 24"><path d="M10 5.5Q4.6 12 10 18.5"/><path d="M5.9 12H19"/></svg></button>
+          <button class="btn" data-act="forward" aria-label="Dalej"><svg viewBox="0 0 24 24"><path d="M14 5.5Q19.4 12 14 18.5"/><path d="M5 12h13.1"/></svg></button>
+          <button class="btn" data-act="reload" aria-label="Odśwież"><svg viewBox="0 0 24 24"><path d="M18.4 9.2A7 7 0 1 0 19 13"/><path d="M19 5.5v3.9h-3.9"/></svg></button>
+          <div class="tabs" id="tabs" role="tablist" aria-label="Karty"></div>
+        </div>
+        <div class="center">
+          <div class="label" id="label"></div>
+          <div class="sbox"><input id="q" type="text" placeholder="Szukaj lub wpisz adres" autocomplete="off" aria-label="Szukaj lub wpisz adres"><button class="btn" data-act="submit" aria-label="Szukaj"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 4.5 4.5"/></svg></button></div>
+        </div>
+        <div class="side" id="right">
+          <button class="btn" data-act="search" aria-label="Nowa karta i wyszukiwanie"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 4.5 4.5"/></svg></button>
+          <button class="btn" data-act="settings" aria-label="Ustawienia"><svg viewBox="0 0 24 24" style="stroke-width:1.4"><path d="M5 8h8M17 8h2M5 16h2M11 16h8"/><circle cx="15" cy="8" r="2"/><circle cx="9" cy="16" r="2"/></svg></button>
+          <div class="arcs">
+            <button class="btn" data-act="none" aria-label="Minimalizuj" style="--glow-icon: rgba(61,220,132,.9); --flash: rgba(61,220,132,1); --spot: rgba(61,220,132,.22)"><svg viewBox="0 0 24 24"><path d="M6 10.5q6 6.5 12 0" stroke="#3DDC84"/></svg></button>
+            <button class="btn" data-act="none" aria-label="Maksymalizuj" style="--glow-icon: rgba(245,197,66,.9); --flash: rgba(245,197,66,1); --spot: rgba(245,197,66,.22)"><svg viewBox="0 0 24 24"><path d="M6 14.5q6-8 12 0" stroke="#F5C542"/></svg></button>
+            <button class="btn" data-act="none" aria-label="Zamknij" style="--glow-icon: rgba(255,95,87,.9); --flash: rgba(255,95,87,1); --spot: rgba(255,95,87,.22)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5.5" stroke="#FF5F57"/></svg></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" id="panel" role="dialog" aria-label="Ustawienia">
+        <div class="ttl">Motyw</div>
+        <div class="seg">
+          <button type="button" data-theme="dark" aria-pressed="true"><svg viewBox="0 0 24 24"><path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z"/></svg>Ciemny</button>
+          <button type="button" data-theme="light" aria-pressed="false"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4"/></svg>Jasny</button>
+        </div>
+      </div>
+
+      <div class="caption" id="caption"></div>
+      <div class="cursor" id="cursor"><svg viewBox="0 0 28 28"><path d="M6 3.5v18.2l4.6-4.4 3 6.9 3.1-1.3-3-6.8h6.4z" fill="#fff" stroke="#111" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button type="button" id="demoBtn">Pauza pokazu</button>
+    <button type="button" id="restartBtn">Pokaz od początku</button>
+    <button type="button" id="manyBtn">Otwórz 12 kart</button>
+    <span class="status" id="status" aria-live="polite">Trwa pokaz. Kliknij w okno, żeby sterować samemu.</span>
+  </div>
+  <div class="controls fxpick" role="group" aria-label="Efekt najechania na przycisk">
+    <span>Efekt najechania na przycisk:</span>
+    <button type="button" data-fx="a" aria-pressed="false">A · Rozjaśnienie</button>
+    <button type="button" data-fx="b" aria-pressed="true">B · Świecąca ikona</button>
+    <button type="button" data-fx="c" aria-pressed="false">C · Kropka</button>
+    <button type="button" data-fx="d" aria-pressed="false">D · Uniesienie</button>
+    <button type="button" data-fx="e" aria-pressed="false">E · Plama światła</button>
+  </div>
+  <p class="note">Przyciski są zawsze na górze. Najedź na górną krawędź okna: obok odświeżania płynnie pojawią się karty, a chwilę później linia, która obejmuje otwartą kartę i biegnie od lewej do prawej krawędzi. Plus otwiera pustą kartę, lupa otwiera kartę z wyszukiwaniem, ustawienia zmieniają motyw. Pod oknem możesz wybrać efekt najechania na przycisk i otworzyć naraz 12 kart. Wszystkie strony są zmyślone, na potrzeby makiety.</p>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var W = 1920, VH = 1080;
+  var stage = document.getElementById('stage'), screen = document.getElementById('screen');
+  var vp = document.getElementById('vp'), bar = document.getElementById('bar');
+  var labelEl = document.getElementById('label'), tabsEl = document.getElementById('tabs');
+  var input = document.getElementById('q'), panelEl = document.getElementById('panel'), manyBtn = document.getElementById('manyBtn');
+  var veilEl = document.getElementById('veil');
+  var progressEl = document.getElementById('progress'), cursorEl = document.getElementById('cursor');
+  var captionEl = document.getElementById('caption'), statusEl = document.getElementById('status');
+  var demoBtn = document.getElementById('demoBtn'), restartBtn = document.getElementById('restartBtn');
+  var scale = .5;
+  function fit() { scale = stage.clientWidth / W; screen.style.setProperty('--s', scale); }
+  fit(); window.addEventListener('resize', fit);
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+  /* ================= Scena przyrodnicza (canvas) ================= */
+  var NH = 4320, natureCanvas = document.createElement('canvas');
+  natureCanvas.width = W; natureCanvas.height = NH;
+  (function draw(ctx) {
+    var seed = 7;
+    function rnd() { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
+    function ridgeY(x, base, amp, k) { return base - amp * (0.55 * Math.sin(x * 0.0021 * k + 1.3 * k) + 0.3 * Math.sin(x * 0.0057 * k + 0.7) + 0.15 * Math.sin(x * 0.013 + k * 2.1)); }
+    function ridge(base, amp, k, bottom) { ctx.beginPath(); ctx.moveTo(0, bottom); for (var x = 0; x <= W; x += 8) ctx.lineTo(x, ridgeY(x, base, amp, k)); ctx.lineTo(W, bottom); ctx.closePath(); }
+    function vg(y0, y1, st) { var g = ctx.createLinearGradient(0, y0, 0, y1); st.forEach(function (s) { g.addColorStop(s[0], s[1]); }); return g; }
+    function pine(x, base, h, color, snow) {
+      var w = h * .36; ctx.fillStyle = color; ctx.beginPath(); ctx.moveTo(x, base - h); ctx.lineTo(x + w / 2, base); ctx.lineTo(x - w / 2, base); ctx.closePath(); ctx.fill();
+      if (snow) { ctx.fillStyle = snow; ctx.beginPath(); ctx.moveTo(x, base - h); ctx.lineTo(x + w * .16, base - h * .62); ctx.lineTo(x - w * .16, base - h * .62); ctx.closePath(); ctx.fill(); }
+    }
+    ctx.fillStyle = vg(0, 1080, [[0, '#F6F3EE'], [.32, '#F4DEC4'], [.62, '#E7AE8E'], [1, '#9A6C70']]); ctx.fillRect(0, 0, W, 1080);
+    var sun = ctx.createRadialGradient(1360, 560, 0, 1360, 560, 320); sun.addColorStop(0, 'rgba(255,247,228,.95)'); sun.addColorStop(1, 'rgba(255,236,205,0)');
+    ctx.fillStyle = sun; ctx.fillRect(1000, 200, 720, 720);
+    ctx.fillStyle = '#FFF7E6'; ctx.beginPath(); ctx.arc(1360, 560, 64, 0, Math.PI * 2); ctx.fill();
+    ridge(640, 150, 1, 1080); ctx.fillStyle = '#F1EAEE'; ctx.fill();
+    ridge(690, 135, 1, 1080); ctx.fillStyle = '#B9A3AF'; ctx.fill();
+    ctx.fillStyle = vg(640, 800, [[0, 'rgba(255,250,245,0)'], [.5, 'rgba(255,250,245,.55)'], [1, 'rgba(255,250,245,0)']]); ctx.fillRect(0, 640, W, 160);
+    ridge(790, 95, 1.7, 1080); ctx.fillStyle = '#7A6C86'; ctx.fill();
+    ridge(900, 55, 2.6, 1080); ctx.fillStyle = '#44504F'; ctx.fill();
+    ctx.fillStyle = '#22322D'; ctx.fillRect(0, 990, W, 90);
+    for (var x = -20; x < W + 40; x += 26 + rnd() * 22) pine(x, 1010, 70 + rnd() * 90, '#22322D');
+    ctx.fillStyle = vg(1080, 2160, [[0, '#22322D'], [1, '#0D1913']]); ctx.fillRect(0, 1080, W, 1080);
+    [[1760, '#1A2B24', 160, 260], [1900, '#14231D', 200, 320], [2060, '#0F1C16', 240, 380], [2180, '#0B1611', 260, 420]].forEach(function (r) {
+      for (var x = -40; x < W + 60; x += 34 + rnd() * 40) { if (r[0] < 1950 && x > 1000 && x < 1880 && rnd() < .5) continue; pine(x, r[0], r[2] + rnd() * (r[3] - r[2]), r[1]); }
+    });
+    for (var i = 0; i < 70; i++) { ctx.fillStyle = 'rgba(255,226,140,' + (.25 + rnd() * .5) + ')'; ctx.beginPath(); ctx.arc(rnd() * W, 1350 + rnd() * 700, 1.5 + rnd() * 2.5, 0, Math.PI * 2); ctx.fill(); }
+    ctx.fillStyle = '#0B1611'; ctx.fillRect(0, 2160, W, 120);
+    ctx.fillStyle = vg(2280, 3240, [[0, '#2B4B5E'], [.5, '#1E3A4C'], [1, '#112331']]); ctx.fillRect(0, 2280, W, 960);
+    for (var x3 = -20; x3 < W + 40; x3 += 30 + rnd() * 30) { var h3 = 50 + rnd() * 120; ctx.fillStyle = 'rgba(8,18,14,.55)'; ctx.beginPath(); ctx.moveTo(x3, 2280 + h3); ctx.lineTo(x3 + h3 * .16, 2280); ctx.lineTo(x3 - h3 * .16, 2280); ctx.closePath(); ctx.fill(); }
+    for (var j = 0; j < 220; j++) { ctx.fillStyle = 'rgba(214,232,240,' + (.05 + rnd() * .22) + ')'; ctx.fillRect(rnd() * W, 2420 + rnd() * 800, 30 + rnd() * 180, 2); }
+    ctx.fillStyle = vg(3200, 4320, [[0, '#F6F8FA'], [.5, '#EEF2F6'], [1, '#FBFCFD']]);
+    ctx.beginPath(); ctx.moveTo(0, 4320); for (var x4 = 0; x4 <= W; x4 += 10) ctx.lineTo(x4, 3180 + 10 * Math.sin(x4 * .006) + 6 * Math.sin(x4 * .019)); ctx.lineTo(W, 4320); ctx.closePath(); ctx.fill();
+    for (var d = 0; d < 9; d++) { ctx.fillStyle = 'rgba(176,196,214,' + (.16 + rnd() * .12) + ')'; ctx.beginPath(); ctx.ellipse(rnd() * W, 3700 + rnd() * 560, 220 + rnd() * 260, 26 + rnd() * 24, 0, 0, Math.PI * 2); ctx.fill(); }
+    [[1100, 4300, 260], [1290, 4310, 200], [1480, 4290, 300], [1760, 4305, 240], [1880, 4300, 180]].forEach(function (t) { pine(t[0], t[1], t[2], '#2D4038', '#F4F7FA'); });
+  })(natureCanvas.getContext('2d'));
+  var natureLum = (function () {
+    var s = document.createElement('canvas'); s.width = 120; s.height = NH / 8;
+    var c = s.getContext('2d'); c.drawImage(natureCanvas, 0, 0, s.width, s.height);
+    var p = c.getImageData(0, 0, s.width, s.height).data, rows = [];
+    for (var y = 0; y < s.height; y++) { var sum = 0; for (var x = 0; x < s.width; x++) { var o = (y * s.width + x) * 4; sum += (.2126 * p[o] + .7152 * p[o + 1] + .0722 * p[o + 2]) / 255; } rows.push(sum / s.width); }
+    return rows;
+  })();
+
+  /* ================= Treść stron ================= */
+  var VIDEOS = [
+    ['Świt w górach, 4K bez muzyki', 'Cisza Gór', '48 tys.', '2 dni', '12:08', ['#F3D7B6', '#E59C7E', '#6E5C78']],
+    ['Jak odróżnić świerk od jodły', 'Leśny Kadr', '21 tys.', 'tydzień', '8:41', ['#CFE3D2', '#7FAE8C', '#2F4D3B']],
+    ['Szum strumienia na trzy godziny', 'Natura z bliska', '310 tys.', 'miesiąc', '3:00:00', ['#BFD9E6', '#6F9FB7', '#294456']],
+    ['Wędrówka przez zamglony las', 'Szlakiem', '15 tys.', '4 dni', '22:15', ['#DADFDB', '#9BAA9F', '#46564C']],
+    ['Burza nad jeziorem z bliska', 'Niebo i chmury', '96 tys.', '3 tygodnie', '6:32', ['#9AA6B8', '#5A6680', '#232B3D']],
+    ['Pierwszy śnieg w dolinie', 'Cisza Gór', '33 tys.', '5 dni', '10:47', ['#F2F5F8', '#C9D5E0', '#6F8396']],
+    ['Sowy nocą, nagrania z kamery', 'Leśny Kadr', '72 tys.', '2 miesiące', '18:20', ['#4C4F6B', '#2D2F48', '#14152A']],
+    ['Mgła nad stawem, timelapse', 'Natura z bliska', '12 tys.', 'wczoraj', '4:05', ['#E8E3EF', '#B4AFC9', '#5E5A7A']],
+    ['Kajakiem po rzece o świcie', 'Szlakiem', '27 tys.', '6 dni', '31:44', ['#F7E2C4', '#E7B27A', '#3D5A55']],
+    ['Las w deszczu, dźwięki do snu', 'Natura z bliska', '1,1 mln', 'rok', '10:00:00', ['#B9C7BE', '#6F8576', '#26352C']],
+    ['Zimowy biwak w namiocie', 'Szlakiem', '58 tys.', '3 miesiące', '27:12', ['#DCE6F0', '#93A9C0', '#34465A']],
+    ['Jesienne kolory z drona', 'Niebo i chmury', '44 tys.', '2 tygodnie', '7:58', ['#F5D6A0', '#D9844A', '#6B3B2A']],
+    ['Ptaki w karmniku przez cały dzień', 'Leśny Kadr', '19 tys.', '9 dni', '1:12:30', ['#E9E4CF', '#B9B08A', '#5D5A3D']],
+    ['Wodospad po roztopach', 'Cisza Gór', '63 tys.', 'miesiąc', '9:16', ['#D3E7EE', '#86B5C7', '#2F5867']],
+    ['Nocne niebo nad połoniną', 'Niebo i chmury', '88 tys.', '5 tygodni', '15:03', ['#3C4570', '#1E2448', '#0B0F26']],
+    ['Mapa szlaku krok po kroku', 'Szlakiem', '9 tys.', '3 dni', '11:29', ['#EDE5D3', '#C2B08A', '#6E5F43']]
+  ];
+  function thumb(i, w, h, big) {
+    var c = VIDEOS[i % VIDEOS.length][5];
+    var sun = big ? '<div style="position:absolute;left:66%;top:28%;width:' + (w * .07) + 'px;height:' + (w * .07) + 'px;border-radius:50%;background:rgba(255,250,236,.85)"></div>' : '';
+    return '<div style="position:relative;width:' + w + 'px;height:' + h + 'px;border-radius:' + (big ? 0 : 12) + 'px;overflow:hidden;background:linear-gradient(180deg,' + c[0] + ' 0%,' + c[1] + ' 62%,' + c[2] + ' 100%)">' + sun +
+      '<div style="position:absolute;inset:0;background:' + c[2] + ';opacity:.55;clip-path:polygon(0 72%,14% 52%,26% 63%,41% 38%,55% 58%,68% 44%,82% 60%,100% 47%,100% 100%,0 100%)"></div>' +
+      '<div style="position:absolute;inset:0;background:' + c[2] + ';clip-path:polygon(0 86%,18% 70%,33% 80%,50% 66%,64% 78%,80% 69%,100% 79%,100% 100%,0 100%)"></div></div>';
+  }
+  var FAV = {
+    start: '<span class="fav" style="background:transparent"><svg viewBox="0 0 120 120" width="15" height="15"><path d="M52.34 0.5 A60 60 0 1 0 119.5 67.67 A48 48 0 1 1 52.34 0.5 Z" fill="currentColor"/></svg></span>',
+    results: '<span class="fav" style="background:#2E3440;color:#fff"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 4.5 4.5"/></svg></span>',
+    wiki: '<span class="fav" style="background:#F4F1EA;color:#1A1A1A;border:1px solid #CFC9BC">W</span>',
+    video: '<span class="fav" style="background:#22B59A"><svg viewBox="0 0 10 10" width="8" height="8"><path d="M3 2l5 3-5 3z" fill="#fff"/></svg></span>',
+    watch: null,
+    nature: '<span class="fav" style="background:#3E6B4E"><svg viewBox="0 0 10 10" width="9" height="9"><path d="M5 1.5 8 7.5H2z" fill="#E9F2E4"/></svg></span>'
+  };
+  FAV.watch = FAV.video;
+
+  var PAGES = {
+    start: {
+      info: function () { return { title: 'Nowa karta', host: '', path: '', brand: true }; },
+      light: function () { return S.theme === 'light'; },
+      html: function () {
+        var L = S.theme === 'light';
+        var c = L ? { bg: '#FAFAFA', moon: '#1C1C1C', star: '#8C8C8C', foot: '#B5B5B5', key: '#8A8A8A', vars: '--n-text:#1C1C1C;--n-ph:#B3B3B3;--n-icon:#6F6F6F;--n-hint:#A6A6A6;--n-hint-b:#7A7A7A' }
+                  : { bg: '#000', moon: '#ECECEC', star: '#8C8C8C', foot: '#444', key: '#5C5C5C', vars: '--n-text:#ECECEC;--n-ph:#4D4D4D;--n-icon:#9A9A9A;--n-hint:#4A4A4A;--n-hint-b:#6A6A6A' };
+        return '<div style="height:1080px;background:' + c.bg + ';' + c.vars + ';display:flex;flex-direction:column;align-items:center;justify-content:center;gap:40px;font-family:var(--ui);transition:background-color .5s ease">' +
+          '<svg width="76" height="76" viewBox="0 0 120 120"><path d="M52.34 0.5 A60 60 0 1 0 119.5 67.67 A48 48 0 1 1 52.34 0.5 Z" fill="' + c.moon + '"/><path d="M96 12 Q98.4 27.6 114 30 Q98.4 32.4 96 48 Q93.6 32.4 78 30 Q93.6 27.6 96 12 Z" fill="' + c.star + '"/></svg>' +
+          '<div class="note-field" id="noteField"><div class="note-line">' +
+          '<input class="nin" id="nin" type="text" placeholder="Napisz coś albo wklej link…" autocomplete="off" aria-label="Napisz coś albo wklej link">' +
+          '<span class="nact" data-act="nsubmit" role="button" aria-label="Szukaj albo otwórz">' +
+          '<svg class="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 20 20"/></svg>' +
+          '<svg class="i-link" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>' +
+          '<div class="nhint"><span class="h-search"><b>Enter</b> szukaj</span><span class="h-link"><b>Enter</b> otwórz stronę</span></div></div>' +
+          '<div style="position:absolute;bottom:30px;font-size:13px;color:' + c.foot + ';letter-spacing:.02em"><b style="color:' + c.key + ';font-weight:500">Ctrl+T</b> nowa karta &nbsp;·&nbsp; <b style="color:' + c.key + ';font-weight:500">Ctrl+L</b> adres</div></div>';
+      }
+    },
+    results: {
+      info: function (t) { return { title: '„' + t.q + '” – Szukaj', host: 'szukaj.example', path: '/?q=' + encodeURIComponent(t.q).replace(/%20/g, '+') }; },
+      light: function () { return true; },
+      html: function (t) {
+        var q = t.q.toLowerCase(), list = [
+          { go: 'wiki', host: 'wiedza.example › wiki › Świerk_pospolity', title: 'Świerk pospolity – encyklopedia Wiedza', text: 'Wiecznie zielone drzewo iglaste z rodziny sosnowatych. Wygląd, występowanie w Europie i zastosowanie drewna.', fav: 'wiki', key: /świerk|swierk|drzew|wiki|wiedz/ },
+          { go: 'video', host: 'filmy.example', title: 'Filmy – przyroda, góry i dźwięki natury', text: 'Nagrania z lasów, gór i znad wody. Szum strumienia, timelapse mgły, wędrówki krok po kroku.', fav: 'video', key: /film|wideo|nagran|video/ },
+          { go: 'nature', host: 'przyroda.example › dolina-o-swicie', title: 'Dolina o świcie – reportaż', text: 'Zanim słońce wyjdzie zza grani, w dolinie słychać tylko strumień. Las, staw i śnieg w jednej wędrówce.', fav: 'nature', key: /dolin|świt|swit|gór|gor|przyrod/ }
+        ];
+        list.sort(function (a, b) { return (b.key.test(q) ? 1 : 0) - (a.key.test(q) ? 1 : 0); });
+        var items = list.map(function (r) {
+          return '<div class="clickable" data-go="' + r.go + '" style="display:flex;flex-direction:column;gap:8px;max-width:760px">' +
+            '<div style="display:flex;align-items:center;gap:10px;font-size:15px;color:#5A5F66">' + FAV[r.fav] + esc(r.host) + '</div>' +
+            '<div style="font:500 27px/1.25 var(--body);color:#1F3A8A">' + esc(r.title) + '</div>' +
+            '<div style="font:400 17px/1.55 var(--body);color:#3E434A">' + esc(r.text) + '</div></div>';
+        }).join('');
+        return '<div style="min-height:1180px;background:#FAFAF8;color:#1B1D21;font-family:var(--body)">' +
+          '<div style="padding:116px 0 0 260px;display:flex;flex-direction:column;gap:44px">' +
+          '<div style="font-size:15px;color:#777B82">Wyniki dla <b style="color:#1B1D21;font-weight:600">„' + esc(t.q) + '”</b> · bez śledzenia i bez reklam</div>' + items + '</div></div>';
+      }
+    },
+    wiki: {
+      info: function () { return { title: 'Świerk pospolity – Wiedza', host: 'wiedza.example', path: '/wiki/Świerk_pospolity' }; },
+      light: function () { return true; },
+      html: function () {
+        var P = 'font:400 19px/1.7 var(--body);color:#222;margin:0';
+        var H2 = 'font:600 34px/1.2 var(--display);margin:26px 0 0;padding-bottom:10px;border-bottom:1px solid #E2DED6';
+        var L = 'color:#2A55C4';
+        return '<div style="background:#fff;color:#1A1A1A;font-family:var(--body);padding-bottom:160px">' +
+          '<div style="height:120px;border-bottom:1px solid #ECE8E0;display:flex;align-items:flex-end;padding:0 160px 18px;gap:26px">' +
+          '<span style="font:600 30px/1 var(--display)">Wiedza</span><span style="font-size:15px;color:#777">encyklopedia</span>' +
+          '<span style="margin-left:auto;width:420px;height:40px;border:1px solid #D9D5CC;border-radius:8px;display:flex;align-items:center;padding:0 14px;color:#999;font-size:15px">Szukaj w Wiedzy</span></div>' +
+          '<div style="display:flex;gap:80px;padding:56px 160px 0">' +
+          '<article style="flex:1;min-width:0;display:flex;flex-direction:column;gap:20px">' +
+          '<h1 style="font:600 60px/1.05 var(--display);margin:0">Świerk pospolity</h1>' +
+          '<div style="font-size:15px;color:#777">Artykuł z encyklopedii Wiedza · <i>Picea abies</i></div>' +
+          '<p style="' + P + '"><b>Świerk pospolity</b> to wiecznie zielone drzewo iglaste z rodziny <span style="' + L + '">sosnowatych</span>. Rośnie w dużej części Europy, zwłaszcza w górach i na północy kontynentu. W Polsce jest jednym z najczęściej spotykanych drzew leśnych.</p>' +
+          '<h2 style="' + H2 + '">Wygląd</h2>' +
+          '<p style="' + P + '">Ma prosty pień i stożkową koronę, która u starszych drzew sięga daleko w dół. Igły są krótkie, sztywne i czterokanciaste, osadzone pojedynczo na gałązkach. Szyszki są długie i zwisają w dół, a po dojrzeniu odpadają w całości.</p>' +
+          '<p style="' + P + '">Może dorastać do około 50 metrów wysokości. Kora młodych drzew jest gładka i rdzawobrązowa, z wiekiem staje się łuskowata.</p>' +
+          '<h2 style="' + H2 + '">Występowanie</h2>' +
+          '<p style="' + P + '">Naturalnie występuje w <span style="' + L + '">Alpach</span>, <span style="' + L + '">Karpatach</span> i Skandynawii oraz na niżu w północno-wschodniej Europie. W górach tworzy rozległe lasy w reglu górnym, a wyżej przechodzi w kosodrzewinę.</p>' +
+          '<p style="' + P + '">Lubi chłodny, wilgotny klimat. Ma płytki system korzeniowy, przez co jest wrażliwy na silny wiatr i suszę.</p>' +
+          '<h2 style="' + H2 + '">Zastosowanie</h2>' +
+          '<p style="' + P + '">Drewno świerka jest lekkie i łatwe w obróbce. Używa się go w budownictwie, do produkcji papieru i mebli. Wyselekcjonowane drewno rezonansowe trafia do lutników, którzy robią z niego płyty wierzchnie skrzypiec i gitar.</p>' +
+          '<p style="' + P + '">Młode świerki są popularnymi choinkami bożonarodzeniowymi.</p>' +
+          '</article>' +
+          '<aside style="width:400px;flex:none;border:1px solid #E2DED6;background:#F8F7F3;border-radius:10px;overflow:hidden;align-self:flex-start">' +
+          '<div style="font:600 20px/1.2 var(--display);padding:16px 18px;text-align:center;border-bottom:1px solid #E2DED6">Świerk pospolity</div>' +
+          '<div style="height:280px;background:linear-gradient(#E8EEF0,#F8F7F3);display:flex;align-items:flex-end;justify-content:center">' +
+          '<svg width="200" height="250" viewBox="0 0 200 250"><rect x="94" y="200" width="12" height="44" fill="#6B4A33"/><path d="M100 14 140 84H118L156 148H128L172 210H28L72 148H44L82 84H60Z" fill="#2F5A40"/></svg></div>' +
+          ['Królestwo|rośliny', 'Gromada|nagonasienne', 'Rodzina|sosnowate', 'Rodzaj|świerk', 'Gatunek|świerk pospolity'].map(function (r) {
+            var p = r.split('|'); return '<div style="display:flex;justify-content:space-between;gap:12px;padding:11px 18px;border-top:1px solid #ECE8E0;font-size:16px"><span style="color:#777">' + p[0] + '</span><span>' + p[1] + '</span></div>';
+          }).join('') + '</aside></div></div>';
+      }
+    },
+    video: {
+      info: function () { return { title: 'Filmy', host: 'filmy.example', path: '' }; },
+      light: function () { return false; },
+      html: function () {
+        var cards = VIDEOS.map(function (v, i) {
+          return '<div class="clickable" data-go="watch" data-v="' + i + '" style="display:flex;flex-direction:column;gap:12px">' +
+            '<div style="position:relative">' + thumb(i, 400, 225) + '<span style="position:absolute;right:10px;bottom:10px;background:rgba(0,0,0,.75);color:#fff;font:500 13px/1 var(--body);padding:4px 6px;border-radius:5px">' + v[4] + '</span></div>' +
+            '<div style="font:500 18px/1.35 var(--body);color:#F1F1F1">' + esc(v[0]) + '</div>' +
+            '<div style="font:400 14px/1.4 var(--body);color:#9C9C9C">' + esc(v[1]) + '<br>' + v[2] + ' wyświetleń · ' + v[3] + ' temu</div></div>';
+        }).join('');
+        var chips = ['Wszystko', 'Przyroda', 'Góry', 'Dźwięki natury', 'Timelapse', 'Na żywo'].map(function (c, i) {
+          return '<span style="padding:9px 16px;border-radius:9px;font:500 15px/1 var(--body);' + (i === 0 ? 'background:#F1F1F1;color:#111' : 'background:#232325;color:#E8E8E8') + '">' + c + '</span>';
+        }).join('');
+        return '<div style="background:#0F0F10;color:#F1F1F1;font-family:var(--body);padding-bottom:120px">' +
+          '<div style="height:120px;display:flex;align-items:flex-end;padding:0 112px 14px;gap:16px">' +
+          '<span style="width:34px;height:34px;border-radius:10px;background:#22B59A;display:grid;place-items:center"><svg viewBox="0 0 10 10" width="14" height="14"><path d="M3 2l5 3-5 3z" fill="#fff"/></svg></span>' +
+          '<span style="font:600 24px/1 var(--body);letter-spacing:-.01em">Filmy</span>' +
+          '<span style="margin:0 auto;width:640px;height:44px;border-radius:22px;background:#1C1C1E;border:1px solid #2C2C2F;display:flex;align-items:center;padding:0 20px;color:#8A8A8A;font-size:16px">Szukaj filmów</span>' +
+          '<span style="width:40px;height:40px;border-radius:50%;background:#3A4E46"></span></div>' +
+          '<div style="display:flex;gap:10px;padding:18px 112px 26px">' + chips + '</div>' +
+          '<div style="display:grid;grid-template-columns:repeat(4,400px);gap:40px 32px;padding:0 112px">' + cards + '</div></div>';
+      }
+    },
+    watch: {
+      info: function (t) { return { title: VIDEOS[t.v][0], host: 'filmy.example', path: '/ogladaj?v=' + (7341 + t.v * 13).toString(36) }; },
+      light: function () { return false; },
+      html: function (t) {
+        var v = VIDEOS[t.v];
+        var next = VIDEOS.map(function (n, i) { return i; }).filter(function (i) { return i !== t.v; }).slice(0, 8).map(function (i) {
+          return '<div class="clickable" data-go="watch" data-v="' + i + '" style="display:flex;gap:12px">' + thumb(i, 168, 94) +
+            '<div style="display:flex;flex-direction:column;gap:6px;min-width:0"><span style="font:500 15px/1.3 var(--body);color:#F1F1F1">' + esc(VIDEOS[i][0]) + '</span><span style="font-size:13px;color:#9C9C9C">' + esc(VIDEOS[i][1]) + '</span></div></div>';
+        }).join('');
+        return '<div style="background:#0F0F10;color:#F1F1F1;font-family:var(--body);display:flex;gap:32px;padding:80px 112px 140px">' +
+          '<div style="width:1280px;flex:none;display:flex;flex-direction:column;gap:18px">' +
+          '<div style="position:relative;border-radius:14px;overflow:hidden">' + thumb(t.v, 1280, 720, true) +
+          '<div style="position:absolute;left:0;right:0;bottom:0;height:90px;background:linear-gradient(transparent,rgba(0,0,0,.65))"></div>' +
+          '<div style="position:absolute;left:24px;right:24px;bottom:22px;display:flex;align-items:center;gap:16px;font:500 14px/1 var(--body)">' +
+          '<svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><rect x="6" y="5" width="4" height="14" rx="1.5"/><rect x="14" y="5" width="4" height="14" rx="1.5"/></svg>' +
+          '<div style="flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,.3);overflow:hidden"><div style="height:100%;background:#22B59A;animation:playbar 90s linear forwards;width:3%"></div></div>' +
+          '<span>' + v[4] + '</span></div></div>' +
+          '<div style="font:600 28px/1.3 var(--body)">' + esc(v[0]) + '</div>' +
+          '<div style="display:flex;align-items:center;gap:14px"><span style="width:44px;height:44px;border-radius:50%;background:' + v[5][1] + '"></span>' +
+          '<div><div style="font:600 16px/1.3 var(--body)">' + esc(v[1]) + '</div><div style="font-size:13px;color:#9C9C9C">12,4 tys. obserwujących</div></div>' +
+          '<span style="margin-left:14px;background:#F1F1F1;color:#111;font:600 14px/1 var(--body);padding:11px 18px;border-radius:20px">Obserwuj</span></div>' +
+          '<div style="background:#1C1C1E;border-radius:12px;padding:16px 18px;font:400 15px/1.6 var(--body);color:#D6D6D6"><b>' + v[2] + ' wyświetleń · ' + v[3] + ' temu</b><br>Nagranie bez muzyki i bez komentarza, tylko dźwięki miejsca. Najlepiej oglądać w słuchawkach.</div></div>' +
+          '<div style="flex:1;display:flex;flex-direction:column;gap:14px;min-width:0"><div style="font:600 17px/1 var(--body);margin-bottom:4px">Następne</div>' + next + '</div></div>' +
+          '<style>@keyframes playbar{to{width:100%}}</style>';
+      }
+    },
+    nature: {
+      info: function () { return { title: 'Dolina o świcie', host: 'przyroda.example', path: '/dolina-o-swicie' }; },
+      light: function (s) {
+        var a = Math.floor(s / 8), b = Math.ceil((s + 48) / 8), sum = 0, n = 0;
+        for (var k = a; k < b && k < natureLum.length; k++) { sum += natureLum[k]; n++; }
+        return n ? sum / n > .55 : false;
+      },
+      html: function () {
+        var ART = 'position:absolute;left:160px;width:760px;display:flex;flex-direction:column;gap:22px;';
+        var H = 'font-family:var(--display);font-weight:600;margin:0;letter-spacing:-.01em;';
+        var Pd = 'margin:0;font:400 24px/1.6 var(--body);color:#D6D9D3;';
+        return '<div style="position:relative;height:' + NH + 'px"><canvas class="nat" width="1920" height="' + NH + '" style="position:absolute;inset:0;display:block"></canvas>' +
+          '<section style="' + ART + 'top:640px;color:#F4F1EC;text-shadow:0 2px 18px rgba(20,24,26,.45)"><span style="font:500 16px/1 var(--body);letter-spacing:.14em;text-transform:uppercase">Reportaż · 6 min czytania</span><h1 style="' + H + 'font-size:112px;line-height:1">Dolina o świcie</h1><p style="' + Pd + 'color:#F1EEE8">Zanim słońce wyjdzie zza grani, w dolinie słychać tylko strumień i pierwsze sikory. To godzina, w której góry nie należą do nikogo.</p></section>' +
+          '<section style="' + ART + 'top:1210px;color:#F4F1EC"><h2 style="' + H + 'font-size:64px;line-height:1.05">Las, który oddycha</h2><p style="' + Pd + '">Świerki stoją tu ciasno, jeden przy drugim. Pod koronami jest o kilka stopni chłodniej, a mech tłumi każdy krok. Mgła zostaje między pniami najdłużej.</p></section>' +
+          '<section style="' + ART + 'top:2420px;left:1000px;color:#F4F1EC"><h2 style="' + H + 'font-size:64px;line-height:1.05">Staw jak lustro</h2><p style="' + Pd + '">Przy bezwietrznej pogodzie woda odbija grań tak dokładnie, że trudno powiedzieć, gdzie kończy się góra.</p></section>' +
+          '<section style="' + ART + 'top:3420px;color:#1D2A33"><h2 style="' + H + 'font-size:64px;line-height:1.05">Wyżej już tylko śnieg</h2><p style="' + Pd + 'color:#3A4A55">Nad stawem szlak skręca w żleb, w którym śnieg leży do czerwca. Ostatnie świerki zostają w dole. Zostaje biel, niebo i własny oddech.</p></section></div>';
+      }
+    }
+  };
+
+  /* ================= Stan przeglądarki ================= */
+  var S, docEl = null;
+  function freshState() {
+    return { tabs: [{ id: 1, kind: 'start', q: '', v: 0, scroll: 0, back: [], fwd: [] }], active: 1, nextId: 2, hover: false, search: false, settings: false, theme: 'dark' };
+  }
+  function tab() { for (var i = 0; i < S.tabs.length; i++) if (S.tabs[i].id === S.active) return S.tabs[i]; return S.tabs[0]; }
+  function maxScroll() { return docEl ? Math.max(0, docEl.offsetHeight - VH) : 0; }
+
+  function renderPage() {
+    var t = tab();
+    vp.innerHTML = '<div class="doc" id="doc">' + PAGES[t.kind].html(t) + '</div>';
+    docEl = document.getElementById('doc');
+    var nat = docEl.querySelector('canvas.nat');
+    if (nat) nat.getContext('2d').drawImage(natureCanvas, 0, 0);
+    t.scroll = Math.min(t.scroll, maxScroll());
+    applyScroll();
+    renderBar();
+  }
+  function applyScroll() {
+    var t = tab();
+    if (docEl) docEl.style.transform = 'translateY(' + (-t.scroll).toFixed(1) + 'px)';
+    updateTone();
+  }
+  // Pasek pokazany: nieprzezroczysty, w kolorze motywu Lum. Schowany: przezroczysty, kolor ikon według strony.
+  function updateTone() {
+    var t = tab(), shown = S.hover || S.search || S.settings;
+    var light = shown ? S.theme === 'light' : !!PAGES[t.kind].light(t.scroll);
+    bar.classList.toggle('on-light', light);
+    veilEl.classList.toggle('on', shown);
+  }
+  function noteState() {
+    var f = document.getElementById('noteField'), n = document.getElementById('nin');
+    if (!f || !n) return;
+    var v = n.value.trim();
+    f.classList.toggle('typing', v.length > 0);
+    f.classList.toggle('is-link', /^(https?:\/\/)?[^\s]+\.[a-z]{2,}(\/\S*)?$/i.test(v));
+  }
+  function renderBar() {
+    var t = tab(), info = PAGES[t.kind].info(t);
+    var show = S.hover || S.search || S.settings;
+    bar.classList.toggle('show', show);
+    var mode = S.search ? 'mode-search' : (show ? 'mode-tabs' : 'mode-label');
+    bar.classList.remove('mode-label', 'mode-tabs', 'mode-search'); bar.classList.add(mode);
+    labelEl.className = 'label' + (info.brand ? ' brand' : '');
+    labelEl.innerHTML = info.brand ? 'Lum' : esc(info.host) + '<span class="path">' + esc(info.path) + '</span>';
+    tabsEl.innerHTML = S.tabs.map(function (x, idx) {
+      var i = PAGES[x.kind].info(x);
+      return '<div class="tab' + (x.id === S.active ? ' active' : '') + '" style="--i:' + idx + '" role="tab" tabindex="0" aria-selected="' + (x.id === S.active) + '" data-tab="' + x.id + '">' +
+        FAV[x.kind] + '<span class="t">' + esc(i.title) + '</span>' +
+        '<span class="x" data-close="' + x.id + '" aria-label="Zamknij kartę"><svg viewBox="0 0 12 12"><path d="M3 3l6 6M9 3 3 9"/></svg></span></div>';
+    }).join('') + '<button class="btn newtab" style="--i:' + S.tabs.length + '" data-act="newtab" aria-label="Nowa karta"><svg viewBox="0 0 24 24"><path d="M12 6.5v11M6.5 12h11"/></svg></button>';
+    // przy wielu kartach zostają same ikonki
+    tabsEl.classList.toggle('dense', (tabsEl.clientWidth - 44) / S.tabs.length < 120);
+    panelEl.classList.toggle('open', S.settings);
+    panelEl.querySelectorAll('[data-theme]').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.theme === S.theme ? 'true' : 'false'); });
+    screen.classList.toggle('theme-light', S.theme === 'light');
+    updateTone();
+    bar.querySelector('[data-act=back]').classList.toggle('off', !t.back.length);
+    bar.querySelector('[data-act=forward]').classList.toggle('off', !t.fwd.length);
+    updateTrack(show && !S.search);
+  }
+
+  /* Linia karty: z lewej (za przyciskami) do otwartej karty, nad nią i dalej w prawo do końca */
+  var trackPath = document.getElementById('trackPath'), track = { L: 0, R: 0, ready: false, timer: null };
+  function trackD(L, R) {
+    var t = 8, b = 44, r = 10, end = 1920, x0 = 0;
+    return 'M' + x0 + ' ' + b + 'H' + (L - r) + 'Q' + L + ' ' + b + ' ' + L + ' ' + (b - r) + 'V' + (t + r) + 'Q' + L + ' ' + t + ' ' + (L + r) + ' ' + t +
+      'H' + (R - r) + 'Q' + R + ' ' + t + ' ' + R + ' ' + (t + r) + 'V' + (b - r) + 'Q' + R + ' ' + b + ' ' + (R + r) + ' ' + b + 'H' + end;
+  }
+  function updateTrack(visible) {
+    var a = tabsEl.querySelector('.tab.active');
+    if (!a) return;
+    var L = a.offsetLeft, R = a.offsetLeft + a.offsetWidth;
+    clearTimeout(track.timer);
+    if (!visible || !track.ready) { track.L = L; track.R = R; track.ready = true; trackPath.setAttribute('d', trackD(L, R)); return; }
+    var L0 = track.L, R0 = track.R, t0 = Date.now(), ms = 420;
+    (function step() {
+      var f = Math.min(1, (Date.now() - t0) / ms), e = 1 - Math.pow(1 - f, 3);
+      track.L = L0 + (L - L0) * e; track.R = R0 + (R - R0) * e;
+      trackPath.setAttribute('d', trackD(track.L, track.R));
+      if (f < 1) track.timer = setTimeout(step, 16);
+    })();
+  }
+  function progress() { progressEl.classList.remove('run'); void progressEl.offsetWidth; progressEl.classList.add('run'); }
+  function snap(t) { return { kind: t.kind, q: t.q, v: t.v, scroll: t.scroll }; }
+  function restore(t, s) { t.kind = s.kind; t.q = s.q; t.v = s.v; t.scroll = s.scroll; }
+  function navigate(kind, opts) {
+    var t = tab(); opts = opts || {};
+    t.back.push(snap(t)); t.fwd = [];
+    t.kind = kind; t.q = opts.q != null ? opts.q : t.q; t.v = opts.v != null ? opts.v : t.v; t.scroll = 0;
+    progress(); renderPage();
+  }
+  function goBack() { var t = tab(); if (!t.back.length) return; t.fwd.push(snap(t)); restore(t, t.back.pop()); progress(); renderPage(); }
+  function goForward() { var t = tab(); if (!t.fwd.length) return; t.back.push(snap(t)); restore(t, t.fwd.pop()); progress(); renderPage(); }
+  function reload() { progress(); setTimeout(renderPage, 220); }
+  function newTab(kind, opts) {
+    opts = opts || {};
+    S.tabs.push({ id: S.nextId, kind: kind || 'start', q: opts.q || '', v: opts.v || 0, scroll: 0, back: [], fwd: [] });
+    S.active = S.nextId++;
+  }
+  function openNewTab() {
+    S.settings = false; S.search = false; newTab('start'); renderPage();
+    if (!demo.running) setTimeout(function () { var n = document.getElementById('nin'); if (n) n.focus(); }, 30);
+  }
+  function setTheme(t) { S.theme = t; renderPage(); }
+  function openMany(n) {
+    var kinds = [['wiki'], ['video'], ['nature'], ['results', { q: 'mapa szlaków' }], ['watch', { v: 2 }], ['results', { q: 'pogoda w górach' }], ['watch', { v: 9 }], ['start']];
+    for (var i = 0; i < n; i++) { var k = kinds[i % kinds.length]; newTab(k[0], k[1]); }
+    S.search = false; S.settings = false; renderPage();
+  }
+  function openSearch() {
+    S.settings = false;
+    var t = tab();
+    if (t.kind !== 'start') { newTab('start'); renderPage(); }
+    S.search = true; input.value = ''; renderBar();
+    if (!demo.running) setTimeout(function () { input.focus(); }, 30);
+  }
+  function submitSearch(text) {
+    text = (text || '').trim(); if (!text) return;
+    S.search = false; input.blur();
+    var low = text.toLowerCase();
+    if (/^\S+\.\S+/.test(low)) {
+      if (low.indexOf('filmy') >= 0) return navigate('video');
+      if (low.indexOf('wiedza') >= 0) return navigate('wiki');
+      if (low.indexOf('przyroda') >= 0) return navigate('nature');
+    }
+    navigate('results', { q: text });
+  }
+  function closeSearch() { S.search = false; input.blur(); renderBar(); }
+  function switchTab(id) { S.active = id; S.search = false; renderPage(); }
+  function closeTab(id) {
+    var i = S.tabs.findIndex(function (x) { return x.id === id; });
+    if (i < 0) return;
+    S.tabs.splice(i, 1);
+    if (!S.tabs.length) S.tabs.push({ id: S.nextId++, kind: 'start', q: '', v: 0, scroll: 0, back: [], fwd: [] });
+    if (S.active === id) S.active = S.tabs[Math.min(i, S.tabs.length - 1)].id;
+    renderPage();
+  }
+  function setHover(h) { if (h !== S.hover) { S.hover = h; renderBar(); } }
+  function closePanel() { if (S.settings) { S.settings = false; renderBar(); } }
+
+  /* ================= Efekt kliknięcia ================= */
+  function pressFx(el) {
+    var target = el.closest('.btn, .tab, .seg button');
+    if (!target) return;
+    target.classList.add('pressed');
+    setTimeout(function () { target.classList.remove('pressed'); }, 140);
+  }
+
+  /* ================= Akcje (kliknięcia: prawdziwe i z pokazu) ================= */
+  screen.addEventListener('click', function (e) {
+    var el = e.target;
+    var close = el.closest('[data-close]'); if (close) { e.stopPropagation(); closeTab(Number(close.dataset.close)); return; }
+    var tb = el.closest('[data-tab]'); if (tb) { switchTab(Number(tb.dataset.tab)); return; }
+    var th = el.closest('[data-theme]'); if (th) { setTheme(th.dataset.theme); return; }
+    if (el.closest('#panel')) return;
+    var go = el.closest('[data-go]'); if (go) { closePanel(); navigate(go.dataset.go, go.dataset.v != null ? { v: Number(go.dataset.v) } : {}); return; }
+    var act = el.closest('[data-act]');
+    if (act) {
+      var a = act.dataset.act;
+      if (a !== 'settings') S.settings = false;
+      if (a === 'back') goBack(); else if (a === 'forward') goForward(); else if (a === 'reload') reload();
+      else if (a === 'search') { if (S.search) closeSearch(); else openSearch(); }
+      else if (a === 'newtab') openNewTab();
+      else if (a === 'submit') submitSearch(input.value);
+      else if (a === 'nsubmit') { var n = document.getElementById('nin'); if (n) submitSearch(n.value); }
+      else if (a === 'settings') { S.settings = !S.settings; S.search = false; renderBar(); }
+      else renderBar();
+      return;
+    }
+    closePanel();
+  });
+  vp.addEventListener('input', function (e) { if (e.target.id === 'nin') noteState(); });
+  vp.addEventListener('keydown', function (e) { if (e.target.id === 'nin' && e.key === 'Enter') { e.preventDefault(); submitSearch(e.target.value); } });
+  input.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); submitSearch(input.value); }
+    else if (e.key === 'Escape') closeSearch();
+  });
+  screen.addEventListener('pointerdown', function (e) {
+    if (!e.isTrusted) return;
+    if (demo.running) stopDemo(true);
+    var sr = screen.getBoundingClientRect();
+    pressFx(e.target, (e.clientX - sr.left) / scale, (e.clientY - sr.top) / scale);
+  });
+  stage.addEventListener('pointermove', function (e) {
+    if (demo.running) return;
+    var sr = screen.getBoundingClientRect();
+    setHover((e.clientY - sr.top) / scale < 60);
+  });
+  stage.addEventListener('pointerleave', function () { if (!demo.running) setHover(false); });
+  stage.addEventListener('wheel', function (e) {
+    if (demo.running) return;
+    e.preventDefault();
+    var t = tab(); t.scroll = Math.max(0, Math.min(maxScroll(), t.scroll + e.deltaY / scale * .5)); applyScroll();
+  }, { passive: false });
+
+  /* ================= Pokaz z kursorem ================= */
+  var demo = { running: false, token: 0, x: 960, y: 760 };
+  function placeCursor() { cursorEl.style.transform = 'translate(' + (demo.x - 6) + 'px,' + (demo.y - 3) + 'px)'; }
+  function Cancel() {}
+  function check(tok) { if (tok !== demo.token) throw new Cancel(); }
+  function sleep(ms, tok) { return new Promise(function (res) { setTimeout(res, ms); }).then(function () { check(tok); }); }
+  function ease(t) { return t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+  function tween(ms, fn, tok) {
+    return new Promise(function (res, rej) {
+      var t0 = Date.now();
+      (function step() {
+        if (tok !== demo.token) return rej(new Cancel());
+        var f = Math.min(1, (Date.now() - t0) / ms); fn(ease(f));
+        if (f < 1) setTimeout(step, 16); else res();
+      })();
+    });
+  }
+  function moveTo(x, y, tok, ms) {
+    var x0 = demo.x, y0 = demo.y, dist = Math.hypot(x - x0, y - y0);
+    return tween(ms || Math.max(350, Math.min(950, dist * .9)), function (f) {
+      demo.x = x0 + (x - x0) * f; demo.y = y0 + (y - y0) * f; placeCursor();
+      setHover(demo.y < 60); hoverAt();
+    }, tok);
+  }
+  // Kursor pokazu podświetla przycisk, nad którym jest (jak prawdziwe najechanie)
+  var hotEl = null;
+  function setHot(h) { if (h !== hotEl) { if (hotEl) hotEl.classList.remove('hot'); hotEl = h; if (h) h.classList.add('hot'); } }
+  function hoverAt() {
+    var sr = screen.getBoundingClientRect();
+    var el = document.elementFromPoint(sr.left + demo.x * scale, sr.top + demo.y * scale);
+    setHot(el && el.closest ? el.closest('.btn, .tab') : null);
+  }
+  function center(el) {
+    var r = el.getBoundingClientRect(), sr = screen.getBoundingClientRect();
+    return { x: (r.left - sr.left + r.width / 2) / scale, y: (r.top - sr.top + r.height / 2) / scale };
+  }
+  async function clickEl(get, tok, label) {
+    var el = typeof get === 'function' ? get() : get;
+    if (!el) return;
+    var c = center(el);
+    await moveTo(c.x, c.y, tok);
+    if (label) caption(label);
+    await sleep(160, tok);
+    el = typeof get === 'function' ? get() || el : el;
+    var ring = document.createElement('div'); ring.className = 'ring'; ring.style.left = demo.x + 'px'; ring.style.top = demo.y + 'px';
+    screen.appendChild(ring); setTimeout(function () { ring.remove(); }, 470);
+    pressFx(el, demo.x, demo.y);
+    el.click();
+    await sleep(380, tok);
+  }
+  async function type(text, tok, el) {
+    el = el || input;
+    for (var i = 1; i <= text.length; i++) { el.value = text.slice(0, i); if (el.id === 'nin') noteState(); await sleep(70 + Math.random() * 50, tok); }
+  }
+  async function scrollTo(target, ms, tok) {
+    var t = tab(), s0 = t.scroll, s1 = Math.min(target, maxScroll());
+    await tween(ms, function (f) { t.scroll = s0 + (s1 - s0) * f; applyScroll(); }, tok);
+  }
+  function caption(text) { captionEl.textContent = text || ''; }
+  var $ = function (sel) { return function () { return screen.querySelector(sel); }; };
+  function tabEl(i) { return function () { return tabsEl.children[i]; }; }
+  async function closeTabAt(i, tok) {
+    var t = tabsEl.querySelectorAll('.tab')[i];
+    if (!t) return;
+    var c = center(t);
+    await moveTo(c.x, c.y, tok, 420); await sleep(260, tok);
+    await clickEl(function () { var tt = tabsEl.querySelectorAll('.tab')[i]; return tt && tt.querySelector('.x'); }, tok);
+  }
+
+  async function runDemo(tok) {
+    S = freshState(); renderPage(); demo.x = 960; demo.y = 760; placeCursor();
+    caption('Po starcie na środku paska jest napis Lum, przyciski są zawsze widoczne'); await sleep(2400, tok);
+    caption('Przy górnej krawędzi pasek przestaje być przezroczysty i pojawiają się karty');
+    await moveTo(980, 22, tok); await sleep(1300, tok);
+    caption('Na nowej karcie piszesz jak w notatce, lupa pojawia się sama');
+    await clickEl($('#nin'), tok);
+    await type('świerk pospolity', tok, document.getElementById('nin')); await sleep(800, tok);
+    await clickEl($('[data-act=nsubmit]'), tok); await sleep(900, tok);
+    caption('Po zabraniu kursora karty znikają, a na środku wraca adres');
+    await clickEl($('[data-go=wiki]'), tok); await sleep(800, tok);
+    await moveTo(1160, 640, tok, 600);
+    caption('Strona przewija się pod przezroczystym paskiem');
+    await scrollTo(1250, 3200, tok); await sleep(900, tok);
+    caption('Nowa karta: znowu lupa');
+    await moveTo(1500, 22, tok); await sleep(700, tok);
+    await clickEl($('#right [data-act=search]'), tok);
+    await type('filmy przyroda', tok); await sleep(300, tok);
+    await clickEl($('.sbox [data-act=submit]'), tok); await sleep(800, tok);
+    await clickEl($('[data-go=video]'), tok, 'Strona z filmami'); await sleep(700, tok);
+    await moveTo(1000, 700, tok, 500);
+    await scrollTo(460, 2000, tok); await sleep(500, tok);
+    await clickEl($('[data-go=watch][data-v="5"]'), tok, 'Otwieram film'); await sleep(2600, tok);
+    caption('Linia obejmuje otwartą kartę, pozostałe są bez obwódki');
+    await moveTo(900, 22, tok); await sleep(1500, tok);
+    await clickEl(tabEl(0), tok, 'Przełączam kartę, linia przesuwa się za nią'); await sleep(1100, tok);
+    await clickEl($('[data-act=back]'), tok, 'Wstecz'); await sleep(900, tok);
+    await clickEl($('[data-act=forward]'), tok, 'Dalej'); await sleep(900, tok);
+    await clickEl($('[data-act=reload]'), tok, 'Odśwież'); await sleep(1000, tok);
+    await clickEl($('#right [data-act=search]'), tok, 'Jeszcze jedna karta');
+    await type('dolina o świcie', tok); await sleep(300, tok);
+    await clickEl($('.sbox [data-act=submit]'), tok); await sleep(800, tok);
+    await clickEl($('[data-go=nature]'), tok, 'Reportaż o przyrodzie'); await sleep(600, tok);
+    await moveTo(1200, 760, tok, 600);
+    caption('Kolor adresu sam się dopasowuje do tła');
+    await scrollTo(3240, 7600, tok); await sleep(900, tok);
+    await moveTo(1700, 22, tok); await sleep(600, tok);
+    await moveTo(1300, 22, tok); await sleep(700, tok);
+    await clickEl($('[data-act=newtab]'), tok, 'Plus obok kart otwiera nową kartę'); await sleep(900, tok);
+    await clickEl($('#right [data-act=settings]'), tok, 'Ustawienia: jasny albo ciemny motyw'); await sleep(900, tok);
+    await clickEl($('[data-theme=light]'), tok, 'Jasny motyw'); await sleep(1900, tok);
+    await clickEl($('[data-theme=dark]'), tok, 'I z powrotem ciemny'); await sleep(1300, tok);
+    await clickEl($('#right [data-act=settings]'), tok); await sleep(600, tok);
+    caption('Kart może być dowolnie dużo');
+    for (var n = 0; n < 10; n++) { await clickEl($('[data-act=newtab]'), tok); closeSearch(); await sleep(200, tok); }
+    await sleep(1400, tok);
+    caption('Przy wielu kartach zostają ikonki, a krzyżyk po najechaniu');
+    for (var m = 0; m < 5; m++) { await closeTabAt(2, tok); await sleep(450, tok); }
+    await moveTo(960, 760, tok); caption('Koniec pokazu, za chwilę od nowa'); await sleep(2600, tok);
+  }
+  function startDemo() {
+    var tok = ++demo.token; demo.running = true;
+    cursorEl.style.display = ''; demoBtn.textContent = 'Pauza pokazu';
+    statusEl.textContent = 'Trwa pokaz. Kliknij w okno, żeby sterować samemu.';
+    (async function loop() {
+      try { while (true) await runDemo(tok); }
+      catch (err) { if (!(err instanceof Cancel)) throw err; }
+    })();
+  }
+  function stopDemo(manual) {
+    demo.token++; demo.running = false;
+    cursorEl.style.display = 'none'; caption(''); setHot(null);
+    demoBtn.textContent = 'Odtwórz pokaz';
+    statusEl.textContent = manual ? 'Sterujesz samodzielnie. Najedź na górę okna, żeby zobaczyć karty.' : 'Pokaz zatrzymany.';
+    setHover(false);
+  }
+  demoBtn.addEventListener('click', function () {
+    if (demo.running) stopDemo(false); else { demo.token++; startDemo(); }
+  });
+  restartBtn.addEventListener('click', function () { stopDemo(false); startDemo(); });
+  manyBtn.addEventListener('click', function () { if (demo.running) stopDemo(true); openMany(12); setHover(true); });
+  document.querySelectorAll('[data-fx]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      bar.classList.remove('fx-a', 'fx-b', 'fx-c', 'fx-d', 'fx-e'); bar.classList.add('fx-' + b.dataset.fx);
+      document.querySelectorAll('[data-fx]').forEach(function (o) { o.setAttribute('aria-pressed', o === b ? 'true' : 'false'); });
+    });
+  });
+
+  S = freshState(); renderPage(); placeCursor();
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce) stopDemo(false); else startDemo();
+})();
+</script>

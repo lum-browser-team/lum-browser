@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https: http:;">
+<title>Lum</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="fx-b">
+  <div id="pages"></div>
+  <div class="err" id="err" hidden>
+    <div class="err-in">
+      <div class="err-t">Nie udało się otworzyć strony</div>
+      <div class="err-u" id="errUrl"></div>
+      <div class="err-d" id="errDesc"></div>
+      <button type="button" class="err-b" data-act="retry">Spróbuj ponownie</button>
+    </div>
+  </div>
+
+  <div class="progress" id="progress"></div>
+
+  <div class="bar" id="bar">
+    <!-- Po najechaniu: nad linią kolor motywu (band), wnętrze otwartej karty w kolorze strony (tabFill), sama linia (trackPath) -->
+    <svg class="track" id="track" aria-hidden="true"><path id="band" fill-rule="evenodd" d="M0 0H1"/><path id="tabFill" d="M0 0H1"/><path id="trackPath" d="M0 34H1"/></svg>
+
+    <div class="side" id="left">
+      <button class="btn nav" data-act="back" title="Wstecz (Alt+←)" aria-label="Wstecz"><svg viewBox="0 0 24 24"><path d="M15.5 5.5C13.2 8.4 10.6 10.2 7.5 12C10.6 13.8 13.2 15.6 15.5 18.5"/></svg></button>
+      <button class="btn nav" data-act="forward" title="Dalej (Alt+→)" aria-label="Dalej"><svg viewBox="0 0 24 24"><path d="M8.5 5.5C10.8 8.4 13.4 10.2 16.5 12C13.4 13.8 10.8 15.6 8.5 18.5"/></svg></button>
+      <button class="btn" data-act="reload" title="Odśwież (F5)" aria-label="Odśwież"><svg viewBox="0 0 24 24"><path d="M18.4 9.2A7 7 0 1 0 19 13"/><path d="M19 5.5v3.9h-3.9"/></svg></button>
+      <div class="tabs" id="tabs" role="tablist" aria-label="Karty"></div>
+      <button class="btn newtab" id="newtab" data-act="newtab" title="Nowa karta (Ctrl+T)" aria-label="Nowa karta"><svg viewBox="0 0 24 24"><path d="M12 6.5v11M6.5 12h11"/></svg></button>
+      <!-- Po kliknięciu plusa: pole w jego miejscu; nowa karta powstaje po Enterze -->
+      <div class="newfield" id="newfield">
+        <input id="nq" type="text" placeholder="Napisz coś albo wklej link…" autocomplete="off" spellcheck="false" aria-label="Adres albo szukaj, otworzy się w nowej karcie">
+        <button class="btn" data-act="addgo" title="Otwórz w nowej karcie (Enter)" aria-label="Otwórz w nowej karcie"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 4.5 4.5"/></svg></button>
+      </div>
+    </div>
+
+    <div class="center">
+      <div class="label" id="label"></div>
+      <div class="sbox" id="sbox">
+        <input id="q" type="text" placeholder="Szukaj lub wpisz adres" autocomplete="off" spellcheck="false" aria-label="Szukaj lub wpisz adres">
+        <button class="btn" data-act="submit" aria-label="Szukaj"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 4.5 4.5"/></svg></button>
+      </div>
+    </div>
+
+    <div class="side" id="right">
+      <button class="btn" data-act="settings" title="Ustawienia" aria-label="Ustawienia"><svg viewBox="0 0 24 24" style="stroke-width:1.4"><path d="M5 8h8M17 8h2M5 16h2M11 16h8"/><circle cx="15" cy="8" r="2"/><circle cx="9" cy="16" r="2"/></svg></button>
+      <div class="arcs">
+        <!-- Każdy przycisk ma dwie ikony: łuki (styl zaokrąglony) i klasyczne — □ ✕ (styl kanciasty) -->
+        <button class="btn" data-act="min" title="Minimalizuj" aria-label="Minimalizuj" style="--glow-icon: rgba(61,220,132,.9); --flash: #3DDC84"><svg class="ic-round" viewBox="0 0 24 24"><path d="M6 10.5q6 6.5 12 0" stroke="#3DDC84"/></svg><svg class="ic-square" viewBox="0 0 24 24"><path d="M6.5 12h11"/></svg></button>
+        <button class="btn" data-act="max" title="Maksymalizuj" aria-label="Maksymalizuj" style="--glow-icon: rgba(245,197,66,.9); --flash: #F5C542"><svg class="ic-round" viewBox="0 0 24 24"><path d="M6 14.5q6-8 12 0" stroke="#F5C542"/></svg><svg class="ic-square" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10"/></svg></button>
+        <button class="btn" data-act="close" title="Zamknij" aria-label="Zamknij" style="--glow-icon: rgba(255,95,87,.9); --flash: #FF5F57"><svg class="ic-round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5.5" stroke="#FF5F57"/></svg><svg class="ic-square" viewBox="0 0 24 24"><path d="M7 7l10 10M17 7 7 17"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel" role="dialog" aria-label="Ustawienia">
+    <div class="ttl">Motyw · <span id="tname">Czarny</span></div>
+    <div class="swatches" role="group" aria-label="Motyw">
+      <button type="button" class="sw-btn" data-theme="black" title="Czarny" aria-label="Czarny"><span style="background:#000000"></span></button>
+      <button type="button" class="sw-btn" data-theme="graphite" title="Grafit" aria-label="Grafit"><span style="background:#1C1D20"></span></button>
+      <button type="button" class="sw-btn" data-theme="gray" title="Szary" aria-label="Szary"><span style="background:#3A3B40"></span></button>
+      <button type="button" class="sw-btn" data-theme="silver" title="Jasnoszary" aria-label="Jasnoszary"><span style="background:#DFE0E3"></span></button>
+      <button type="button" class="sw-btn" data-theme="white" title="Biały" aria-label="Biały"><span style="background:#FAFAFA"></span></button>
+    </div>
+    <div class="swatches" role="group" aria-label="Motywy pastelowe i własny kolor" style="margin-top:6px">
+      <button type="button" class="sw-btn" data-theme="mint" title="Miętowy" aria-label="Miętowy"><span style="background:#CFEBDD"></span></button>
+      <button type="button" class="sw-btn" data-theme="sky" title="Błękitny" aria-label="Błękitny"><span style="background:#CFE3F3"></span></button>
+      <button type="button" class="sw-btn" data-theme="lavender" title="Lawendowy" aria-label="Lawendowy"><span style="background:#DCD3F2"></span></button>
+      <button type="button" class="sw-btn" data-theme="rose" title="Różowy" aria-label="Różowy"><span style="background:#F3D3DE"></span></button>
+      <button type="button" class="sw-btn" data-theme="peach" title="Brzoskwiniowy" aria-label="Brzoskwiniowy"><span style="background:#F6D9C7"></span></button>
+      <button type="button" class="sw-btn" data-theme="lemon" title="Cytrynowy" aria-label="Cytrynowy"><span style="background:#F3EDC4"></span></button>
+      <!-- Własny kolor: dowolny, z systemowego wybieraka -->
+      <label class="sw-btn sw-custom" data-theme="custom" title="Własny kolor" aria-label="Własny kolor">
+        <span id="customSwatch"></span>
+        <input type="color" id="customColor" value="#B9D7EA" aria-label="Wybierz własny kolor">
+      </label>
+    </div>
+    <div class="ttl" style="margin-top:16px">Styl</div>
+    <div class="seg">
+      <button type="button" data-style="round" aria-pressed="true" title="Łuki zamiast przycisków okna, zaokrąglona linia karty"><svg viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="5"/></svg>Zaokrąglony</button>
+      <button type="button" data-style="square" aria-pressed="false" title="Klasyczne przyciski — □ ✕, kanciasta linia karty"><svg viewBox="0 0 24 24" style="stroke-linejoin:miter;stroke-linecap:square"><rect x="4" y="6" width="16" height="12"/></svg>Kanciasty</button>
+    </div>
+    <div class="ttl" style="margin-top:16px">Pasek</div>
+    <div class="seg">
+      <button type="button" data-barmode="auto" aria-pressed="true" title="Pasek znika; wraca po najechaniu na samą górę okna"><svg viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M8 12l4 4 4-4" opacity=".7"/></svg>Chowany</button>
+      <button type="button" data-barmode="fixed" aria-pressed="false" title="Pasek zawsze widoczny, strona zaczyna się pod nim"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2.5"/><path d="M4 9.5h16"/></svg>Zawsze</button>
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

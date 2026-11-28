@@ -29,6 +29,8 @@ Nie kopiujemy kodu, nazw, grafik ani wyglądu innych przeglądarek (np. Helium) 
 - `build/` - kod Chromium (`build/src`) i wyniki. Ignorowany przez Git. **Zmiany w `build/src` giną** przy
   czystej kompilacji - każdą zmianę w Chromium trzeba zapisać jako łatkę w `lum/patches/`.
 - `docs/ungoogled-chromium-windows.md` - oryginalna dokumentacja upstream (zależności, aktualizacje rust itd.).
+- **Wygląd Lum**: `docs/lum-interfejs.md` (specyfikacja) + `ui-preview/` (działająca makieta, wzór). Przeczytaj przed każdą zmianą UI.
+  Projekt interfejsu: olehnykorovych. Autorzy w `AUTORZY.md` - uzupełniaj przy nowych rzeczach z autorem.
 
 ## Łatki
 
