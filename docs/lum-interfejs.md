@@ -143,6 +143,8 @@ Ikona otwierająca ustawienia (dwa suwaki) zostaje na pasku, po lewej od przycis
 - Tryb Chowany przypomina odsłanianie paska w trybie pełnoekranowym (reveal przy górnej krawędzi) – strona w pełnym oknie, pasek nad nią.
 - Karty i pasek narzędzi: uproszczony pasek kart + pasek narzędzi w jednym wierszu 38 px; linia wokół aktywnej karty jako własne rysowanie.
 - Kolor wnętrza aktywnej karty: z koloru strony (np. `theme-color` albo próbka ostatniej klatki) – tanio, tylko przy zmianie strony/przewinięciu.
+  **Podczas ładowania i odświeżania zostaje poprzedni kolor**; nowy pobieramy dopiero, gdy strona jest gotowa
+  (zdarzenie `load`, załadowane czcionki, narysowana klatka) i jeszcze raz chwilę później – nigdy z pustej, niewczytanej strony.
 - Nowa karta: własna lokalna strona (WebUI) zamiast domyślnej, bez żadnych żądań sieciowych.
 - Pasek przewijania: styl nakładkowy (overlay) albo własny `NativeTheme`.
 - Kolory motywów przez mechanizm motywów Chromium (kolory ramki/paska), nie przez rozszerzenie.

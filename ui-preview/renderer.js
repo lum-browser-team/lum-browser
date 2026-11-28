@@ -112,8 +112,8 @@ function createTab(url, focus = true) {
     render(); sampleSoon(t);
   });
   wv.addEventListener('did-navigate-in-page', (e) => { if (e.isMainFrame) { t.url = e.url; render(); sampleSoon(t); } });
-  wv.addEventListener('did-start-loading', () => { t.loading = true; if (t.id === S.active) progress(true); renderTabs(); });
-  wv.addEventListener('did-stop-loading', () => { t.loading = false; if (t.id === S.active) progress(false); renderTabs(); updateNav(); sampleSoon(t); });
+  wv.addEventListener('did-start-loading', () => { t.loading = true; t.navSeq = (t.navSeq || 0) + 1; if (t.id === S.active) progress(true); renderTabs(); });
+  wv.addEventListener('did-stop-loading', () => { t.loading = false; if (t.id === S.active) progress(false); renderTabs(); updateNav(); sampleWhenReady(t); });
   wv.addEventListener('did-fail-load', (e) => {
     if (!e.isMainFrame || e.errorCode === -3) return; // -3: przerwane (np. kolejna nawigacja)
     t.error = { url: e.validatedURL || t.url, desc: e.errorDescription || String(e.errorCode) };
@@ -445,7 +445,8 @@ function progress(on) {
 // Do tego rzadki zapas co 4 s dla stron, które zmieniają się same (tylko gdy okno jest aktywne).
 function sample(t) {
   t = t || tab();
-  if (!t || !t.ready || t.error || document.hidden) return;
+  // Podczas ładowania strona bywa pusta albo w połowie narysowana - zostaje poprzedni kolor
+  if (!t || !t.ready || t.error || t.loading || document.hidden) return;
   let id;
   try { id = t.wv.getWebContentsId(); } catch { return; }
   // Kolor karty: pas wokół otwartej karty (z zapasem po bokach), jasność: cała szerokość
@@ -469,6 +470,24 @@ function sampleSoon(t) {
   sampleTimers.set(t.id, setTimeout(() => sample(t), 160));
 }
 setInterval(() => { if (document.hasFocus()) sample(); }, 4000);
+
+// Po wczytaniu strony kolor pobieramy, gdy strona jest naprawdę gotowa: pełne wczytanie (load),
+// załadowane czcionki i dwie narysowane klatki. Potem jeszcze raz po chwili, bo niektóre strony
+// dociągają treść (np. tło, baner) po wczytaniu.
+const WHEN_READY = "new Promise(function (done) {" +
+  "function frames() { requestAnimationFrame(function () { requestAnimationFrame(function () { done(true); }); }); }" +
+  "function fonts() { (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(frames, frames); }" +
+  "if (document.readyState === 'complete') fonts(); else addEventListener('load', fonts, { once: true });" +
+  "setTimeout(function () { done(false); }, 6000);" +
+  "})";
+function sampleWhenReady(t) {
+  const nav = (t.navSeq = (t.navSeq || 0) + 1); // kolejna nawigacja unieważnia poprzednie oczekiwanie
+  t.wv.executeJavaScript(WHEN_READY).catch(() => false).then(() => {
+    if (t.navSeq !== nav || t.loading) return;
+    sample(t);
+    setTimeout(() => { if (t.navSeq === nav && !t.loading) sample(t); }, 1200);
+  });
+}
 
 /* ================= Zdarzenia ================= */
 function pressFx(el) {
