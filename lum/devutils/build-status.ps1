@@ -1,10 +1,10 @@
-# Lum: podglad na zywo postepu kompilacji (czyta build-log.txt).
+# Lum: live build progress (reads build-log.txt).
 #
-# Uzycie (w osobnym oknie PowerShell, z folderu repo):
+# Usage (in a separate PowerShell window, from the repo folder):
 #   powershell -ExecutionPolicy Bypass -File lum\devutils\build-status.ps1
-# Zamykanie: Ctrl+C (kompilacji to nie przerywa).
+# Close with Ctrl+C (it does not stop the build).
 #
-# Kompilacje trzeba uruchomic z zapisem do logu, np.:
+# The build must write a log, e.g.:
 #   python3 build.py --tarball *>&1 | Tee-Object -FilePath build-log.txt
 
 param(
@@ -13,13 +13,13 @@ param(
 )
 
 $stages = @(
-    'Pobieranie kodu Chromium',
-    'Rozpakowywanie kodu Chromium',
-    'Pobieranie narzedzi (Rust, LLVM, Node...)',
-    'Nakladanie latek (ungoogled, Windows, Lum)',
-    'Przygotowanie kompilacji (gn, bindgen)',
-    'Kompilacja',
-    'Gotowe'
+    'Downloading the Chromium code',
+    'Unpacking the Chromium code',
+    'Downloading tools (Rust, LLVM, Node...)',
+    'Applying patches (ungoogled, Windows, Lum)',
+    'Preparing the build (gn, bindgen)',
+    'Compiling',
+    'Done'
 )
 $samples = New-Object System.Collections.Generic.List[object]
 
@@ -39,14 +39,14 @@ function Format-Span([TimeSpan]$t) { '{0}:{1:mm}' -f [int][Math]::Floor($t.Total
 
 while ($true) {
     if (-not (Test-Path $Log)) {
-        Clear-Host; Write-Host "Brak pliku logu: $Log (czy kompilacja jest uruchomiona?)" -ForegroundColor Yellow
+        Clear-Host; Write-Host "No log file: $Log (is the build running?)" -ForegroundColor Yellow
         Start-Sleep $RefreshSeconds; continue
     }
     $start = (Get-Item $Log).CreationTime
     $text = (Get-Content $Log -Raw -ErrorAction SilentlyContinue)
     if ($null -eq $text) { $text = '' }
 
-    # Kompilacja: ostatnia linia [n/m]
+    # Compile progress: the last [n/m] line
     $n = 0; $m = 0
     $last = [regex]::Matches($text, '(?m)^\[(\d+)/(\d+)\]')
     if ($last.Count -gt 0) { $mm = $last[$last.Count - 1]; $n = [int]$mm.Groups[1].Value; $m = [int]$mm.Groups[2].Value }
@@ -55,7 +55,7 @@ while ($true) {
     $failed = $text -match 'Traceback \(most recent call last\)|FAILED: |Build failed|ninja: build stopped'
     $stage = Get-Stage $text $done
 
-    # Tempo i ETA kompilacji z probek z ostatnich ~15 min
+    # Speed and ETA from the samples of the last ~15 min
     $now = Get-Date
     if ($m -gt 0) {
         $samples.Add([pscustomobject]@{ T = $now; N = $n })
@@ -74,7 +74,7 @@ while ($true) {
     if ($lastLine.Length -gt 110) { $lastLine = $lastLine.Substring(0, 110) + '...' }
 
     Clear-Host
-    Write-Host ("LUM - kompilacja    start {0:HH:mm}, trwa {1}    (odswiezanie co {2} s, Ctrl+C zamyka podglad)" -f $start, (Format-Span ($now - $start)), $RefreshSeconds) -ForegroundColor Cyan
+    Write-Host ("LUM - build    started {0:HH:mm}, running {1}    (refresh every {2} s, Ctrl+C closes this view)" -f $start, (Format-Span ($now - $start)), $RefreshSeconds) -ForegroundColor Cyan
     Write-Host ''
     for ($i = 0; $i -lt $stages.Count; $i++) {
         if ($i -lt $stage) { $mark = '[x]'; $color = 'Green' }
@@ -85,14 +85,14 @@ while ($true) {
             $pct = 100.0 * $n / $m
             $bar = ('#' * [int]($pct / 4)).PadRight(25, '-')
             $line += ("   [{0}] {1,5:N1}%  {2}/{3}" -f $bar, $pct, $n, $m)
-            if ($eta -and -not $done) { $line += ("   zostalo ok. {0} (koniec ok. {1:HH:mm})" -f (Format-Span $eta), ($now + $eta)) }
+            if ($eta -and -not $done) { $line += ("   about {0} left (done at about {1:HH:mm})" -f (Format-Span $eta), ($now + $eta)) }
         }
         Write-Host $line -ForegroundColor $color
     }
     Write-Host ''
-    Write-Host ("CPU {0,3:N0}%    Wolne na C: {1:N0} GB    Kompilacja dziala: {2}" -f $cpu, $free, $(if ($running) { 'tak' } else { 'nie' }))
-    Write-Host "Ostatnia linia: $lastLine" -ForegroundColor DarkGray
-    if ($failed) { Write-Host "`nW logu jest BLAD - kompilacja mogla sie przerwac. Sprawdz koniec $Log" -ForegroundColor Red }
-    if ($done) { Write-Host "`nKompilacja zakonczona. Nastepny krok: python3 package.py" -ForegroundColor Green }
+    Write-Host ("CPU {0,3:N0}%    Free on C: {1:N0} GB    Build running: {2}" -f $cpu, $free, $(if ($running) { 'yes' } else { 'no' }))
+    Write-Host "Last line: $lastLine" -ForegroundColor DarkGray
+    if ($failed) { Write-Host "`nThe log has an ERROR - the build may have stopped. Check the end of $Log" -ForegroundColor Red }
+    if ($done) { Write-Host "`nBuild finished. Next step: python3 package.py" -ForegroundColor Green }
     Start-Sleep $RefreshSeconds
 }
